@@ -32,7 +32,7 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
-import c3d
+import lmj.c3d
 
 FLAGS = optparse.OptionParser(usage='python c3d_viewer.py [OPTIONS] FILE...')
 
@@ -329,6 +329,6 @@ if __name__ == '__main__':
 
     for filename in args:
         try:
-            Viewer(c3d.Reader(open(filename, 'rb'))).mainloop()
+            Viewer(lmj.c3d.Reader(open(filename, 'rb'))).mainloop()
         except StopIteration:
             pass

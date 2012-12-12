@@ -15,7 +15,7 @@ setuptools.setup(
     keywords=('c3d '
               'motion-tracking'),
     install_requires=['numpy'],
-    scripts=['c3d_viewer.py'],
+    scripts=['scripts/c3d-viewer'],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Science/Research',
