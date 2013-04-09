@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+
+# Copyright (c) 2013 Leif Johnson <leif@leifjohnson.net>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+'''Convert a C3D file to CSV (text) format.'''
+
+from __future__ import print_function
+
+import argparse
+import lmj.c3d
+import sys
+
+FLAGS = argparse.ArgumentParser(
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+FLAGS.add_argument('-a', '--include-analog', action='store_true',
+                   help='output analog values after point positions')
+FLAGS.add_argument('-c', '--include-confidence', action='store_true',
+                   help='output confidence values with each point position')
+FLAGS.add_argument('-e', '--end', default='\\n', metavar='K',
+                   help='write K between records')
+FLAGS.add_argument('-s', '--sep', default=',', metavar='C',
+                   help='write C between fields in a record')
+
+if __name__ == '__main__':
+    args = FLAGS.parse_args()
+    sep = args.sep.replace('\\t', '\t').replace('TAB', '\t')
+    end = args.end.replace(
+        '\\r', '\r').replace('CR', '\r').replace(
+        '\\n', '\n').replace('NL', '\n')
+    for points, analog in lmj.c3d.Reader(sys.stdin).read_frames():
+        fields = []
+        for x, y, z, c in points:
+            fields.append(str(x))
+            fields.append(str(y))
+            fields.append(str(z))
+            if args.include_confidence:
+                fields.append(str(c))
+        if args.include_analog:
+            fields.extend(str(x) for x in analog)
+        print(*fields, sep=sep, end=end)
