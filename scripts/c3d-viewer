@@ -65,7 +65,7 @@ class Viewer(object):
         # rendering state.
         self.theta = 350.0
         self.phi = 300.0
-        self.rho = 1.0
+        self.rho = 0.0001
         self.paused = False
 
         self._last_time = 0
@@ -257,7 +257,10 @@ class Viewer(object):
 
         elapsed = time.time() - self._last_time
         if elapsed > 1.0 / self._frame_rate:
-            points, analog = self._frames.next()
+            try:
+                points, analog = self._frames.next()
+            except StopIteration:
+                points = []
             for trail, point in itertools.izip(self._trails, points):
                 trail.append(point[:3])
             self._last_time = time.time()
