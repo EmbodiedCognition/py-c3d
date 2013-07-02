@@ -31,7 +31,7 @@ import cStringIO
 class Header(object):
     '''Header information from a C3D file.'''
 
-    BINARY_FORMAT = 'BBHHHHHfHHf270sHH214s'
+    BINARY_FORMAT = '<BBHHHHHfHHf270sHH214s'
 
     def __init__(self, handle=None):
 	self.label_block = 0
@@ -97,7 +97,7 @@ long_event_labels: %(long_event_labels)s
         '''
         handle.seek(0)
 	(self.parameter_block,
-         _,
+         magic,
          self.point_count,
          self.analog_count,
          self.first_frame,
@@ -111,6 +111,8 @@ long_event_labels: %(long_event_labels)s
          self.long_event_labels,
          self.label_block,
          _) = struct.unpack(self.BINARY_FORMAT, handle.read(512))
+
+        assert magic == 80, 'C3D magic %d != 80 !' % magic
 
         logging.info('''loaded C3D header information:
   parameter_block: %(parameter_block)s
@@ -196,12 +198,16 @@ class Param(object):
         handle.write(struct.pack('B', len(self.desc)))
         handle.write(self.desc)
 
+        kwargs = self.__dict__.copy()
+        if self.bytes:
+            kwargs['bytes'] = self.bytes[:40]
+
         logging.info('''wrote C3D parameter information:
       name: %(name)s
       desc: %(desc)s
  data_size: %(data_size)s
 dimensions: %(dimensions)s
-     bytes: %(bytes)r''' % self.__dict__)
+     bytes: %(bytes)r''' % kwargs)
 
     def read(self, handle):
         '''Read binary data for this parameter from a file handle.
@@ -228,12 +234,26 @@ dimensions: %(dimensions)s
         size, = struct.unpack('B', handle.read(1))
 	self.desc = size and handle.read(size) or ''
 
+        kwargs = self.__dict__.copy()
+        kwargs['shaped'] = ''
+        if self.bytes:
+            kwargs['bytes'] = '%s%s' % (self.bytes[:10], ['', '...'][len(self.bytes) > 10])
+            if len(self.dimensions) == 2:
+                cols, rows = self.dimensions
+                lines = ['']
+                for r in range(rows):
+                    lines.append(repr(self.bytes[r * cols:(r+1) * cols]))
+                kwargs['shaped'] = '\n'.join(lines)
+            if len(self.dimensions) == 0:
+                fmt = '<%s' % {2: 'H', 4: 'f'}.get(len(self.bytes), 'B')
+                kwargs['shaped'] = ' -> %s' % struct.unpack(fmt, self.bytes)[0]
+
         logging.info('''loaded C3D parameter information:
       name: %(name)s
       desc: %(desc)s
  data_size: %(data_size)s
 dimensions: %(dimensions)s
-     bytes: %(bytes)r''' % self.__dict__)
+     bytes: %(bytes)r%(shaped)s''' % kwargs)
 
 
 class Group(object):
@@ -249,7 +269,8 @@ class Group(object):
 
     def add_param(self, name, **kwargs):
         self.params[name.upper()] = Param(name.upper(), **kwargs)
-        logging.info('added parameter %s: %s', name, kwargs)
+        if 'handle' not in kwargs:
+            logging.info('added parameter %s: %s', name, kwargs)
 
     def binary_size(self):
         '''Return the number of bytes to store this group and its parameters.'''
@@ -433,13 +454,16 @@ class Reader(Manager):
         if start_block != self.header.data_block:
             logging.info('start_block %d != data_block %d',
                          start_block, self.header.data_block)
+            if not start_block:
+                logging.info('setting start_block = data_block')
+                start_block = self.header.data_block
 
         # read frame and analog data in either float or int format.
         format = 'fi'[self.group('POINT').get_float('SCALE') >= 0]
         ppf = self.points_per_frame()
         apf = self.analog_per_frame()
 
-        self._handle.seek((self.header.data_block - 1) * 512)
+        self._handle.seek((start_block - 1) * 512)
         start = self._handle.tell()
         f = 0
         for f in xrange(self.end_field() - self.start_field() + 1):
