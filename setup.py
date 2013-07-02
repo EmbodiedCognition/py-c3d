@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
     name='lmj.c3d',
-    version='0.1.1',
+    version='0.1.2',
     namespace_packages=['lmj'],
     packages=setuptools.find_packages(),
     author='Leif Johnson',
@@ -12,10 +12,9 @@ setuptools.setup(
     long_description=open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'README.md')).read(),
     license='MIT',
     url='http://github.com/lmjohns3/py-c3d',
-    keywords=('c3d '
-              'motion-tracking'),
+    keywords=('c3d motion-capture'),
     install_requires=['numpy'],
-    scripts=['scripts/c3d-viewer'],
+    scripts=['scripts/c3d-viewer', 'scripts/c3d2csv'],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Science/Research',
