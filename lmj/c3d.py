@@ -356,17 +356,15 @@ class Manager(object):
     def frame_rate(self):
         return self.header.frame_rate
 
-    def num_points(self):
-        return self.group('POINT').get_uint16('USED')
-
-    def num_analog(self):
-        return self.group('ANALOG').get_uint16('USED')
-
     def points_per_frame(self):
         return self.group('POINT').get_uint16('USED')
 
+    num_points = points_per_frame
+
     def analog_per_frame(self):
         return self.group('ANALOG').get_uint16('USED')
+
+    num_analog = analog_per_frame
 
     def start_field(self):
         return self.group('TRIAL').get_uint32('ACTUAL_START_FIELD')
