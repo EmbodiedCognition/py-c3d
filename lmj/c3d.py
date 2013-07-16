@@ -202,7 +202,7 @@ class Param(object):
         if self.bytes:
             kwargs['bytes'] = self.bytes[:40]
 
-        logging.info('''wrote C3D parameter information:
+        logging.debug('''wrote C3D parameter information:
       name: %(name)s
       desc: %(desc)s
  data_size: %(data_size)s
@@ -234,6 +234,10 @@ dimensions: %(dimensions)s
         size, = struct.unpack('B', handle.read(1))
 	self.desc = size and handle.read(size) or ''
 
+        logging.debug('loaded C3D parameter information: %s', str(self))
+
+    def __str__(self):
+        '''Return a friendly string representation of this parameter.'''
         kwargs = self.__dict__.copy()
         kwargs['shaped'] = ''
         if self.bytes:
@@ -248,12 +252,12 @@ dimensions: %(dimensions)s
                 fmt = '<%s' % {2: 'H', 4: 'f'}.get(len(self.bytes), 'B')
                 kwargs['shaped'] = ' -> %s' % struct.unpack(fmt, self.bytes)[0]
 
-        logging.info('''loaded C3D parameter information:
+        return '''
       name: %(name)s
       desc: %(desc)s
  data_size: %(data_size)s
 dimensions: %(dimensions)s
-     bytes: %(bytes)r%(shaped)s''' % kwargs)
+     bytes: %(bytes)r%(shaped)s''' % kwargs
 
 
 class Group(object):
@@ -270,7 +274,7 @@ class Group(object):
     def add_param(self, name, **kwargs):
         self.params[name.upper()] = Param(name.upper(), **kwargs)
         if 'handle' not in kwargs:
-            logging.info('added parameter %s: %s', name, kwargs)
+            logging.debug('added parameter %s: %s', name, kwargs)
 
     def binary_size(self):
         '''Return the number of bytes to store this group and its parameters.'''
@@ -318,12 +322,12 @@ class Manager(object):
         group = self._groups.get(group_id)
 
         if group is None:
-            logging.info('added C3D parameter group #%d: %s: %s',
-                         group_id, name, desc)
+            logging.debug('added C3D parameter group #%d: %s: %s',
+                          group_id, name, desc)
             group = self._groups[group_id] = Group(name, desc)
         else:
-            logging.info('using C3D parameter group %s: %s',
-                         group.name, group.desc)
+            logging.debug('using C3D parameter group %s: %s',
+                          group.name, group.desc)
 
         if name is not None:
             name = name.upper()
@@ -355,6 +359,9 @@ class Manager(object):
 
     def frame_rate(self):
         return self.header.frame_rate
+
+    def scale_factor(self):
+        return self.group('POINT').get_float('SCALE')
 
     def points_per_frame(self):
         return self.group('POINT').get_uint16('USED')
@@ -435,7 +442,7 @@ class Reader(Manager):
             logging.debug('consumed %d bytes of metadata',
                           512 * parameter_blocks - len(bytes))
 
-        logging.info('read %d parameter groups', len(self._groups) // 2)
+        logging.debug('read %d parameter groups', len(self._groups) // 2)
 
     def read_frames(self):
         '''Iterate over the data frames from our C3D file handle.
@@ -471,7 +478,7 @@ class Reader(Manager):
             analog.fromfile(self._handle, apf)
             yield (numpy.array(points).reshape((ppf, 4)), numpy.array(analog))
             if f and not f % 10000:
-                logging.debug('consumed %d frames in %dkB of frame data',
+                logging.debug('consumed %d frames from %dkB of frame data',
                               f, (self._handle.tell() - start) / 1000)
 
         logging.info('iterated over %d frames', f)
@@ -524,7 +531,7 @@ class Writer(Manager):
         group_id: The numerical ID of the group.
         group: The Group object to write to the handle.
         '''
-        logging.info('writing C3D parameter group #%d: %s: %s',
+        logging.debug('writing C3D parameter group #%d: %s: %s',
                      group_id, group.name, group.desc)
         self._handle.write(struct.pack('bb', len(group.name), -group_id))
         self._handle.write(group.name)
@@ -658,6 +665,7 @@ class Writer(Manager):
         self.header.last_frame = min(frame_count, 65535)
         self.header.point_count = ppf
         self.header.analog_count = apf
+        self.header.scale_factor = point_scale_factor
 
         self.write_metadata()
         self.write_frames(frames)
