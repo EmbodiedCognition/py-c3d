@@ -25,7 +25,7 @@
 from __future__ import print_function
 
 import argparse
-import lmj.c3d
+import c3d
 import sys
 
 FLAGS = argparse.ArgumentParser(
@@ -46,7 +46,7 @@ if __name__ == '__main__':
     end = args.end.replace(
         '\\r', '\r').replace('CR', '\r').replace(
         '\\n', '\n').replace('NL', '\n')
-    for points, analog in lmj.c3d.Reader(sys.stdin).read_frames():
+    for points, analog in c3d.Reader(sys.stdin).read_frames():
         fields = []
         for x, y, z, c in points:
             fields.append(str(x))

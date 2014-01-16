@@ -25,7 +25,7 @@
 import argparse
 import collections
 import itertools
-import lmj.c3d
+import c3d
 import math
 import OpenGL.GL as gl
 import OpenGL.GLU as glu
@@ -331,6 +331,6 @@ if __name__ == '__main__':
 
     for filename in args.inputs:
         try:
-            Viewer(lmj.c3d.Reader(open(filename, 'rb'))).mainloop()
+            Viewer(c3d.Reader(open(filename, 'rb'))).mainloop()
         except StopIteration:
             pass
