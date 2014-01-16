@@ -34,20 +34,20 @@ class Header(object):
     BINARY_FORMAT = '<BBHHHHHfHHf270sHH214s'
 
     def __init__(self, handle=None):
-	self.label_block = 0
-	self.parameter_block = 2
-	self.data_block = 3
+        self.label_block = 0
+        self.parameter_block = 2
+        self.data_block = 3
 
-	self.point_count = 50
-	self.analog_count = 0
+        self.point_count = 50
+        self.analog_count = 0
 
-	self.first_frame = 1
-	self.last_frame = 1
-	self.sample_per_frame = 0
-	self.frame_rate = 60.0
+        self.first_frame = 1
+        self.last_frame = 1
+        self.sample_per_frame = 0
+        self.frame_rate = 60.0
 
-	self.max_gap = 0
-	self.scale_factor = -1.0
+        self.max_gap = 0
+        self.scale_factor = -1.0
         self.long_event_labels = False
 
         if handle:
@@ -96,7 +96,7 @@ long_event_labels: %(long_event_labels)s
         This method reads exactly 512 bytes from the beginning of the file.
         '''
         handle.seek(0)
-	(self.parameter_block,
+        (self.parameter_block,
          magic,
          self.point_count,
          self.analog_count,
@@ -156,7 +156,7 @@ class Param(object):
         handle: If provided, the data for the parameter will be read from this
           file handle.
         '''
-	self.name = name
+        self.name = name
         self.desc = desc
 
         self.negative_data_size = data_size < 0
@@ -215,24 +215,24 @@ dimensions: %(dimensions)s
         This reads exactly enough data from the current position in the file to
         initialize the parameter.
         '''
-	self.data_size, = struct.unpack('b', handle.read(1))
+        self.data_size, = struct.unpack('b', handle.read(1))
         if self.data_size < 0:
             self.negative_data_size = True
             self.data_size = abs(self.data_size)
 
-	count, = struct.unpack('B', handle.read(1))
-	self.dimensions = [
+        count, = struct.unpack('B', handle.read(1))
+        self.dimensions = [
             struct.unpack('B', handle.read(1))[0] for _ in xrange(count)]
 
         count = reduce(operator.mul, self.dimensions, 1)
-	self.bytes = None
+        self.bytes = None
         if self.data_size * count:
             self.bytes = handle.read(self.data_size * count)
         else:
             logging.debug('zero data_size * count !')
 
         size, = struct.unpack('B', handle.read(1))
-	self.desc = size and handle.read(size) or ''
+        self.desc = size and handle.read(size) or ''
 
         logging.debug('loaded C3D parameter information: %s', str(self))
 
