@@ -13,7 +13,7 @@ setuptools.setup(
     url='http://github.com/EmbodiedCognition/py-c3d',
     keywords=('c3d motion-capture'),
     install_requires=['numpy'],
-    scripts=['scripts/c3d-viewer', 'scripts/c3d2csv'],
+    scripts=['scripts/c3d-metadata', 'scripts/c3d-viewer', 'scripts/c3d2csv'],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Science/Research',
