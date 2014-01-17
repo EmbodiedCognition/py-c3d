@@ -23,17 +23,60 @@
 import array
 import numpy
 import struct
-import logging
 import operator
 import cStringIO
 
 
 class Header(object):
-    '''Header information from a C3D file.'''
+    '''Header information from a C3D file.
+
+    Attributes
+    ----------
+    label_block : int
+        Index of the 512-byte block where labels (metadata) are found.
+    parameter_block : int
+        Index of the 512-byte block where parameters (metadata) are found.
+    data_block : int
+        Index of the 512-byte block where data starts.
+    point_count : int
+        Number of motion capture points recorded in this file.
+    analog_count : int
+        Number of analog channels recorded in this file.
+    first_frame : int
+        Index of the first frame of data.
+
+        This is actually not used in Phasespace data files; instead, to seek to
+        data, use the POINTS.ACTUAL_START_FIELD parameter.
+    last_frame : int
+        Index of the last frame of data.
+
+        This is actually not used in Phasespace data files; instead, to seek to
+        data, use the POINTS.ACTUAL_END_FIELD parameter.
+    sample_per_frame : int
+        Number of samples per frame. Seems to be unused in Phasespace files.
+    frame_rate : float
+        The frame rate of the recording, in frames per second.
+    scale_factor : float
+        Multiply values in the file by this scale parameter.
+
+        This is actually not used in Phasespace C3D files; instead, use the
+        POINT.SCALE parameter.
+    long_event_labels : bool
+    max_gap : int
+    '''
 
     BINARY_FORMAT = '<BBHHHHHfHHf270sHH214s'
 
     def __init__(self, handle=None):
+        '''Create a new Header object.
+
+        Arguments
+        ---------
+        handle : file handle, optional
+            If given, initialize attributes for the Header from this file
+            handle. The handle must be seek-able and readable. If `handle` is
+            not given, Header attributes are initialized with default values.
+        '''
         self.label_block = 0
         self.parameter_block = 2
         self.data_block = 3
@@ -56,7 +99,15 @@ class Header(object):
     def write(self, handle):
         '''Write binary header data to a file handle.
 
-        This method writes exactly 512 bytes to the beginning of the file.
+        This method writes exactly 512 bytes to the beginning of the given file
+        handle.
+
+        Arguments
+        ---------
+        handle : file handle
+            The given handle will be reset to 0 using `seek` and then 512 bytes
+            will be written to describe the parameters in this Header. The
+            handle must be writeable.
         '''
         handle.seek(0)
         handle.write(struct.pack(self.BINARY_FORMAT,
@@ -76,24 +127,39 @@ class Header(object):
                                  self.label_block,
                                  ''))
 
-        logging.info('''wrote C3D header information:
-  parameter_block: %(parameter_block)s
-      point_count: %(point_count)s
-     analog_count: %(analog_count)s
-      first_frame: %(first_frame)s
-       last_frame: %(last_frame)s
-          max_gap: %(max_gap)s
-     scale_factor: %(scale_factor)s
-       data_block: %(data_block)s
- sample_per_frame: %(sample_per_frame)s
-       frame_rate: %(frame_rate)s
-long_event_labels: %(long_event_labels)s
-      label_block: %(label_block)s''' % self.__dict__)
+    def __str__(self):
+        '''Return a string representation of this Header's attributes.'''
+        return '''\
+  parameter_block: {0.parameter_block}
+      point_count: {0.point_count}
+     analog_count: {0.analog_count}
+      first_frame: {0.first_frame}
+       last_frame: {0.last_frame}
+          max_gap: {0.max_gap}
+     scale_factor: {0.scale_factor}
+       data_block: {0.data_block}
+ sample_per_frame: {0.sample_per_frame}
+       frame_rate: {0.frame_rate}
+long_event_labels: {0.long_event_labels}
+      label_block: {0.label_block}'''.format(self)
 
     def read(self, handle):
         '''Read and parse binary header data from a file handle.
 
-        This method reads exactly 512 bytes from the beginning of the file.
+        This method reads exactly 512 bytes from the beginning of the given file
+        handle.
+
+        Arguments
+        ---------
+        handle : file handle
+            The given handle will be reset to 0 using `seek` and then 512 bytes
+            will be read to initialize the attributes in this Header. The handle
+            must be readable.
+
+        Raises
+        ------
+        AssertionError, if the magic byte from the header is not 80 (the C3D
+        magic value).
         '''
         handle.seek(0)
         (self.parameter_block,
@@ -112,55 +178,59 @@ long_event_labels: %(long_event_labels)s
          self.label_block,
          _) = struct.unpack(self.BINARY_FORMAT, handle.read(512))
 
-        assert magic == 80, 'C3D magic %d != 80 !' % magic
-
-        logging.info('''loaded C3D header information:
-  parameter_block: %(parameter_block)s
-      point_count: %(point_count)s
-     analog_count: %(analog_count)s
-      first_frame: %(first_frame)s
-       last_frame: %(last_frame)s
-          max_gap: %(max_gap)s
-     scale_factor: %(scale_factor)s
-       data_block: %(data_block)s
- sample_per_frame: %(sample_per_frame)s
-       frame_rate: %(frame_rate)s
-long_event_labels: %(long_event_labels)s
-      label_block: %(label_block)s''' % self.__dict__)
+        assert magic == 80, 'C3D magic {} != 80 !'.format(magic)
 
 
 class Param(object):
-    '''We represent a single named parameter from a C3D file.'''
+    '''A class representing a single named parameter from a C3D file.
+
+    Attributes
+    ----------
+    name : str
+        Name of this parameter.
+    desc : str
+        Brief description of this parameter.
+    bytes_per_element : int, optional
+        For array data, this describes the size of each element of data. For
+        string data (including arrays of strings), this should be -1.
+    dimensions : list of int
+        For array data, this describes the dimensions of the array, stored in
+        column-major order. For arrays of strings, the dimensions here will be
+        the number of columns (length of each string) followed by the number of
+        rows (number of strings).
+    bytes : str
+        Raw data for this parameter.
+    '''
 
     def __init__(self,
                  name,
                  desc='',
-                 data_size=1,
+                 bytes_per_element=1,
                  dimensions=None,
                  bytes=None,
                  handle=None):
         '''Set up a new parameter with at least a name.
 
-        name: The name of the parameter.
-        desc: The description of the parameter.
-        data_size: The number of bytes that are in the binary representation of
-          the data for this parameter. Use -1 if this parameter represents
-          string data.
-        dimensions: The dimensions of the data for this parameter. This is
-          primarily used for string data ; if you want to use strings, they must
-          all be passed in the "bytes" variable as a space-delimited string.
-          Each field in the string must be the same length, and that length must
-          be passed in the dimensions list.
-        bytes: The raw bytes for this parameter. Use struct.pack() to construct
-          this value, or just pass the raw string data for string parameters.
-        handle: If provided, the data for the parameter will be read from this
-          file handle.
+        name : str
+            The name of the parameter.
+        desc : str, optional
+            The description of the parameter.
+        bytes_per_element : int, optional
+            For array data, this describes the size of each element of data. For
+            string data (including arrays of strings), this should be -1.
+        dimensions : list of int, optional
+            For array data, this describes the dimensions of the array, stored
+            in row-major order.
+        bytes : str, optional
+            The raw bytes for this parameter. Use struct.pack() to construct
+            this value, or just pass the raw string data for string parameters.
+        handle : file handle, optional
+            If provided, the data for the parameter will be read from this
+            file handle. The handle must be readable.
         '''
         self.name = name
         self.desc = desc
-
-        self.negative_data_size = data_size < 0
-        self.data_size = abs(data_size)
+        self.bytes_per_element = bytes_per_element
         self.dimensions = dimensions or []
         self.bytes = bytes
 
@@ -168,7 +238,17 @@ class Param(object):
             self.read(handle)
 
     def __repr__(self):
-        return '<Param: %s>' % self.desc
+        return '<Param: {}>'.format(self.desc)
+
+    @property
+    def num_elements(self):
+        '''Return the number of elements in this parameter's array value.'''
+        return reduce(operator.mul, self.dimensions, 1)
+
+    @property
+    def total_bytes(self):
+        '''Return the number of bytes used for storing this parameter's data.'''
+        return self.num_elements * abs(self.bytes_per_element)
 
     def binary_size(self):
         '''Return the number of bytes needed to store this parameter.'''
@@ -178,7 +258,7 @@ class Param(object):
             1 + len(self.name) + # size of name and name bytes
             1 + # data size
             1 + len(self.dimensions) + # size of dimensions and dimension bytes
-            reduce(operator.mul, self.dimensions, 1) * self.data_size + # data
+            self.total_bytes + # data
             1 + len(self.desc) # size of desc and desc bytes
             )
 
@@ -187,10 +267,7 @@ class Param(object):
 
         This writes data at the current position in the file.
         '''
-        size = self.data_size
-        if self.negative_data_size:
-            size = -size
-        handle.write(struct.pack('b', size))
+        handle.write(struct.pack('b', self.bytes_per_element))
         handle.write(struct.pack('B', len(self.dimensions)))
         handle.write(struct.pack('B' * len(self.dimensions), *self.dimensions))
         if self.bytes:
@@ -198,83 +275,121 @@ class Param(object):
         handle.write(struct.pack('B', len(self.desc)))
         handle.write(self.desc)
 
-        kwargs = self.__dict__.copy()
-        if self.bytes:
-            kwargs['bytes'] = self.bytes[:40]
-
-        logging.debug('''wrote C3D parameter information:
-      name: %(name)s
-      desc: %(desc)s
- data_size: %(data_size)s
-dimensions: %(dimensions)s
-     bytes: %(bytes)r''' % kwargs)
-
     def read(self, handle):
         '''Read binary data for this parameter from a file handle.
 
         This reads exactly enough data from the current position in the file to
         initialize the parameter.
         '''
-        self.data_size, = struct.unpack('b', handle.read(1))
-        if self.data_size < 0:
-            self.negative_data_size = True
-            self.data_size = abs(self.data_size)
-
-        count, = struct.unpack('B', handle.read(1))
-        self.dimensions = [
-            struct.unpack('B', handle.read(1))[0] for _ in xrange(count)]
-
-        count = reduce(operator.mul, self.dimensions, 1)
+        self.bytes_per_element, = struct.unpack('b', handle.read(1))
+        dims, = struct.unpack('B', handle.read(1))
+        self.dimensions = [struct.unpack('B', handle.read(1))[0] for _ in range(dims)]
         self.bytes = None
-        if self.data_size * count:
-            self.bytes = handle.read(self.data_size * count)
-        else:
-            logging.debug('zero data_size * count !')
-
+        if self.total_bytes:
+            self.bytes = handle.read(self.total_bytes)
         size, = struct.unpack('B', handle.read(1))
         self.desc = size and handle.read(size) or ''
-
-        logging.debug('loaded C3D parameter information: %s', str(self))
 
     def __str__(self):
         '''Return a friendly string representation of this parameter.'''
         kwargs = self.__dict__.copy()
         kwargs['shaped'] = ''
         if self.bytes:
-            kwargs['bytes'] = '%s%s' % (self.bytes[:10], ['', '...'][len(self.bytes) > 10])
+            kwargs['bytes'] = '{}{}'.format(
+                self.bytes[:10], ['', '...'][len(self.bytes) > 10])
             if len(self.dimensions) == 2:
-                cols, rows = self.dimensions
-                lines = ['']
-                for r in range(rows):
-                    lines.append(repr(self.bytes[r * cols:(r+1) * cols]))
-                kwargs['shaped'] = '\n'.join(lines)
+                C, R = self.dimensions
+                kwargs['shaped'] = ' ->\n' + '\n'.join(
+                    repr(self.bytes[r * C:(r+1) * C]) for r in range(R))
             if len(self.dimensions) == 0:
-                fmt = '<%s' % {2: 'H', 4: 'f'}.get(len(self.bytes), 'B')
-                kwargs['shaped'] = ' -> %s' % struct.unpack(fmt, self.bytes)[0]
+                fmt = '<' + {2: 'H', 4: 'f'}.get(len(self.bytes), 'B')
+                kwargs['shaped'] = ' -> ' + struct.unpack(fmt, self.bytes)[0]
 
-        return '''
-      name: %(name)s
-      desc: %(desc)s
- data_size: %(data_size)s
-dimensions: %(dimensions)s
-     bytes: %(bytes)r%(shaped)s''' % kwargs
+        return '''\
+      name: {0.name}
+      desc: {0.desc}
+ data_size: {0.data_size}
+dimensions: {0.dimensions}
+     bytes: {0.bytes:r}{0.shaped}'''.format(kwargs)
+
+    def _as(self, fmt):
+        '''Unpack the raw bytes of this param using the given struct format.'''
+        return struct.unpack(fmt, self.bytes)[0]
+
+    @property
+    def int8_value(self):
+        '''Get the param as an 8-bit signed integer.'''
+        return self._as('b')
+
+    @property
+    def uint8_value(self):
+        '''Get the param as an 8-bit unsigned integer.'''
+        return self._as('B')
+
+    @property
+    def int16_value(self):
+        '''Get the param as a 16-bit signed integer.'''
+        return self._as('h')
+
+    @property
+    def uint16_value(self):
+        '''Get the param as a 16-bit unsigned integer.'''
+        return self._as('H')
+
+    @property
+    def int32_value(self):
+        '''Get the param as a 32-bit signed integer.'''
+        return self._as('i')
+
+    @property
+    def uint32_value(self):
+        '''Get the param as a 32-bit unsigned integer.'''
+        return self._as('I')
+
+    @property
+    def float_value(self):
+        '''Get the param as a 32-bit float.'''
+        return self._as('f')
+
+    @property
+    def string_value(self):
+        '''Get the param as a raw byte string.'''
+        return self.bytes
 
 
-class Group(object):
-    '''A group of parameters from a C3D file.'''
+class Group(dict):
+    '''A group of parameters from a C3D file.
+
+    In C3D files, parameters are organized in groups. Each group has a name, a
+    description, and a set of named parameters.
+
+    Attributes
+    ----------
+    name : str
+        Name of this parameter group.
+    desc : str
+        Description for this parameter group.
+    '''
 
     def __init__(self, name=None, desc=None):
         self.name = name
         self.desc = desc
-        self.params = {}
 
     def __repr__(self):
-        return '<Group: %s>' % self.desc
+        return '<Group: {}>'.format(self.desc)
 
     def add_param(self, name, **kwargs):
-        self.params[name.upper()] = Param(name.upper(), **kwargs)
-        if 'handle' not in kwargs:
-            logging.debug('added parameter %s: %s', name, kwargs)
+        '''Add a parameter to this group.
+
+        Arguments
+        ---------
+        name : str
+            Name of the parameter to add to this group. The name will
+            automatically be case-normalized.
+
+        Additional keyword arguments will be passed to the `Param` constructor.
+        '''
+        self[name.upper()] = Param(name.upper(), **kwargs)
 
     def binary_size(self):
         '''Return the number of bytes to store this group and its parameters.'''
@@ -286,98 +401,203 @@ class Group(object):
             sum(p.binary_size() for p in self.params.itervalues()))
 
     def get_int8(self, key):
-        return struct.unpack('b', self.params[key].bytes)[0]
+        '''Get the value of the given parameter as an 8-bit signed integer.'''
+        return self[key.upper()].int8_value
 
     def get_uint8(self, key):
-        return struct.unpack('B', self.params[key].bytes)[0]
+        '''Get the value of the given parameter as an 8-bit unsigned integer.'''
+        return self[key.upper()].uint8_value
 
     def get_int16(self, key):
-        return struct.unpack('h', self.params[key].bytes)[0]
+        '''Get the value of the given parameter as a 16-bit signed integer.'''
+        return self[key.upper()].int16_value
 
     def get_uint16(self, key):
-        return struct.unpack('H', self.params[key].bytes)[0]
+        '''Get the value of the given parameter as a 16-bit unsigned integer.'''
+        return self[key.upper()].uint16_value
 
     def get_int32(self, key):
-        return struct.unpack('i', self.params[key].bytes)[0]
+        '''Get the value of the given parameter as a 32-bit signed integer.'''
+        return self[key.upper()].int32_value
 
     def get_uint32(self, key):
-        return struct.unpack('I', self.params[key].bytes)[0]
+        '''Get the value of the given parameter as a 32-bit unsigned integer.'''
+        return self[key.upper()].uint32_value
 
     def get_float(self, key):
-        return struct.unpack('f', self.params[key].bytes)[0]
+        '''Get the value of the given parameter as a 32-bit float.'''
+        return self[key.upper()].float_value
 
-    def get_string(self, key, offset=0):
-        return self.params[key].bytes.split()[offset]
+    def get_string(self, key):
+        '''Get the value of the given parameter as a string.'''
+        return self[key.upper()].string_value
 
 
-class Manager(object):
-    '''A base class for managing C3D file metadata.'''
+class Manager(dict):
+    '''A base class for managing C3D file metadata.
 
-    def __init__(self, header=None, groups=None):
+    This class manages a C3D header (which contains some stock metadata fields)
+    as well as a set of parameter groups. Each group is accessible using its
+    name.
+
+    Attributes
+    ----------
+    header : `Header`
+        Header information for the C3D file.
+    '''
+
+    def __init__(self, header=None):
+        '''Set up a new Manager with a Header.'''
         self.header = header or Header()
-        self._groups = groups or {}
 
     def check_group(self, group_id, name=None, desc=None):
-        '''Add a new parameter group.'''
-        group = self._groups.get(group_id)
+        '''Get a parameter group by its numeric id.
 
+        If no such group is available, create a new one.
+
+        Arguments
+        ---------
+        group_id : int
+            The numeric ID for a group to check or create.
+        name : str, optional
+            If a group is created, assign this name to the group.
+        desc : str, optional
+            If a group is created, assign this description to the group.
+
+        Returns
+        -------
+        A `Group` with the given ID, and optionally name and description.
+
+        Raises
+        ------
+        NameError, if a group with a duplicate name already exists.
+        '''
+        group = self.get(group_id)
         if group is None:
-            logging.debug('added C3D parameter group #%d: %s: %s',
-                          group_id, name, desc)
-            group = self._groups[group_id] = Group(name, desc)
-        else:
-            logging.debug('using C3D parameter group %s: %s',
-                          group.name, group.desc)
-
+            group = self[group_id] = Group(name, desc)
         if name is not None:
             name = name.upper()
-            if name in self._groups:
-                raise NameError('group name %s was used more than once' % name)
-            self._groups[name] = group
+            if name in self:
+                raise NameError('group name {} was used more than once'.format(name))
+            self[name] = group
             group.name = name
             group.desc = desc
-
         return group
 
-    def group(self, name):
-        '''Get the parameter group with a given name.'''
-        return self._groups.get(name.upper(), None)
+    def get(self, group, default=None):
+        '''Get a group or parameter.
 
-    def groups(self):
-        '''Get all the (name, group) pairs in our file.'''
-        return self._groups.iteritems()
+        Arguments
+        ---------
+        group : str
+            If this string contains a period (.), then the part before the
+            period will be used to retrieve a group, and the part after the
+            period will be used to retrieve a parameter from that group. If this
+            string does not contain a period, then just a group will be
+            returned.
+        default : any
+            Return this value if the named group and parameter are not found.
+
+        Returns
+        -------
+        Either a `Group` or a `Param` with the specified name(s). If neither is
+        found, returns the default value.
+        '''
+        try:
+            return self[group]
+        except KeyError:
+            return default
+
+    def __getitem__(self, group):
+        '''Get a group or parameter.
+
+        Arguments
+        ---------
+        group : str
+            If this string contains a period (.), then the part before the
+            period will be used to retrieve a group, and the part after the
+            period will be used to retrieve a parameter from that group. If this
+            string does not contain a period, then just a group will be
+            returned.
+
+        Returns
+        -------
+        Either a `Group` or a `Param` with the specified name(s).
+
+        Raises
+        ------
+        KeyError, if no group and parameter with the given identifiers are
+        found.
+        '''
+        if isinstance(group, int):
+            return super(Manager, self).__getitem__(group)
+        group = group.upper()
+        param = None
+        if '.' in group:
+            group, param = group.split('.', 1)
+        group = super(Manager, self).__getitem__(group)
+        if param:
+            return group[param]
+        return group
+
+    def get_int8(self, key):
+        '''Get a parameter value as an 8-bit signed integer.'''
+        return self[key].int8_value
+
+    def get_uint8(self, key):
+        '''Get a parameter value as an 8-bit unsigned integer.'''
+        return self[key].uint8_value
+
+    def get_int16(self, key):
+        '''Get a parameter value as a 16-bit signed integer.'''
+        return self[key].int16_value
+
+    def get_uint16(self, key):
+        '''Get a parameter value as a 16-bit unsigned integer.'''
+        return self[key].uint16_value
+
+    def get_int32(self, key):
+        '''Get a parameter value as a 32-bit signed integer.'''
+        return self[key].int32_value
+
+    def get_uint32(self, key):
+        '''Get a parameter value as a 32-bit unsigned integer.'''
+        return self[key].uint32_value
+
+    def get_float(self, key):
+        '''Get a parameter value as a 32-bit float.'''
+        return self[key].float_value
+
+    def get_string(self, key):
+        '''Get a parameter value as a string.'''
+        return self[key].string_value
 
     def parameter_blocks(self):
         '''Compute the size (in 512B blocks) of the parameter section.'''
-        bytes = 4
-        for name, group in self._groups.iteritems():
-            bytes += group.binary_size()
-        blocks, overflow = divmod(bytes, 512)
-        if overflow:
-            blocks += 1
-        return blocks
+        bytes = 4. + sum(g.binary_size() for g in self.itervalues())
+        return int(numpy.ceil(bytes / 512))
 
     def frame_rate(self):
         return self.header.frame_rate
 
     def scale_factor(self):
-        return self.group('POINT').get_float('SCALE')
+        return self.get_float('POINT.SCALE')
 
     def points_per_frame(self):
-        return self.group('POINT').get_uint16('USED')
+        return self.get_uint16('POINT.USED')
 
     num_points = points_per_frame
 
     def analog_per_frame(self):
-        return self.group('ANALOG').get_uint16('USED')
+        return self.get_uint16('ANALOG.USED')
 
     num_analog = analog_per_frame
 
     def start_field(self):
-        return self.group('TRIAL').get_uint32('ACTUAL_START_FIELD')
+        return self.get_uint32('TRIAL.ACTUAL_START_FIELD')
 
     def end_field(self):
-        return self.group('TRIAL').get_uint32('ACTUAL_END_FIELD')
+        return self.get_uint32('TRIAL.ACTUAL_END_FIELD')
 
 
 class Reader(Manager):
@@ -385,24 +605,34 @@ class Reader(Manager):
 
     A C3D file contains metadata and frame-based data describing 3D motion.
 
-    You can iterate over the frames in the file by calling
-    "read_frames(handle)" after construction:
+    You can iterate over the frames in the file by calling `read_frames()` after
+    construction:
 
     >>> r = c3d.Reader(open('capture.c3d', 'rb'))
     >>> for points, analog in r.read_frames():
-    ...     print points.shape, 'points in this frame'
+    ...     print('{0.shape} points in this frame'.format(points))
     ...     frames.append(points, analog)
     '''
 
     def __init__(self, handle):
         '''Initialize this C3D file by reading header and parameter data.
+
+        Arguments
+        ---------
+        handle : file handle
+            Read metadata and C3D motion frames from the given file handle. This
+            handle is assumed to be `seek`-able and `read`-able. The handle must
+            remain open for the life of the `Reader` instance. The `Reader` does
+            not `close` the handle.
+
+        Raises
+        ------
+        ValueError, if the processor metadata in the C3D file is anything other
+        than 84 (Intel format).
         '''
         super(Reader, self).__init__(Header(handle))
-        self._handle = handle
-        self._read_metadata()
 
-    def _read_metadata(self):
-        '''Read group and parameter data from our file handle.'''
+        self._handle = handle
         self._handle.seek((self.header.parameter_block - 1) * 512)
 
         # metadata header
@@ -430,41 +660,33 @@ class Reader(Manager):
                 size, = struct.unpack('B', buf.read(1))
                 desc = size and buf.read(size) or ''
                 g = self.check_group(group_id, name, desc)
-                logging.debug('%s group takes up %d bytes', name,
-                              g.binary_size())
             else:
-                g = self.check_group(group_id)
-                g.add_param(name, handle=buf)
-                logging.debug('%s parameter takes up %d bytes', name,
-                              g.params[name].binary_size())
+                self.check_group(group_id).add_param(name, handle=buf)
 
             bytes = bytes[2 + abs(chars_in_name) + offset_to_next:]
-            logging.debug('consumed %d bytes of metadata',
-                          512 * parameter_blocks - len(bytes))
-
-        logging.debug('read %d parameter groups', len(self._groups) // 2)
 
     def read_frames(self):
         '''Iterate over the data frames from our C3D file handle.
 
+        Returns
+        -------
         This generates a sequence of (points, analog) ordered pairs, one
         ordered pair per frame. The first element of each frame contains a numpy
         array of 4D "points" and the second element of each frame contains a
         numpy array of 1D "analog" values that were probably recorded
-        simultaneously. The four dimensions in the point data are typically
-        (x, y, z) and a "confidence" estimate for the point.
+        simultaneously.
+
+        The four dimensions in the point data are typically (x, y, z) and a
+        "confidence" estimate for the point.
         '''
         # find out where we seek to start reading frame data.
-        start_block = self.group('POINT').get_uint16('DATA_START')
+        start_block = self.get_uint16('POINT.DATA_START')
         if start_block != self.header.data_block:
-            logging.info('start_block %d != data_block %d',
-                         start_block, self.header.data_block)
             if not start_block:
-                logging.info('setting start_block = data_block')
                 start_block = self.header.data_block
 
         # read frame and analog data in either float or int format.
-        format = 'fi'[self.group('POINT').get_float('SCALE') >= 0]
+        format = 'fi'[self.scale_factor() >= 0]
         ppf = self.points_per_frame()
         apf = self.analog_per_frame()
 
@@ -476,12 +698,7 @@ class Reader(Manager):
             points.fromfile(self._handle, 4 * ppf)
             analog = array.array(format)
             analog.fromfile(self._handle, apf)
-            yield (numpy.array(points).reshape((ppf, 4)), numpy.array(analog))
-            if f and not f % 10000:
-                logging.debug('consumed %d frames from %dkB of frame data',
-                              f, (self._handle.tell() - start) / 1000)
-
-        logging.info('iterated over %d frames', f)
+            yield numpy.array(points).reshape((ppf, 4)), numpy.array(analog)
 
 
 class Writer(Manager):
@@ -494,6 +711,16 @@ class Writer(Manager):
     '''
 
     def __init__(self, handle):
+        '''Initialize a new Writer with a file handle.
+
+        Arguments
+        ---------
+        handle : file handle
+            Write metadata and C3D motion frames to the given file handle. This
+            handle is assumed to be `seek`-able and `write`-able. The handle
+            must remain open for the life of the `Writer` instance. The `Writer`
+            does not `close` the handle.
+        '''
         super(Writer, self).__init__()
         self._handle = handle
 
@@ -501,7 +728,6 @@ class Writer(Manager):
         '''Pad the file with 0s to the end of the next block boundary.'''
         extra = self._handle.tell() % 512
         if extra:
-            logging.debug('padding with %d zeros', 512 - extra)
             self._handle.write('\x00' * (512 - extra))
 
     def write_metadata(self):
@@ -510,11 +736,10 @@ class Writer(Manager):
         self.header.write(self._handle)
         self._pad_block()
         assert self._handle.tell() == 512
-        logging.debug('produced %d bytes of header data', self._handle.tell())
 
         # groups
         self._handle.write(struct.pack('BBBB', 0, 0, self.parameter_blocks(), 84))
-        id_groups = sorted((i, g) for i, g in self.groups() if isinstance(i, int))
+        id_groups = sorted((i, g) for i, g in self.iteritems() if isinstance(i, int))
         for group_id, group in id_groups:
             self._write_group(group_id, group)
 
@@ -523,40 +748,36 @@ class Writer(Manager):
         while self._handle.tell() != 512 * (self.header.data_block - 1):
             self._handle.write('\x00' * 512)
 
-        logging.debug('produced %d bytes of metadata', self._handle.tell())
-
     def _write_group(self, group_id, group):
         '''Write a single parameter group, with parameters, to our file handle.
 
-        group_id: The numerical ID of the group.
-        group: The Group object to write to the handle.
+        Arguments
+        ---------
+        group_id : int
+            The numerical ID of the group.
+        group : `Group`
+            The `Group` object to write to the handle.
         '''
-        logging.debug('writing C3D parameter group #%d: %s: %s',
-                     group_id, group.name, group.desc)
         self._handle.write(struct.pack('bb', len(group.name), -group_id))
         self._handle.write(group.name)
         self._handle.write(struct.pack('h', 3 + len(group.desc)))
         self._handle.write(struct.pack('B', len(group.desc)))
         self._handle.write(group.desc)
-        logging.debug('writing group info yields offset %d', self._handle.tell())
         for name, param in group.params.iteritems():
             self._handle.write(struct.pack('bb', len(name), group_id))
             self._handle.write(name)
             self._handle.write(struct.pack('h', param.binary_size() - 2 - len(name)))
             param.write(self._handle)
-            logging.debug('writing %d bytes yields offset %d',
-                          4 + len(name) + param.binary_size(), self._handle.tell())
-        logging.debug('group %s ends at byte offset %d',
-                      group.name, self._handle.tell())
 
     def write_frames(self, frames):
         '''Write the given list of frame data to our file handle.
 
-        frames: A sequence of (points, analog) tuples, each containing data for
-          one frame.
+        frames : sequence of frame data
+            A sequence of (points, analog) tuples, each containing data for one
+            frame.
         '''
         assert self._handle.tell() == 512 * (self.header.data_block - 1)
-        format = 'fi'[self.group('POINT').get_float('SCALE') >= 0]
+        format = 'fi'[self.scale_factor() >= 0]
         for p, a in frames:
             point = array.array(format)
             point.extend(p.flatten())
@@ -575,12 +796,20 @@ class Writer(Manager):
                               ):
         '''Write a set of frames to a file so it looks like Phasespace wrote it.
 
-        frames: The sequence of frames to write.
-        frame_count: The number of frames to write.
-        point_frame_rate: The frame rate of the data.
-        analog_frame_rate: The number of analog samples per frame.
-        point_scale_factor: The scale factor for point data.
-        point_units: The units that the point numbers represent.
+        Arguments
+        ---------
+        frames : sequence of frame data
+            The sequence of frames to write.
+        frame_count : int
+            The number of frames to write.
+        point_frame_rate : float
+            The frame rate of the data.
+        analog_frame_rate : float
+            The number of analog samples per frame.
+        point_scale_factor : float
+            The scale factor for point data.
+        point_units : str
+            The units that the point numbers represent.
         '''
         try:
             points, analog = iter(frames).next()
