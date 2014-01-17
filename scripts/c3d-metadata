@@ -5,42 +5,26 @@ import sys
 
 
 def print_metadata(reader):
-    print('''Header information:
-  parameter_block: {parameter_block}
-      point_count: {point_count}
-     analog_count: {analog_count}
-      first_frame: {first_frame}
-       last_frame: {last_frame}
-          max_gap: {max_gap}
-     scale_factor: {scale_factor}
-       data_block: {data_block}
- sample_per_frame: {sample_per_frame}
-       frame_rate: {frame_rate}
-long_event_labels: {long_event_labels}
-      label_block: {label_block}'''.format(reader.header))
-
-    for name, g in sorted(reader.groups()):
-        if isinstance(name, int):
+    print('Header information:\n{}'.format(reader.header))
+    for key, g in sorted(reader.iteritems()):
+        if isinstance(key, int):
             continue
         print('')
-        for key, p in sorted(g.params.iteritems()):
-            if len(p.dimensions) == 2:
-                cols, rows = p.dimensions
-                for r in range(rows):
-                    print('{0}.{1}: {2}B * {3} [{4} of {5}] {6}'.format(
-                        name, key, p.data_size, cols, r, rows,
-                        repr(p.bytes[r * cols:(r+1) * cols])))
-                continue
+        for key, p in sorted(g.iteritems()):
             shaped = ''
-            dim = ' %s' % p.dimensions if p.dimensions else ''
+            dim = ' {}'.format(p.dimensions if p.dimensions else '')
             raw = p.bytes
             if p.bytes:
-                raw = '%s%s' % (repr(p.bytes[:3]), ['', '...'][len(p.bytes) > 3])
+                raw = '{}{}'.format(repr(p.bytes[:8]), ['', '...'][len(p.bytes) > 8])
                 if len(p.dimensions) == 0:
                     get = {2: g.get_uint16, 4: g.get_float}.get(len(p.bytes), g.get_uint8)
-                    shaped = ' -> %s' % get(key)
-            print('{0}.{1}: {2}B{3} {4}{5}'.format(
-                    name, key, p.data_size, dim, raw, shaped))
+                    shaped = ' -> {}'.format(get(key))
+            print('{0.name}.{1.name}: {1.total_bytes}B{2} {3}{4}'.format(g, p, dim, raw, shaped))
+            if len(p.dimensions) == 2:
+                C, R = p.dimensions
+                for r in range(R):
+                    print('{0.name}.{1.name}[{4}]: {5}'.format(
+                        g, p, C, R, r, repr(p.bytes[r * C:(r+1) * C])))
 
 
 if __name__ == '__main__':
