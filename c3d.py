@@ -450,10 +450,8 @@ class Manager(dict):
         '''Set up a new Manager with a Header.'''
         self.header = header or Header()
 
-    def check_group(self, group_id, name=None, desc=None):
-        '''Get a parameter group by its numeric id.
-
-        If no such group is available, create a new one.
+    def add_group(self, group_id, name, desc):
+        '''Add a new parameter group.
 
         Arguments
         ---------
@@ -466,22 +464,18 @@ class Manager(dict):
 
         Returns
         -------
-        A `Group` with the given ID, and optionally name and description.
+        A `Group` with the given ID, name, and description.
 
         Raises
         ------
-        NameError, if a group with a duplicate name already exists.
+        KeyError, if a group with a duplicate ID or name already exists.
         '''
-        group = self.get(group_id)
-        if group is None:
-            group = self[group_id] = Group(name, desc)
-        if name is not None:
-            name = name.upper()
-            if name in self:
-                raise NameError('group name {} was used more than once'.format(name))
-            self[name] = group
-            group.name = name
-            group.desc = desc
+        if group_id in self:
+            raise KeyError(group_id)
+        name = name.upper()
+        if name in self:
+            raise KeyError(name)
+        group = self[name] = self[group_id] = Group(name, desc)
         return group
 
     def get(self, group, default=None):
@@ -659,9 +653,9 @@ class Reader(Manager):
                 group_id = abs(group_id)
                 size, = struct.unpack('B', buf.read(1))
                 desc = size and buf.read(size) or ''
-                g = self.check_group(group_id, name, desc)
+                self.add_group(group_id, name, desc)
             else:
-                self.check_group(group_id).add_param(name, handle=buf)
+                self[group_id].add_param(name, handle=buf)
 
             bytes = bytes[2 + abs(chars_in_name) + offset_to_next:]
 
@@ -818,7 +812,7 @@ class Writer(Manager):
 
         # POINT group
         ppf = len(points)
-        point_group = self.check_group(1, 'POINT', 'POINT group')
+        point_group = self.add_group(1, 'POINT', 'POINT group')
         point_group.add_param('USED', desc='Number of 3d markers',
                               data_size=2,
                               bytes=struct.pack('H', ppf))
@@ -857,7 +851,7 @@ class Writer(Manager):
 
         # ANALOG group
         apf = len(analog)
-        analog_group = self.check_group(2, 'ANALOG', 'ANALOG group')
+        analog_group = self.add_group(2, 'ANALOG', 'ANALOG group')
         analog_group.add_param('USED', desc='analog channel count',
                                data_size=2,
                                bytes=struct.pack('H', apf))
@@ -875,7 +869,7 @@ class Writer(Manager):
                                dimensions=[0])
 
         # TRIAL group
-        trial_group = self.check_group(3, 'TRIAL', 'TRIAL group')
+        trial_group = self.add_group(3, 'TRIAL', 'TRIAL group')
         trial_group.add_param('ACTUAL_START_FIELD', desc='actual start frame',
                               data_size=2,
                               dimensions=[2],
