@@ -25,6 +25,7 @@ import numpy
 import struct
 import operator
 import cStringIO
+import warnings
 
 
 class Header(object):
@@ -653,7 +654,10 @@ class Reader(Manager):
                 group_id = abs(group_id)
                 size, = struct.unpack('B', buf.read(1))
                 desc = size and buf.read(size) or ''
-                self.add_group(group_id, name, desc)
+                if self.get(name):
+                    warnings.warn('duplicate parameter group {}'.format(name))
+                else:
+                    self.add_group(group_id, name, desc)
             else:
                 self[group_id].add_param(name, handle=buf)
 
