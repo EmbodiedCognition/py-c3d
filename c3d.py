@@ -399,7 +399,7 @@ class Group(dict):
             1 + len(self.name) + # size of name and name bytes
             2 + # next offset marker
             1 + len(self.desc) + # size of desc and desc bytes
-            sum(p.binary_size() for p in self.params.itervalues()))
+            sum(p.binary_size() for p in self.itervalues()))
 
     def get_int8(self, key):
         '''Get the value of the given parameter as an 8-bit signed integer.'''
@@ -530,6 +530,8 @@ class Manager(dict):
         param = None
         if '.' in group:
             group, param = group.split('.', 1)
+        if ':' in group:
+            group, param = group.split(':', 1)
         group = super(Manager, self).__getitem__(group)
         if param:
             return group[param]
@@ -576,23 +578,23 @@ class Manager(dict):
         return self.header.frame_rate
 
     def scale_factor(self):
-        return self.get_float('POINT.SCALE')
+        return self.get_float('POINT:SCALE')
 
     def points_per_frame(self):
-        return self.get_uint16('POINT.USED')
+        return self.get_uint16('POINT:USED')
 
     num_points = points_per_frame
 
     def analog_per_frame(self):
-        return self.get_uint16('ANALOG.USED')
+        return self.get_uint16('ANALOG:USED')
 
     num_analog = analog_per_frame
 
     def start_field(self):
-        return self.get_uint32('TRIAL.ACTUAL_START_FIELD')
+        return self.get_uint32('TRIAL:ACTUAL_START_FIELD')
 
     def end_field(self):
-        return self.get_uint32('TRIAL.ACTUAL_END_FIELD')
+        return self.get_uint32('TRIAL:ACTUAL_END_FIELD')
 
 
 class Reader(Manager):
@@ -678,7 +680,7 @@ class Reader(Manager):
         "confidence" estimate for the point.
         '''
         # find out where we seek to start reading frame data.
-        start_block = self.get_uint16('POINT.DATA_START')
+        start_block = self.get_uint16('POINT:DATA_START')
         if start_block != self.header.data_block:
             if not start_block:
                 start_block = self.header.data_block
@@ -761,7 +763,7 @@ class Writer(Manager):
         self._handle.write(struct.pack('h', 3 + len(group.desc)))
         self._handle.write(struct.pack('B', len(group.desc)))
         self._handle.write(group.desc)
-        for name, param in group.params.iteritems():
+        for name, param in group.iteritems():
             self._handle.write(struct.pack('bb', len(name), group_id))
             self._handle.write(name)
             self._handle.write(struct.pack('h', param.binary_size() - 2 - len(name)))
@@ -885,7 +887,7 @@ class Writer(Manager):
 
         # sync parameter information to header.
         blocks = self.parameter_blocks()
-        point_group.params['DATA_START'].bytes = struct.pack('H', 2 + blocks)
+        point_group['DATA_START'].bytes = struct.pack('H', 2 + blocks)
 
         self.header.data_block = 2 + blocks
         self.header.frame_rate = point_frame_rate
