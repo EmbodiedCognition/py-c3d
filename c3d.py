@@ -304,7 +304,7 @@ class Param(object):
                     repr(self.bytes[r * C:(r+1) * C]) for r in range(R))
             if len(self.dimensions) == 0:
                 fmt = '<' + {2: 'H', 4: 'f'}.get(len(self.bytes), 'B')
-                kwargs['shaped'] = ' -> ' + struct.unpack(fmt, self.bytes)[0]
+                kwargs['shaped'] = ' -> {}'.format(struct.unpack(fmt, self.bytes)[0])
 
         return '''\
       name: {0.name}
