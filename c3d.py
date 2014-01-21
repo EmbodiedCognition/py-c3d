@@ -21,10 +21,10 @@
 '''A Python library for reading and writing C3D files.'''
 
 import array
-import numpy
-import struct
-import operator
 import cStringIO
+import numpy as np
+import operator
+import struct
 import warnings
 
 
@@ -46,13 +46,13 @@ class Header(object):
     first_frame : int
         Index of the first frame of data.
 
-        This is actually not used in Phasespace data files; instead, to seek to
-        data, use the POINTS.ACTUAL_START_FIELD parameter.
+        This is actually not used in Phasespace data files; instead, the first
+        frame number is stored in the POINTS:ACTUAL_START_FIELD parameter.
     last_frame : int
         Index of the last frame of data.
 
-        This is actually not used in Phasespace data files; instead, to seek to
-        data, use the POINTS.ACTUAL_END_FIELD parameter.
+        This is actually not used in Phasespace data files; instead, the last
+        frame number is stored in the POINTS:ACTUAL_END_FIELD parameter.
     sample_per_frame : int
         Number of samples per frame. Seems to be unused in Phasespace files.
     frame_rate : float
@@ -263,11 +263,19 @@ class Param(object):
             1 + len(self.desc) # size of desc and desc bytes
             )
 
-    def write(self, handle):
+    def write(self, group_id, handle):
         '''Write binary data for this parameter to a file handle.
 
-        This writes data at the current position in the file.
+        Arguments
+        ---------
+        group_id : int
+            The numerical ID of the group that holds this parameter.
+        handle : file handle
+            An open, writable, binary file handle.
         '''
+        handle.write(struct.pack('bb', len(self.name), group_id))
+        handle.write(self.name)
+        handle.write(struct.pack('h', self.binary_size() - 2 - len(self.name)))
         handle.write(struct.pack('b', self.bytes_per_element))
         handle.write(struct.pack('B', len(self.dimensions)))
         handle.write(struct.pack('B' * len(self.dimensions), *self.dimensions))
@@ -290,28 +298,6 @@ class Param(object):
             self.bytes = handle.read(self.total_bytes)
         size, = struct.unpack('B', handle.read(1))
         self.desc = size and handle.read(size) or ''
-
-    def __str__(self):
-        '''Return a friendly string representation of this parameter.'''
-        kwargs = self.__dict__.copy()
-        kwargs['shaped'] = ''
-        if self.bytes:
-            kwargs['bytes'] = '{}{}'.format(
-                self.bytes[:10], ['', '...'][len(self.bytes) > 10])
-            if len(self.dimensions) == 2:
-                C, R = self.dimensions
-                kwargs['shaped'] = ' ->\n' + '\n'.join(
-                    repr(self.bytes[r * C:(r+1) * C]) for r in range(R))
-            if len(self.dimensions) == 0:
-                fmt = '<' + {2: 'H', 4: 'f'}.get(len(self.bytes), 'B')
-                kwargs['shaped'] = ' -> {}'.format(struct.unpack(fmt, self.bytes)[0])
-
-        return '''\
-      name: {0.name}
-      desc: {0.desc}
- data_size: {0.data_size}
-dimensions: {0.dimensions}
-     bytes: {0.bytes:r}{0.shaped}'''.format(kwargs)
 
     def _as(self, fmt):
         '''Unpack the raw bytes of this param using the given struct format.'''
@@ -400,6 +386,24 @@ class Group(dict):
             2 + # next offset marker
             1 + len(self.desc) + # size of desc and desc bytes
             sum(p.binary_size() for p in self.itervalues()))
+
+    def write(self, group_id, handle):
+        '''Write this parameter group, with parameters, to a file handle.
+
+        Arguments
+        ---------
+        group_id : int
+            The numerical ID of the group.
+        handle : file handle
+            An open, writable, binary file handle.
+        '''
+        handle.write(struct.pack('bb', len(self.name), -group_id))
+        handle.write(self.name)
+        handle.write(struct.pack('h', 3 + len(self.desc)))
+        handle.write(struct.pack('B', len(self.desc)))
+        handle.write(self.desc)
+        for param in self.itervalues():
+            param.write(group_id, handle)
 
     def get_int8(self, key):
         '''Get the value of the given parameter as an 8-bit signed integer.'''
@@ -572,10 +576,10 @@ class Manager(dict):
     def parameter_blocks(self):
         '''Compute the size (in 512B blocks) of the parameter section.'''
         bytes = 4. + sum(g.binary_size() for g in self.itervalues())
-        return int(numpy.ceil(bytes / 512))
+        return int(np.ceil(bytes / 512))
 
     def frame_rate(self):
-        return self.header.frame_rate
+        return self.get_float('POINT:RATE')
 
     def scale_factor(self):
         return self.get_float('POINT:SCALE')
@@ -590,11 +594,14 @@ class Manager(dict):
 
     num_analog = analog_per_frame
 
-    def start_field(self):
-        return self.get_uint32('TRIAL:ACTUAL_START_FIELD')
+    def analog_frame_rate(self):
+        return self.get_float('ANALOG:RATE')
 
-    def end_field(self):
-        return self.get_uint32('TRIAL:ACTUAL_END_FIELD')
+    def first_frame(self):
+        return self.header.first_frame
+
+    def last_frame(self):
+        return self.header.last_frame
 
 
 class Reader(Manager):
@@ -638,9 +645,9 @@ class Reader(Manager):
         if processor != 84:
             raise ValueError('We only read Intel C3D files.')
 
-        # read all metadata in a chunk, then process each chunk (to avoid block
-        # boundary issues).
-        bytes = self._handle.read(512 * parameter_blocks)
+        # read all parameter blocks as a single chunk to avoid block
+        # boundary issues.
+        bytes = self._handle.read(512 * parameter_blocks - 4)
         while bytes:
             buf = cStringIO.StringIO(bytes)
 
@@ -665,40 +672,93 @@ class Reader(Manager):
 
             bytes = bytes[2 + abs(chars_in_name) + offset_to_next:]
 
+        # ensure that the metadata in the file is self-consistent.
+        assert self.header.point_count == self.points_per_frame(), (
+            'inconsistent point count! {} count != {} per frame'.format(
+                self.header.point_count,
+                self.points_per_frame(),
+            ))
+
+        apf = self.analog_per_frame() * self.analog_frame_rate() / self.frame_rate()
+        assert self.header.analog_count == apf, (
+            'inconsistent analog count! {} count != {} per frame * '
+            '{} analog-fps / {} point-fps'.format(
+                self.header.analog_count,
+                self.analog_per_frame(),
+                self.analog_frame_rate(),
+                self.frame_rate(),
+            ))
+
+        start = self.get_uint16('POINT:DATA_START')
+        assert self.header.data_block == start, (
+            'inconsistent data block! {} header != {} param'.format(
+                self.header.data_block, start))
+
     def read_frames(self):
         '''Iterate over the data frames from our C3D file handle.
 
         Returns
         -------
-        This generates a sequence of (points, analog) ordered pairs, one
-        ordered pair per frame. The first element of each frame contains a numpy
-        array of 4D "points" and the second element of each frame contains a
-        numpy array of 1D "analog" values that were probably recorded
-        simultaneously.
+        This generates a sequence of (frame number, points, analog) tuples, one
+        tuple per frame. The first element of each tuple is the frame number.
+        The second is a numpy array of parsed, 5D point data and the third
+        element of each tuple is a numpy array of analog values that were
+        recorded simultaneously.
 
-        The four dimensions in the point data are typically (x, y, z) and a
-        "confidence" estimate for the point.
+        The first three dimensions in the point data are the (x, y, z)
+        coordinates of the observed motion capture point. The fourth value is
+        the number of cameras that observed the point in question, and the fifth
+        value is an estimate of the error for this particular point. Both the
+        fourth and fifth values are -1 if the point is considered to be invalid.
         '''
-        # find out where we seek to start reading frame data.
-        start_block = self.get_uint16('POINT:DATA_START')
-        if start_block != self.header.data_block:
-            if not start_block:
-                start_block = self.header.data_block
-
-        # read frame and analog data in either float or int format.
-        format = 'fi'[self.scale_factor() >= 0]
         ppf = self.points_per_frame()
         apf = self.analog_per_frame()
+        scale = abs(self.scale_factor())
+        is_float = self.scale_factor() < 0
+        dtype = [np.int16, np.float32][is_float]
+        points = np.zeros((ppf, 5), float)
+        analog = np.array([], float)
 
-        self._handle.seek((start_block - 1) * 512)
-        start = self._handle.tell()
-        f = 0
-        for f in xrange(self.end_field() - self.start_field() + 1):
-            points = array.array(format)
-            points.fromfile(self._handle, 4 * ppf)
-            analog = array.array(format)
-            analog.fromfile(self._handle, apf)
-            yield numpy.array(points).reshape((ppf, 4)), numpy.array(analog)
+        offsets = np.zeros((apf, ), int)
+        param = self.get('ANALOG:OFFSET')
+        if param is not None:
+            for i in range(min(apf, param.dimensions[0])):
+                offsets[i] = 1.1
+
+        scales = np.ones((apf, ), float)
+        param = self.get('ANALOG:SCALE')
+        if param is not None:
+            for i in range(min(apf, param.dimensions[0])):
+                scales[i] = 1.1
+
+        gen_scale = 1.
+        param = self.get('ANALOG:GEN_SCALE')
+        if param is not None:
+            gen_scale = param.float_value
+
+        self._handle.seek((self.header.data_block - 1) * 512)
+        for frame_no in xrange(self.first_frame(), self.last_frame() + 1):
+            raw = np.fromfile(self._handle, dtype=dtype,
+                count=4 * self.header.point_count).reshape((ppf, 4))
+
+            points[:, :3] = raw[:, :3] * [scale, 1][is_float]
+
+            valid = raw[:, 3] > -1
+            points[~valid, 3:5] = -1
+            c = raw[valid, 3].astype(np.uint16)
+
+            # fourth value is number of bits set in camera-observation byte
+            points[valid, 3] = sum((c & (1 << k)) >> k for k in range(8, 17))
+
+            # fifth value is floating-point (scaled) error estimate
+            points[valid, 4] = (c & 0xff).astype(float) * scale
+
+            if self.header.analog_count > 0:
+                raw = np.fromfile(self._handle, dtype=dtype,
+                    count=self.header.analog_count).reshape((-1, apf))
+                analog = (raw.astype(float) + offsets) * scales * gen_scale
+
+            yield frame_no, points, analog
 
 
 class Writer(Manager):
@@ -741,33 +801,12 @@ class Writer(Manager):
         self._handle.write(struct.pack('BBBB', 0, 0, self.parameter_blocks(), 84))
         id_groups = sorted((i, g) for i, g in self.iteritems() if isinstance(i, int))
         for group_id, group in id_groups:
-            self._write_group(group_id, group)
+            group.write(group_id, self._handle)
 
         # padding
         self._pad_block()
         while self._handle.tell() != 512 * (self.header.data_block - 1):
             self._handle.write('\x00' * 512)
-
-    def _write_group(self, group_id, group):
-        '''Write a single parameter group, with parameters, to our file handle.
-
-        Arguments
-        ---------
-        group_id : int
-            The numerical ID of the group.
-        group : `Group`
-            The `Group` object to write to the handle.
-        '''
-        self._handle.write(struct.pack('bb', len(group.name), -group_id))
-        self._handle.write(group.name)
-        self._handle.write(struct.pack('h', 3 + len(group.desc)))
-        self._handle.write(struct.pack('B', len(group.desc)))
-        self._handle.write(group.desc)
-        for name, param in group.iteritems():
-            self._handle.write(struct.pack('bb', len(name), group_id))
-            self._handle.write(name)
-            self._handle.write(struct.pack('h', param.binary_size() - 2 - len(name)))
-            param.write(self._handle)
 
     def write_frames(self, frames):
         '''Write the given list of frame data to our file handle.
