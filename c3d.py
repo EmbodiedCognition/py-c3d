@@ -208,7 +208,7 @@ class Param(object):
                  desc='',
                  bytes_per_element=1,
                  dimensions=None,
-                 bytes=None,
+                 bytes='',
                  handle=None):
         '''Set up a new parameter with at least a name.
 
@@ -293,7 +293,7 @@ class Param(object):
         self.bytes_per_element, = struct.unpack('b', handle.read(1))
         dims, = struct.unpack('B', handle.read(1))
         self.dimensions = [struct.unpack('B', handle.read(1))[0] for _ in range(dims)]
-        self.bytes = None
+        self.bytes = ''
         if self.total_bytes:
             self.bytes = handle.read(self.total_bytes)
         size, = struct.unpack('B', handle.read(1))
@@ -391,8 +391,8 @@ class Param(object):
         '''Get the param as a array of raw byte strings.'''
         assert len(self.dimensions) == 2, \
             '{}: cannot get value as string array!'.format(self.name)
-        l, n = param.dimensions
-        return [param.bytes[i*l:(i+1)*l] for i in range(n)]
+        l, n = self.dimensions
+        return [self.bytes[i*l:(i+1)*l] for i in range(n)]
 
 
 class Group(dict):
@@ -604,11 +604,11 @@ class Manager(dict):
         Arguments
         ---------
         group : str
-            If this string contains a period (.), then the part before the
-            period will be used to retrieve a group, and the part after the
-            period will be used to retrieve a parameter from that group. If this
-            string does not contain a period, then just a group will be
-            returned.
+            If this string contains a colon (:) or a period (.), then the part
+            before the punctuation will be used to retrieve a group, and the
+            part after the punctuation will be used to retrieve a parameter from
+            that group. If this string does not contain a period, then just a
+            group will be returned.
 
         Returns
         -------
@@ -628,7 +628,7 @@ class Manager(dict):
         if ':' in group:
             group, param = group.split(':', 1)
         group = super(Manager, self).__getitem__(group)
-        if param:
+        if param is not None:
             return group[param]
         return group
 
@@ -773,12 +773,14 @@ class Reader(Manager):
         tuple per frame. The first element of each tuple is the frame number.
         The second is a numpy array of parsed, 5D point data and the third
         element of each tuple is a numpy array of analog values that were
-        recorded simultaneously.
+        recorded during the frame. (Often the analog data are sampled at a
+        higher frequency than the 3D point data, resulting in multiple analog
+        frames per frame of point data.)
 
         The first three dimensions in the point data are the (x, y, z)
         coordinates of the observed motion capture point. The fourth value is
-        the number of cameras that observed the point in question, and the fifth
-        value is an estimate of the error for this particular point. Both the
+        an estimate of the error for this particular point, and the fifth value
+        is the number of cameras that observed the point in question. Both the
         fourth and fifth values are -1 if the point is considered to be invalid.
         '''
         ppf = self.points_per_frame()
@@ -827,11 +829,11 @@ class Reader(Manager):
             points[~valid, 3:5] = -1
             c = raw[valid, 3].astype(np.uint16)
 
-            # fourth value is number of bits set in camera-observation byte
-            points[valid, 3] = sum((c & (1 << k)) >> k for k in range(8, 17))
+            # fourth value is floating-point (scaled) error estimate
+            points[valid, 3] = (c & 0xff).astype(float) * scale
 
-            # fifth value is floating-point (scaled) error estimate
-            points[valid, 4] = (c & 0xff).astype(float) * scale
+            # fifth value is number of bits set in camera-observation byte
+            points[valid, 4] = sum((c & (1 << k)) >> k for k in range(8, 17))
 
             if self.header.analog_count > 0:
                 raw = np.fromfile(self._handle, dtype=analog_dtype,
