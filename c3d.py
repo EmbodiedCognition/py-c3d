@@ -343,6 +343,57 @@ class Param(object):
         '''Get the param as a raw byte string.'''
         return self.bytes
 
+    def _as_array(self, fmt):
+        '''Unpack the raw bytes of this param using the given data format.'''
+        assert self.dimensions, \
+            '{}: cannot get value as {} array!'.format(self.name, fmt)
+        elems = array.array(fmt)
+        elems.fromstring(self.bytes)
+        return np.array(elems).reshape(self.dimensions)
+
+    @property
+    def int8_array(self):
+        '''Get the param as an array of 8-bit signed integers.'''
+        return self._as_array('b')
+
+    @property
+    def uint8_array(self):
+        '''Get the param as an array of 8-bit unsigned integers.'''
+        return self._as_array('B')
+
+    @property
+    def int16_array(self):
+        '''Get the param as a array of 16-bit signed integers.'''
+        return self._as_array('h')
+
+    @property
+    def uint16_array(self):
+        '''Get the param as a array of 16-bit unsigned integers.'''
+        return self._as_array('H')
+
+    @property
+    def int32_array(self):
+        '''Get the param as a array of 32-bit signed integers.'''
+        return self._as_array('i')
+
+    @property
+    def uint32_array(self):
+        '''Get the param as a array of 32-bit unsigned integers.'''
+        return self._as_array('I')
+
+    @property
+    def float_array(self):
+        '''Get the param as a array of 32-bit floats.'''
+        return self._as_array('f')
+
+    @property
+    def string_array(self):
+        '''Get the param as a array of raw byte strings.'''
+        assert len(self.dimensions) == 2, \
+            '{}: cannot get value as string array!'.format(self.name)
+        l, n = param.dimensions
+        return [param.bytes[i*l:(i+1)*l] for i in range(n)]
+
 
 class Group(dict):
     '''A group of parameters from a C3D file.
@@ -454,6 +505,46 @@ class Manager(dict):
     def __init__(self, header=None):
         '''Set up a new Manager with a Header.'''
         self.header = header or Header()
+
+    def check_metadata(self):
+        '''Ensure that the metadata in our file is self-consistent.'''
+        assert self.header.point_count == self.points_per_frame(), (
+            'inconsistent point count! {} header != {} parameter'.format(
+                self.header.point_count,
+                self.points_per_frame(),
+            ))
+
+        assert self.header.scale_factor == self.scale_factor(), (
+            'inconsistent scale factor! {} header != {} parameter'.format(
+                self.header.scale_factor,
+                self.scale_factor(),
+            ))
+
+        assert self.header.frame_rate == self.frame_rate(), (
+            'inconsistent frame rate! {} header != {} parameter'.format(
+                self.header.frame_rate,
+                self.frame_rate(),
+            ))
+
+        apf = self.analog_per_frame() * self.analog_frame_rate() / self.frame_rate()
+        assert self.header.analog_count == apf, (
+            'inconsistent analog count! {} header != {} analog per frame * '
+            '{} analog-fps / {} point-fps'.format(
+                self.header.analog_count,
+                self.analog_per_frame(),
+                self.analog_frame_rate(),
+                self.frame_rate(),
+            ))
+
+        start = self.get_uint16('POINT:DATA_START')
+        assert self.header.data_block == start, (
+            'inconsistent data block! {} header != {} parameter'.format(
+                self.header.data_block, start))
+
+        for name in ('POINT:LABELS', 'POINT:DESCRIPTIONS', 'ANALOG:USED',
+                     'ANALOG:LABELS', 'ANALOG:DESCRIPTIONS'):
+            assert self.get(name) is not None, (
+                '{} parameter is missing!'.format(name))
 
     def add_group(self, group_id, name, desc):
         '''Add a new parameter group.
@@ -613,9 +704,8 @@ class Reader(Manager):
     construction:
 
     >>> r = c3d.Reader(open('capture.c3d', 'rb'))
-    >>> for points, analog in r.read_frames():
+    >>> for frame_no, points, analog in r.read_frames():
     ...     print('{0.shape} points in this frame'.format(points))
-    ...     frames.append(points, analog)
     '''
 
     def __init__(self, handle):
@@ -672,27 +762,7 @@ class Reader(Manager):
 
             bytes = bytes[2 + abs(chars_in_name) + offset_to_next:]
 
-        # ensure that the metadata in the file is self-consistent.
-        assert self.header.point_count == self.points_per_frame(), (
-            'inconsistent point count! {} count != {} per frame'.format(
-                self.header.point_count,
-                self.points_per_frame(),
-            ))
-
-        apf = self.analog_per_frame() * self.analog_frame_rate() / self.frame_rate()
-        assert self.header.analog_count == apf, (
-            'inconsistent analog count! {} count != {} per frame * '
-            '{} analog-fps / {} point-fps'.format(
-                self.header.analog_count,
-                self.analog_per_frame(),
-                self.analog_frame_rate(),
-                self.frame_rate(),
-            ))
-
-        start = self.get_uint16('POINT:DATA_START')
-        assert self.header.data_block == start, (
-            'inconsistent data block! {} header != {} param'.format(
-                self.header.data_block, start))
+        self.check_metadata()
 
     def read_frames(self):
         '''Iterate over the data frames from our C3D file handle.
@@ -713,23 +783,33 @@ class Reader(Manager):
         '''
         ppf = self.points_per_frame()
         apf = self.analog_per_frame()
+
         scale = abs(self.scale_factor())
         is_float = self.scale_factor() < 0
-        dtype = [np.int16, np.float32][is_float]
+
+        point_dtype = [np.int16, np.float32][is_float]
+        point_scale = [scale, 1][is_float]
         points = np.zeros((ppf, 5), float)
+
+        # TODO: handle ANALOG:BITS parameter here!
+        p = self.get('ANALOG:FORMAT')
+        analog_unsigned = p and p.string_value.strip().upper() == 'UNSIGNED'
+        analog_dtype = np.int16
+        if is_float:
+            analog_dtype = np.float32
+        elif analog_unsigned:
+            analog_dtype = np.uint16
         analog = np.array([], float)
 
         offsets = np.zeros((apf, ), int)
         param = self.get('ANALOG:OFFSET')
         if param is not None:
-            for i in range(min(apf, param.dimensions[0])):
-                offsets[i] = 1.1
+            offsets = param.int16_array[:apf]
 
         scales = np.ones((apf, ), float)
         param = self.get('ANALOG:SCALE')
         if param is not None:
-            for i in range(min(apf, param.dimensions[0])):
-                scales[i] = 1.1
+            scales = param.float_array[:apf]
 
         gen_scale = 1.
         param = self.get('ANALOG:GEN_SCALE')
@@ -738,10 +818,10 @@ class Reader(Manager):
 
         self._handle.seek((self.header.data_block - 1) * 512)
         for frame_no in xrange(self.first_frame(), self.last_frame() + 1):
-            raw = np.fromfile(self._handle, dtype=dtype,
+            raw = np.fromfile(self._handle, dtype=point_dtype,
                 count=4 * self.header.point_count).reshape((ppf, 4))
 
-            points[:, :3] = raw[:, :3] * [scale, 1][is_float]
+            points[:, :3] = raw[:, :3] * point_scale
 
             valid = raw[:, 3] > -1
             points[~valid, 3:5] = -1
@@ -754,9 +834,9 @@ class Reader(Manager):
             points[valid, 4] = (c & 0xff).astype(float) * scale
 
             if self.header.analog_count > 0:
-                raw = np.fromfile(self._handle, dtype=dtype,
+                raw = np.fromfile(self._handle, dtype=analog_dtype,
                     count=self.header.analog_count).reshape((-1, apf))
-                analog = (raw.astype(float) + offsets) * scales * gen_scale
+                analog = (raw.astype(float) - offsets) * scales * gen_scale
 
             yield frame_no, points, analog
 
@@ -792,6 +872,8 @@ class Writer(Manager):
 
     def write_metadata(self):
         '''Write metadata for this file to our file handle.'''
+        self.check_metadata()
+
         # header
         self.header.write(self._handle)
         self._pad_block()
