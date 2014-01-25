@@ -541,10 +541,10 @@ class Manager(dict):
             'inconsistent data block! {} header != {} parameter'.format(
                 self.header.data_block, start))
 
-        for name in ('POINT:LABELS', 'POINT:DESCRIPTIONS', 'ANALOG:USED',
-                     'ANALOG:LABELS', 'ANALOG:DESCRIPTIONS'):
-            assert self.get(name) is not None, (
-                '{} parameter is missing!'.format(name))
+        for name in ('POINT:LABELS', 'POINT:DESCRIPTIONS',
+                     'ANALOG:USED', 'ANALOG:LABELS', 'ANALOG:DESCRIPTIONS'):
+            if self.get(name) is None:
+                warnings.warn('missing parameter {}'.format(name))
 
     def add_group(self, group_id, name, desc):
         '''Add a new parameter group.
@@ -689,9 +689,17 @@ class Manager(dict):
         return self.get_float('ANALOG:RATE')
 
     def first_frame(self):
+        # this is a hack for phasespace files ... should put it in a subclass.
+        param = self.get('TRIAL:ACTUAL_START_FIELD')
+        if param is not None:
+            return param.int32_value
         return self.header.first_frame
 
     def last_frame(self):
+        # this is a hack for phasespace files ... should put it in a subclass.
+        param = self.get('TRIAL:ACTUAL_END_FIELD')
+        if param is not None:
+            return param.int32_value
         return self.header.last_frame
 
 
@@ -743,29 +751,47 @@ class Reader(Manager):
 
             chars_in_name, group_id = struct.unpack('bb', buf.read(2))
             if group_id == 0 or chars_in_name == 0:
+                # we've reached the end of the parameter section.
                 break
 
             name = buf.read(abs(chars_in_name)).upper()
-
             offset_to_next, = struct.unpack('h', buf.read(2))
 
-            if group_id < 0:
+            if group_id > 0:
+                # we've just started reading a parameter. if its group doesn't
+                # exist, create a blank one. add the parameter to the group.
+                self.setdefault(group_id, Group()).add_param(name, handle=buf)
+            else:
+                # we've just started reading a group. if a group with the
+                # appropriate id exists already (because we've already created
+                # it for a parameter), just set the name of the group.
+                # otherwise, add a new group.
                 group_id = abs(group_id)
                 size, = struct.unpack('B', buf.read(1))
                 desc = size and buf.read(size) or ''
-                if self.get(name):
-                    warnings.warn('duplicate parameter group {}'.format(name))
+                group = self.get(group_id)
+                if group is not None:
+                    group.name = name
+                    group.desc = desc
+                    self[name] = group
                 else:
                     self.add_group(group_id, name, desc)
-            else:
-                self[group_id].add_param(name, handle=buf)
 
             bytes = bytes[2 + abs(chars_in_name) + offset_to_next:]
 
         self.check_metadata()
 
-    def read_frames(self):
+    def read_frames(self, copy=True):
         '''Iterate over the data frames from our C3D file handle.
+
+        Arguments
+        ---------
+        copy : bool
+            Set this to False if the reader should always return a reference to
+            the same data buffers. The default is False, which causes the reader
+            to return a unique data buffer for each frame. This is somewhat
+            slower, but avoids the nasty appearance that the file is filled with
+            the last frame of data.
 
         Returns
         -------
@@ -782,6 +808,7 @@ class Reader(Manager):
         an estimate of the error for this particular point, and the fifth value
         is the number of cameras that observed the point in question. Both the
         fourth and fifth values are -1 if the point is considered to be invalid.
+
         '''
         ppf = self.points_per_frame()
         apf = self.analog_per_frame()
@@ -840,7 +867,10 @@ class Reader(Manager):
                     count=self.header.analog_count).reshape((-1, apf))
                 analog = (raw.astype(float) - offsets) * scales * gen_scale
 
-            yield frame_no, points, analog
+            if copy:
+                yield frame_no, points.copy(), analog.copy()
+            else:
+                yield frame_no, points, analog
 
 
 class Writer(Manager):
