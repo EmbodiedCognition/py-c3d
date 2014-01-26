@@ -23,15 +23,13 @@
 '''A simple OpenGL viewer for C3D files.'''
 
 import argparse
-import collections
-import itertools
 import c3d
-import math
-import OpenGL.GL as gl
-import OpenGL.GLU as glu
-import OpenGL.GLUT as glut
-import sys
-import time
+import collections
+import contextlib
+import numpy as np
+import pyglet
+
+from pyglet.gl import *
 
 FLAGS = argparse.ArgumentParser()
 
@@ -48,280 +46,221 @@ BLUE = (0.2, 0.3, 0.9)
 COLORS = (WHITE, RED, YELLOW, GREEN, BLUE, ORANGE)
 
 
-class Viewer(object):
-    '''Render data from a C3D file using OpenGL.'''
+@contextlib.contextmanager
+def gl_context(scale=None, translate=None, rotate=None, mat=None):
+    glPushMatrix()
+    if mat is not None:
+        glMultMatrixf(vec(*mat))
+    if translate is not None:
+        glTranslatef(*translate)
+    if rotate is not None:
+        glRotatef(*rotate)
+    if scale is not None:
+        glScalef(*scale)
+    yield
+    glPopMatrix()
 
-    def __init__(self, c3d_reader):
-        '''Set up this viewer with some initial parameters.'''
-        # we get frames from the c3d file.
-        self._frames = c3d_reader.read_frames()
+
+def vec(*args):
+    return (GLfloat * len(args))(*args)
+
+
+def sphere_vertices(n=2):
+    idx = [[0, 1, 2], [0, 5, 1], [0, 2, 4], [0, 4, 5],
+           [3, 2, 1], [3, 4, 2], [3, 5, 4], [3, 1, 5]]
+    vtx = list(np.array([
+        [ 1, 0, 0], [0,  1, 0], [0, 0,  1],
+        [-1, 0, 0], [0, -1, 0], [0, 0, -1]], 'f'))
+    for _ in range(n):
+        idx_ = []
+        for ui, vi, wi in idx:
+            u, v, w = vtx[ui], vtx[vi], vtx[wi]
+            d, e, f = u + v, v + w, w + u
+            di = len(vtx)
+            vtx.append(d / np.linalg.norm(d))
+            ei = len(vtx)
+            vtx.append(e / np.linalg.norm(e))
+            fi = len(vtx)
+            vtx.append(f / np.linalg.norm(f))
+            idx_.append([ui, di, fi])
+            idx_.append([vi, ei, di])
+            idx_.append([wi, fi, ei])
+            idx_.append([di, ei, fi])
+        idx = idx_
+    vtx = np.array(vtx, 'f').flatten()
+    return np.array(idx).flatten(), vtx, vtx
+
+
+class Viewer(pyglet.window.Window):
+    def __init__(self, c3d_reader, trace=None, paused=False):
+        platform = pyglet.window.get_platform()
+        display = platform.get_default_display()
+        screen = display.get_default_screen()
+        try:
+            config = screen.get_best_config(Config(
+                alpha_size=8,
+                depth_size=24,
+                double_buffer=True,
+                sample_buffers=1,
+                samples=4))
+        except pyglet.window.NoSuchConfigException:
+            config = screen.get_best_config(Config())
+
+        super(Viewer, self).__init__(
+            width=1000, height=600, resizable=True, vsync=False, config=config)
+
+        self._frames = c3d_reader.read_frames(copy=False)
         self._frame_rate = c3d_reader.frame_rate()
 
-        self.maxlen = 1
-        self.visible = [True for _ in xrange(c3d_reader.num_points())]
+        print(c3d_reader.header)
+        for gn, g in c3d_reader.iteritems():
+            if isinstance(gn, int):
+                continue
+            for pn, p in g.iteritems():
+                print(gn, pn, p)
+
+        self._maxlen = 16
         self._trails = [[] for _ in xrange(c3d_reader.num_points())]
         self._reset_trails()
 
-        # rendering state.
-        self.theta = 350.0
-        self.phi = 300.0
-        self.rho = 0.0001
-        self.paused = False
+        self.trace = trace
+        self.paused = paused
 
-        self._last_time = 0
-        self._mouse_button = None
-        self._width = 800
-        self._height = 600
-        self._d_theta = 0
-        self._d_phi = 0
-        self._d_rho = 1.0
+        self.zoom = 5
+        self.ty = 0
+        self.tz = -1
+        self.ry = 30
+        self.rz = 30
 
-        # gl initialization.
-        glut.glutInit([])
-        glut.glutInitDisplayMode(glut.GLUT_RGBA | glut.GLUT_DEPTH | glut.GLUT_DOUBLE)
-        glut.glutInitWindowPosition(0, 0)
-        glut.glutInitWindowSize(800, 600)
-        glut.glutCreateWindow('C3D Viewer')
-        glut.glutKeyboardFunc(self.handle_keypress)
-        glut.glutSpecialFunc(self.handle_special_keypress)
-        glut.glutDisplayFunc(self.handle_draw)
-        glut.glutReshapeFunc(self.handle_reshape)
-        glut.glutMotionFunc(self.handle_mouse_movement)
-        glut.glutMouseFunc(self.handle_mouse_button)
-        glut.glutIdleFunc(self.handle_idle)
+        #self.fps = pyglet.clock.ClockDisplay()
 
-        gl.glEnable(gl.GL_COLOR_MATERIAL)
-        gl.glEnable(gl.GL_LINE_SMOOTH)
-        gl.glEnable(gl.GL_NORMALIZE)
-        gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glEnable(gl.GL_BLEND)
+        self.on_resize(self.width, self.height)
 
-        gl.glEnable(gl.GL_LIGHTING)
-        gl.glEnable(gl.GL_LIGHT0)
-        gl.glEnable(gl.GL_LIGHT1)
-        gl.glEnable(gl.GL_LIGHT2)
+        glEnable(GL_BLEND)
+        glEnable(GL_COLOR_MATERIAL)
+        glEnable(GL_CULL_FACE)
+        glEnable(GL_DEPTH_TEST)
+        glEnable(GL_LIGHTING)
+        glEnable(GL_NORMALIZE)
+        glEnable(GL_POLYGON_SMOOTH)
 
-        gl.glShadeModel(gl.GL_SMOOTH)
-        gl.glDepthFunc(gl.GL_LEQUAL)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glDepthFunc(GL_LEQUAL)
+        glCullFace(GL_BACK)
+        glFrontFace(GL_CCW)
+        glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST)
+        glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST)
+        glShadeModel(GL_SMOOTH)
 
-        self._model_list = gl.glGenLists(1)
+        glLightfv(GL_LIGHT0, GL_AMBIENT, vec(0.2, 0.2, 0.2, 1.0))
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, vec(1.0, 1.0, 1.0, 1.0))
+        glLightfv(GL_LIGHT0, GL_POSITION, vec(3.0, 3.0, 10.0, 1.0))
+        glEnable(GL_LIGHT0)
+
+        BLK = [100, 100, 100] * 6
+        WHT = [150, 150, 150] * 6
+        N = 10
+        z = 0
+        vtx = []
+        for i in range(N, -N, -1):
+            for j in range(-N, N, 1):
+                vtx.extend((j,   i, z, j, i-1, z, j+1, i,   z,
+                            j+1, i, z, j, i-1, z, j+1, i-1, z))
+
+        self.floor = pyglet.graphics.vertex_list(
+            len(vtx) // 3,
+            ('v3f/static', vtx),
+            ('c3B/static', ((BLK + WHT) * N + (WHT + BLK) * N) * N),
+            ('n3i/static', [0, 0, 1] * (len(vtx) // 3)))
+
+        idx, vtx, nrm = sphere_vertices()
+        self.sphere = pyglet.graphics.vertex_list_indexed(
+            len(vtx) // 3, idx, ('v3f/static', vtx), ('n3f/static', nrm))
+
+    def on_mouse_scroll(self, x, y, dx, dy):
+        if dy == 0: return
+        self.zoom *= 1.1 ** (-1 if dy < 0 else 1)
+
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        if buttons == pyglet.window.mouse.LEFT:
+            # pan
+            self.ty += 0.03 * dx
+            self.tz += 0.03 * dy
+        else:
+            # roll
+            self.ry += 0.2 * -dy
+            self.rz += 0.2 * dx
+        #print('z', self.zoom, 't', self.ty, self.tz, 'r', self.ry, self.rz)
+
+    def on_resize(self, width, height):
+        glViewport(0, 0, width, height)
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glu.gluPerspective(45, float(width) / height, 1, 100)
+
+    def on_key_press(self, key, modifiers):
+        k = pyglet.window.key
+        if key == k.ESCAPE:
+            pyglet.app.exit()
+        elif key == k.SPACE:
+            self.paused = False if self.paused else True
+        elif key == k.PLUS or key == k.EQUAL:
+            self._maxlen *= 2
+            self._reset_trails()
+        elif key == k.UNDERSCORE or key == k.MINUS:
+            self._maxlen = max(1, self._maxlen / 2)
+            self._reset_trails()
+        elif key == k.RIGHT:
+            skip = int(self._frame_rate)
+            if modifiers:
+                skip *= 10
+            [self._next_frame() for _ in xrange(skip)]
+
+    def on_draw(self):
+        self.clear()
+
+        # http://njoubert.com/teaching/cs184_fa08/section/sec09_camera.pdf
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+        gluLookAt(1, 0, 0, 0, 0, 0, 0, 0, 1)
+        glTranslatef(-self.zoom, 0, 0)
+        glTranslatef(0, self.ty, self.tz)
+        glRotatef(self.ry, 0, 1, 0)
+        glRotatef(self.rz, 0, 0, 1)
+
+        self.floor.draw(GL_TRIANGLES)
+
+        for t, trail in enumerate(self._trails):
+            glColor4f(*(COLORS[t % len(COLORS)] + (0.7, )))
+            point = None
+            glBegin(GL_LINES)
+            for point in trail:
+                glVertex3f(*point)
+            glEnd()
+            with gl_context(translate=point, scale=(0.02, 0.02, 0.02)):
+                self.sphere.draw(GL_TRIANGLES)
 
     def _reset_trails(self):
-        self._trails = [collections.deque(t, self.maxlen) for t in self._trails]
+        self._trails = [collections.deque(t, self._maxlen) for t in self._trails]
 
-    def mainloop(self):
-        '''Run the GLUT main loop, blocking until it returns.'''
-        glut.glutMainLoop()
+    def _next_frame(self):
+        try:
+            return self._frames.next()
+        except StopIteration:
+            pyglet.app.exit()
 
-    def handle_reshape(self, width, height):
-        '''GLUT window reshape callback.'''
-        self._width = width
-        self._height = height
-
-    def handle_mouse_button(self, button, state, x, y):
-        '''GLUT mouse button callback.'''
-        if state == glut.GLUT_UP:
-            self._mouse_button = None
-            self._d_theta = 0
-            self._d_phi = 0
-            self._d_rho = 1.0
-            return
-        self._mouse_button = (button, glut.glutGetModifiers())
-        self.handle_mouse_movement(x, y)
-
-    def handle_mouse_movement(self, x, y):
-        '''GLUT mouse motion callback.'''
-        button, modifier = self._mouse_button
-        if button == glut.GLUT_LEFT_BUTTON:
-            if modifier & glut.GLUT_ACTIVE_CTRL:
-                button = glut.GLUT_MIDDLE_BUTTON
-            if modifier & glut.GLUT_ACTIVE_ALT:
-                button = glut.GLUT_RIGHT_BUTTON
-
-        cx = self._width / 2
-        cy = self._height / 2
-        if button == glut.GLUT_LEFT_BUTTON:
-            self._d_phi = 5 * float(y - cy) / self._height
-            self._d_theta = 5 * float(x - cx) / self._width
-        if button == glut.GLUT_MIDDLE_BUTTON:
-            pass
-        if button == glut.GLUT_RIGHT_BUTTON:
-            self._d_rho = math.exp(float(y - cy) / self._height / 1.3)
-
-    def handle_keypress(self, char, x, y):
-        '''GLUT keyboard callback.'''
-        if char == 'q':
-            sys.exit(0)
-        elif char in '0123456789':
-            self.visible[int(char)] ^= True
-        elif char == 'p':
-            self.paused ^= True
-        elif char in '+=':
-            self.maxlen *= 2
-            self._reset_trails()
-        elif char in '_-':
-            self.maxlen = max(1, self.maxlen / 2)
-            self._reset_trails()
-
-    def handle_special_keypress(self, key, x, y):
-        '''GLUT special key callback.'''
-        if key == glut.GLUT_KEY_PAGE_UP:
-            self.rho /= 1.5
-        elif key == glut.GLUT_KEY_PAGE_DOWN:
-            self.rho *= 1.5
-        elif key == glut.GLUT_KEY_UP:
-            self.phi += 5
-        elif key == glut.GLUT_KEY_DOWN:
-            self.phi -= 5
-        elif key == glut.GLUT_KEY_LEFT:
-            self.theta -= 5
-        elif key == glut.GLUT_KEY_RIGHT:
-            self.theta += 5
-
-    def handle_draw(self):
-        '''GLUT render callback.'''
-        gl.glClearColor(0.9, 0.9, 0.9, 1)
-        gl.glClearDepth(1)
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-
-        self.render_model()
-
-        w = int(2 * self._width / 3.0)
-        h = int(self._height / 3.0)
-
-        # show a perspective rendering of the markers.
-        gl.glViewport(0, 0, w, self._height)
-        gl.glMatrixMode(gl.GL_PROJECTION)
-        gl.glLoadIdentity()
-        glu.gluPerspective(45, float(w) / self._height, 0.01, 10)
-
-        gl.glMatrixMode(gl.GL_MODELVIEW)
-        gl.glPushMatrix()
-        gl.glTranslate(0, 0, -1)
-        gl.glRotate(self.phi, 1, 0, 0)
-        gl.glRotate(self.theta, 0, 0, 1)
-        gl.glScalef(self.rho, self.rho, self.rho)
-        gl.glCallList(self._model_list)
-        gl.glPopMatrix()
-
-        # render orthographic projections of the data.
-        z = 1.0 / self.rho / 2
-        gl.glMatrixMode(gl.GL_PROJECTION)
-        gl.glLoadIdentity()
-        gl.glOrtho(-z, z, -z, z, -z, z)
-
-        # show the x-y plane.
-        gl.glViewport(w, 0, w / 2, h)
-
-        gl.glMatrixMode(gl.GL_MODELVIEW)
-        gl.glPushMatrix()
-        gl.glTranslate(0, 0, -1)
-        gl.glScalef(2, 2, 2)
-        gl.glCallList(self._model_list)
-        gl.glPopMatrix()
-
-        # show the y-z plane.
-        gl.glViewport(w, h, w / 2, h)
-
-        gl.glMatrixMode(gl.GL_MODELVIEW)
-        gl.glPushMatrix()
-        gl.glRotate(-90, 1, 0, 0)
-        gl.glTranslate(0, 0, -1)
-        gl.glScalef(2, 2, 2)
-        gl.glCallList(self._model_list)
-        gl.glPopMatrix()
-
-        # show the x-z plane.
-        gl.glViewport(w, 2 * h, w / 2, h)
-
-        gl.glMatrixMode(gl.GL_MODELVIEW)
-        gl.glPushMatrix()
-        gl.glRotate(-90, 1, 0, 0)
-        gl.glRotate(-90, 0, 0, 1)
-        gl.glTranslate(0, 0, -1)
-        gl.glScalef(2, 2, 2)
-        gl.glCallList(self._model_list)
-        gl.glPopMatrix()
-
-        glut.glutSwapBuffers()
-
-    def handle_idle(self):
-        '''Redraw the scene.'''
-        self.theta += self._d_theta
-        self.phi += self._d_phi
-        self.rho /= self._d_rho
-
+    def update(self, dt):
         if self.paused:
             return
+        for trail, point in zip(self._trails, self._next_frame()[1]):
+            if point[3] > -1 or not len(trail):
+                trail.append(point[:3] / 1000.)
+            else:
+                trail.append(trail[-1])
 
-        elapsed = time.time() - self._last_time
-        if elapsed > 1.0 / self._frame_rate:
-            try:
-                points, analog = self._frames.next()
-            except StopIteration:
-                points = []
-            for trail, point in itertools.izip(self._trails, points):
-                trail.append(point[:3])
-            self._last_time = time.time()
-        else:
-            time.sleep(1.0 / self._frame_rate - elapsed)
-
-        glut.glutPostRedisplay()
-
-    def render_model(self):
-        '''Render the objects in the world.'''
-        gl.glNewList(self._model_list, gl.GL_COMPILE)
-
-        gl.glLightfv(gl.GL_LIGHT0, gl.GL_POSITION, [1, 1, 1, 0])
-        gl.glLightfv(gl.GL_LIGHT0, gl.GL_DIFFUSE, [1, 1, 1, 0.5])
-        gl.glLightfv(gl.GL_LIGHT0, gl.GL_SPECULAR, [1, 1, 1, 0.5])
-        gl.glLightfv(gl.GL_LIGHT1, gl.GL_POSITION, [1, 0, 0, 1])
-        gl.glLightfv(gl.GL_LIGHT1, gl.GL_DIFFUSE, [1, 0, 0, 0.8])
-        gl.glLightfv(gl.GL_LIGHT1, gl.GL_SPECULAR, [1, 0, 0, 0.8])
-        gl.glLightfv(gl.GL_LIGHT2, gl.GL_POSITION, [0, 1, 0, 1])
-        gl.glLightfv(gl.GL_LIGHT2, gl.GL_DIFFUSE, [0, 1, 0, 0.8])
-        gl.glLightfv(gl.GL_LIGHT2, gl.GL_SPECULAR, [0, 1, 0, 0.8])
-        gl.glLightfv(gl.GL_LIGHT3, gl.GL_POSITION, [0, 0, 1, 1])
-        gl.glLightfv(gl.GL_LIGHT3, gl.GL_DIFFUSE, [0, 0, 1, 0.8])
-        gl.glLightfv(gl.GL_LIGHT3, gl.GL_SPECULAR, [0, 0, 1, 0.8])
-
-        # render a simple axis system
-        gl.glLineWidth(1.0)
-        gl.glBegin(gl.GL_LINES)
-        gl.glColor4f(1, 0, 0, 1)
-        gl.glVertex3f(0, 0, 0)
-        gl.glVertex3f(100.0, 0, 0)
-        gl.glColor4f(0, 1, 0, 1)
-        gl.glVertex3f(0, 0, 0)
-        gl.glVertex3f(0, 100.0, 0)
-        gl.glColor4f(0, 0, 1, 1)
-        gl.glVertex3f(0, 0, 0)
-        gl.glVertex3f(0, 0, 100.0)
-        gl.glEnd()
-
-        # draw markers for the currently maintained data
-        for i, points in enumerate(self._trails):
-            if not self.visible[i]:
-                continue
-            self.render_marker_points(str(i), COLORS[i % len(COLORS)], points)
-
-        gl.glEndList()
-
-    def render_marker_points(self, label, color, points):
-        gl.glColor4f(*(color + (0.7, )))
-        for point in points:
-            gl.glPushMatrix()
-            gl.glTranslated(*point)
-            glut.glutSolidSphere(1.0 / self.rho / 200.0, 13, 13)
-            gl.glPopMatrix()
-
-    def render_marker_trails(self, color, points):
-        gl.glColor4f(*(color + (0.7, )))
-        gl.glBegin(gl.GL_LINES)
-        for point in points:
-            gl.glVertex3f(*point)
-        gl.glEnd()
+    def mainloop(self):
+        pyglet.clock.schedule_interval(self.update, 0.1 / self._frame_rate)
+        pyglet.app.run()
 
 
 if __name__ == '__main__':
