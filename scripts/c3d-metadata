@@ -57,13 +57,16 @@ def print_param(g, p):
 
 def main(args):
     for filename in args.input:
-        if filename == '-':
-            print('*** (stdin) ***')
-            print_metadata(c3d.Reader(sys.stdin))
-        else:
-            print('*** {} ***'.format(filename))
-            with open(filename, 'rb') as handle:
-                print_metadata(c3d.Reader(handle))
+        try:
+            if filename == '-':
+                print('*** (stdin) ***')
+                print_metadata(c3d.Reader(sys.stdin))
+            else:
+                print('*** {} ***'.format(filename))
+                with open(filename, 'rb') as handle:
+                    print_metadata(c3d.Reader(handle))
+        except Exception as err:
+            print(err)
 
 
 if __name__ == '__main__':
