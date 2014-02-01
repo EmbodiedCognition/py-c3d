@@ -31,6 +31,8 @@ import gzip
 import numpy as np
 import sys
 
+logging = climate.get_logger('c3d2npz')
+
 climate.add_arg('input', default='-', metavar='FILE', nargs=argparse.REMAINDER,
                 help='process data from this input FILE')
 
@@ -45,9 +47,12 @@ def convert(filename, args):
         output = gzip.open(outname, 'wb')
     points = []
     analog = []
-    for _, p, a in c3d.Reader(input).read_frames():
+    for i, (_, p, a) in enumerate(c3d.Reader(input).read_frames()):
         points.append(p)
         analog.append(a)
+        if i and not i % 10000:
+            logging.info('%s: extracted %d point frames',
+                         outname, len(points))
     np.savez(output, points=points, analog=analog)
     logging.info('%s: saved %dx%s points, %dx%s analog',
                  outname,
