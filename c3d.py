@@ -693,6 +693,9 @@ class Manager(dict):
     def analog_frame_rate(self):
         return self.get_float('ANALOG:RATE')
 
+    def point_labels(self):
+        return self.get('POINT:LABELS').string_array
+
     def first_frame(self):
         # this is a hack for phasespace files ... should put it in a subclass.
         param = self.get('TRIAL:ACTUAL_START_FIELD')
