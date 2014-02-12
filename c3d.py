@@ -28,6 +28,11 @@ import struct
 import warnings
 
 
+PROCESSOR_INTEL = 84
+PROCESSOR_DEC = 85
+PROCESSOR_MIPS = 86
+
+
 class Header(object):
     '''Header information from a C3D file.
 
@@ -275,7 +280,7 @@ class Param(object):
         '''
         handle.write(struct.pack('bb', len(self.name), group_id))
         handle.write(self.name)
-        handle.write(struct.pack('h', self.binary_size() - 2 - len(self.name)))
+        handle.write(struct.pack('<h', self.binary_size() - 2 - len(self.name)))
         handle.write(struct.pack('b', self.bytes_per_element))
         handle.write(struct.pack('B', len(self.dimensions)))
         handle.write(struct.pack('B' * len(self.dimensions), *self.dimensions))
@@ -301,7 +306,7 @@ class Param(object):
 
     def _as(self, fmt):
         '''Unpack the raw bytes of this param using the given struct format.'''
-        return struct.unpack(fmt, self.bytes)[0]
+        return struct.unpack('<' + fmt, self.bytes)[0]
 
     @property
     def int8_value(self):
@@ -450,7 +455,7 @@ class Group(dict):
         '''
         handle.write(struct.pack('bb', len(self.name), -group_id))
         handle.write(self.name)
-        handle.write(struct.pack('h', 3 + len(self.desc)))
+        handle.write(struct.pack('<h', 3 + len(self.desc)))
         handle.write(struct.pack('B', len(self.desc)))
         handle.write(self.desc)
         for param in self.itervalues():
@@ -688,6 +693,9 @@ class Manager(dict):
     def analog_frame_rate(self):
         return self.get_float('ANALOG:RATE')
 
+    def point_labels(self):
+        return self.get('POINT:LABELS').string_array
+
     def first_frame(self):
         # this is a hack for phasespace files ... should put it in a subclass.
         param = self.get('TRIAL:ACTUAL_START_FIELD')
@@ -730,7 +738,7 @@ class Reader(Manager):
         Raises
         ------
         ValueError, if the processor metadata in the C3D file is anything other
-        than 84 (Intel format).
+        than 84 (Intel format) or 85 (DEC format).
         '''
         super(Reader, self).__init__(Header(handle))
 
@@ -740,8 +748,10 @@ class Reader(Manager):
         # metadata header
         buf = self._handle.read(4)
         _, _, parameter_blocks, processor = struct.unpack('BBBB', buf)
-        if processor != 84:
-            raise ValueError('We only read Intel C3D files.')
+        if processor != PROCESSOR_INTEL:
+            raise ValueError(
+                'we only read Intel C3D files (got processor {})'.
+                format(processor))
 
         # read all parameter blocks as a single chunk to avoid block
         # boundary issues.
@@ -755,7 +765,7 @@ class Reader(Manager):
                 break
 
             name = buf.read(abs(chars_in_name)).upper()
-            offset_to_next, = struct.unpack('h', buf.read(2))
+            offset_to_next, = struct.unpack('<h', buf.read(2))
 
             if group_id > 0:
                 # we've just started reading a parameter. if its group doesn't
@@ -974,19 +984,19 @@ class Writer(Manager):
         point_group = self.add_group(1, 'POINT', 'POINT group')
         point_group.add_param('USED', desc='Number of 3d markers',
                               data_size=2,
-                              bytes=struct.pack('H', ppf))
+                              bytes=struct.pack('<H', ppf))
         point_group.add_param('FRAMES', desc='frame count',
                               data_size=2,
-                              bytes=struct.pack('H', min(65535, frame_count)))
+                              bytes=struct.pack('<H', min(65535, frame_count)))
         point_group.add_param('DATA_START', desc='data block number',
                               data_size=2,
-                              bytes=struct.pack('H', 0))
+                              bytes=struct.pack('<H', 0))
         point_group.add_param('SCALE', desc='3d scale factor',
                               data_size=4,
-                              bytes=struct.pack('f', point_scale_factor))
+                              bytes=struct.pack('<f', point_scale_factor))
         point_group.add_param('RATE', desc='3d data capture rate',
                               data_size=4,
-                              bytes=struct.pack('f', point_frame_rate))
+                              bytes=struct.pack('<f', point_frame_rate))
         point_group.add_param('X_SCREEN', desc='X_SCREEN parameter',
                               data_size=-1,
                               dimensions=[2],
@@ -1013,13 +1023,13 @@ class Writer(Manager):
         analog_group = self.add_group(2, 'ANALOG', 'ANALOG group')
         analog_group.add_param('USED', desc='analog channel count',
                                data_size=2,
-                               bytes=struct.pack('H', apf))
+                               bytes=struct.pack('<H', apf))
         analog_group.add_param('RATE', desc='analog frame rate',
                                data_size=4,
-                               bytes=struct.pack('f', analog_frame_rate))
+                               bytes=struct.pack('<f', analog_frame_rate))
         analog_group.add_param('GEN_SCALE', desc='analog general scale factor',
                                data_size=4,
-                               bytes=struct.pack('f', gen_scale))
+                               bytes=struct.pack('<f', gen_scale))
         analog_group.add_param('SCALE', desc='analog channel scale factors',
                                data_size=4,
                                dimensions=[0])
@@ -1032,15 +1042,15 @@ class Writer(Manager):
         trial_group.add_param('ACTUAL_START_FIELD', desc='actual start frame',
                               data_size=2,
                               dimensions=[2],
-                              bytes=struct.pack('I', 1))
+                              bytes=struct.pack('<I', 1))
         trial_group.add_param('ACTUAL_END_FIELD', desc='actual end frame',
                               data_size=2,
                               dimensions=[2],
-                              bytes=struct.pack('I', frame_count))
+                              bytes=struct.pack('<I', frame_count))
 
         # sync parameter information to header.
         blocks = self.parameter_blocks()
-        point_group['DATA_START'].bytes = struct.pack('H', 2 + blocks)
+        point_group['DATA_START'].bytes = struct.pack('<H', 2 + blocks)
 
         self.header.data_block = 2 + blocks
         self.header.frame_rate = point_frame_rate

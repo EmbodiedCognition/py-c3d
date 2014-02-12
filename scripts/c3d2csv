@@ -26,34 +26,53 @@ from __future__ import print_function
 
 import argparse
 import c3d
+import climate
 import sys
 
-FLAGS = argparse.ArgumentParser(
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-FLAGS.add_argument('-a', '--include-analog', action='store_true',
-                   help='output analog values after point positions')
-FLAGS.add_argument('-c', '--include-confidence', action='store_true',
-                   help='output confidence values with each point position')
-FLAGS.add_argument('-e', '--end', default='\\n', metavar='K',
-                   help='write K between records')
-FLAGS.add_argument('-s', '--sep', default=',', metavar='C',
-                   help='write C between fields in a record')
+climate.add_arg('-a', '--include-analog', action='store_true',
+                help='output analog values after point positions')
+climate.add_arg('-c', '--include-camera', action='store_true',
+                help='output camera count with each point position')
+climate.add_arg('-r', '--include-error', action='store_true',
+                help='output error value with each point position')
+climate.add_arg('-e', '--end', default='\\n', metavar='K',
+                help='write K between records')
+climate.add_arg('-s', '--sep', default=',', metavar='C',
+                help='write C between fields in a record')
 
-if __name__ == '__main__':
-    args = FLAGS.parse_args()
+climate.add_arg('input', default='-', metavar='FILE', nargs=argparse.REMAINDER,
+                help='process data from this input FILE')
+
+
+def convert(filename, args, sep, end):
+    input = sys.stdin
+    output = sys.stdout
+    if filename != '-':
+        input = open(filename, 'rb')
+        output = open(filename.replace('.c3d', '.csv'), 'w')
+    for frame_no, points, analog in c3d.Reader(input).read_frames():
+        fields = [frame_no]
+        for x, y, z, err, cam in points:
+            fields.append(str(x))
+            fields.append(str(y))
+            fields.append(str(z))
+            if args.include_error:
+                fields.append(str(err))
+            if args.include_camera:
+                fields.append(str(cam))
+        if args.include_analog:
+            fields.extend(str(x) for x in analog.flatten())
+        print(*fields, sep=sep, end=end, file=output)
+
+
+def main(args):
     sep = args.sep.replace('\\t', '\t').replace('TAB', '\t')
     end = args.end.replace(
         '\\r', '\r').replace('CR', '\r').replace(
         '\\n', '\n').replace('NL', '\n')
-    for points, analog in c3d.Reader(sys.stdin).read_frames():
-        fields = []
-        for x, y, z, c in points:
-            fields.append(str(x))
-            fields.append(str(y))
-            fields.append(str(z))
-            if args.include_confidence:
-                fields.append(str(c))
-        if args.include_analog:
-            fields.extend(str(x) for x in analog)
-        print(*fields, sep=sep, end=end)
+    for filename in args.input:
+        convert(filename, args, sep, end)
+
+
+if __name__ == '__main__':
+    climate.call(main)
