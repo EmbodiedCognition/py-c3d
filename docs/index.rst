@@ -1,12 +1,11 @@
-C3D
-===
+Welcome!
+========
 
-Quickstart
-----------
+.. toctree::
+   :maxdepth: 2
 
-:class:`c3d.Reader`
-
-.. autosummary::
+   quickstart
+   reference
 
 Indices and tables
 ==================
