@@ -76,8 +76,8 @@ class Header(object):
     def __init__(self, handle=None):
         '''Create a new Header object.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         handle : file handle, optional
             If given, initialize attributes for the Header from this file
             handle. The handle must be seek-able and readable. If `handle` is
@@ -108,8 +108,8 @@ class Header(object):
         This method writes exactly 512 bytes to the beginning of the given file
         handle.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         handle : file handle
             The given handle will be reset to 0 using `seek` and then 512 bytes
             will be written to describe the parameters in this Header. The
@@ -155,8 +155,8 @@ long_event_labels: {0.long_event_labels}
         This method reads exactly 512 bytes from the beginning of the given file
         handle.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         handle : file handle
             The given handle will be reset to 0 using `seek` and then 512 bytes
             will be read to initialize the attributes in this Header. The handle
@@ -164,8 +164,8 @@ long_event_labels: {0.long_event_labels}
 
         Raises
         ------
-        AssertionError, if the magic byte from the header is not 80 (the C3D
-        magic value).
+        AssertionError
+            If the magic byte from the header is not 80 (the C3D magic value).
         '''
         handle.seek(0)
         (self.parameter_block,
@@ -271,8 +271,8 @@ class Param(object):
     def write(self, group_id, handle):
         '''Write binary data for this parameter to a file handle.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         group_id : int
             The numerical ID of the group that holds this parameter.
         handle : file handle
@@ -424,8 +424,8 @@ class Group(dict):
     def add_param(self, name, **kwargs):
         '''Add a parameter to this group.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         name : str
             Name of the parameter to add to this group. The name will
             automatically be case-normalized.
@@ -446,8 +446,8 @@ class Group(dict):
     def write(self, group_id, handle):
         '''Write this parameter group, with parameters, to a file handle.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         group_id : int
             The numerical ID of the group.
         handle : file handle
@@ -554,8 +554,8 @@ class Manager(dict):
     def add_group(self, group_id, name, desc):
         '''Add a new parameter group.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         group_id : int
             The numeric ID for a group to check or create.
         name : str, optional
@@ -565,11 +565,13 @@ class Manager(dict):
 
         Returns
         -------
-        A `Group` with the given ID, name, and description.
+        Group :
+            A :class:`Group` with the given ID, name, and description.
 
         Raises
         ------
-        KeyError, if a group with a duplicate ID or name already exists.
+        KeyError
+            If a group with a duplicate ID or name already exists.
         '''
         if group_id in self:
             raise KeyError(group_id)
@@ -582,8 +584,8 @@ class Manager(dict):
     def get(self, group, default=None):
         '''Get a group or parameter.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         group : str
             If this string contains a period (.), then the part before the
             period will be used to retrieve a group, and the part after the
@@ -595,8 +597,9 @@ class Manager(dict):
 
         Returns
         -------
-        Either a `Group` or a `Param` with the specified name(s). If neither is
-        found, returns the default value.
+        Group or Param :
+            Either a :class:`Group` or a :class:`Param` with the specified
+            name(s). If neither is found, returns the default value.
         '''
         try:
             return self[group]
@@ -606,8 +609,8 @@ class Manager(dict):
     def __getitem__(self, group):
         '''Get a group or parameter.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         group : str
             If this string contains a colon (:) or a period (.), then the part
             before the punctuation will be used to retrieve a group, and the
@@ -617,12 +620,14 @@ class Manager(dict):
 
         Returns
         -------
-        Either a `Group` or a `Param` with the specified name(s).
+        Group or Param :
+            Either a :class:`Group` or a :class:`Param` with the specified
+            name(s).
 
         Raises
         ------
-        KeyError, if no group and parameter with the given identifiers are
-        found.
+        KeyError
+            If no group and parameter with the given identifiers are found.
         '''
         if isinstance(group, int):
             return super(Manager, self).__getitem__(group)
@@ -727,8 +732,8 @@ class Reader(Manager):
     def __init__(self, handle):
         '''Initialize this C3D file by reading header and parameter data.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         handle : file handle
             Read metadata and C3D motion frames from the given file handle. This
             handle is assumed to be `seek`-able and `read`-able. The handle must
@@ -737,8 +742,9 @@ class Reader(Manager):
 
         Raises
         ------
-        ValueError, if the processor metadata in the C3D file is anything other
-        than 84 (Intel format) or 85 (DEC format).
+        ValueError
+            If the processor metadata in the C3D file is anything other than 84
+            (Intel format).
         '''
         super(Reader, self).__init__(Header(handle))
 
@@ -794,8 +800,8 @@ class Reader(Manager):
     def read_frames(self, copy=True):
         '''Iterate over the data frames from our C3D file handle.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         copy : bool
             Set this to False if the reader should always return a reference to
             the same data buffers. The default is False, which causes the reader
@@ -805,19 +811,21 @@ class Reader(Manager):
 
         Returns
         -------
-        This generates a sequence of (frame number, points, analog) tuples, one
-        tuple per frame. The first element of each tuple is the frame number.
-        The second is a numpy array of parsed, 5D point data and the third
-        element of each tuple is a numpy array of analog values that were
-        recorded during the frame. (Often the analog data are sampled at a
-        higher frequency than the 3D point data, resulting in multiple analog
-        frames per frame of point data.)
+        sequence of (frame number, points, analog) :
+            This method generates a sequence of (frame number, points, analog)
+            tuples, one tuple per frame. The first element of each tuple is the
+            frame number. The second is a numpy array of parsed, 5D point data
+            and the third element of each tuple is a numpy array of analog
+            values that were recorded during the frame. (Often the analog data
+            are sampled at a higher frequency than the 3D point data, resulting
+            in multiple analog frames per frame of point data.)
 
-        The first three dimensions in the point data are the (x, y, z)
-        coordinates of the observed motion capture point. The fourth value is
-        an estimate of the error for this particular point, and the fifth value
-        is the number of cameras that observed the point in question. Both the
-        fourth and fifth values are -1 if the point is considered to be invalid.
+            The first three columns in the returned point data are the (x, y, z)
+            coordinates of the observed motion capture point. The fourth value
+            is an estimate of the error for this particular point, and the fifth
+            value is the number of cameras that observed the point in question.
+            Both the fourth and fifth values are -1 if the point is considered
+            to be invalid.
 
         '''
         ppf = self.points_per_frame()
@@ -895,8 +903,8 @@ class Writer(Manager):
     def __init__(self, handle):
         '''Initialize a new Writer with a file handle.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         handle : file handle
             Write metadata and C3D motion frames to the given file handle. This
             handle is assumed to be `seek`-able and `write`-able. The handle
@@ -959,8 +967,8 @@ class Writer(Manager):
                               ):
         '''Write a set of frames to a file so it looks like Phasespace wrote it.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         frames : sequence of frame data
             The sequence of frames to write.
         frame_count : int
