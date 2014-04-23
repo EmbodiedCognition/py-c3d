@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
     name='c3d',
-    version='0.2.1',
+    version='0.2.2',
     py_modules=['c3d'],
     author='Leif Johnson',
     author_email='leif@leifjohnson.net',
