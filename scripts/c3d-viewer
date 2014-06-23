@@ -113,14 +113,14 @@ class Viewer(pyglet.window.Window):
         self._frame_rate = c3d_reader.frame_rate()
 
         print(c3d_reader.header)
-        for gn, g in c3d_reader.iteritems():
+        for gn, g in c3d_reader.items():
             if isinstance(gn, int):
                 continue
-            for pn, p in g.iteritems():
+            for pn, p in g.items():
                 print(gn, pn, p)
 
         self._maxlen = 16
-        self._trails = [[] for _ in xrange(c3d_reader.num_points())]
+        self._trails = [[] for _ in range(c3d_reader.num_points())]
         self._reset_trails()
 
         self.trace = trace
@@ -214,7 +214,7 @@ class Viewer(pyglet.window.Window):
             skip = int(self._frame_rate)
             if modifiers:
                 skip *= 10
-            [self._next_frame() for _ in xrange(skip)]
+            [self._next_frame() for _ in range(skip)]
 
     def on_draw(self):
         self.clear()

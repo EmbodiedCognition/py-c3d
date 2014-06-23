@@ -21,9 +21,8 @@
 '''A Python library for reading and writing C3D files.'''
 
 import array
-import cStringIO
+import io
 import numpy as np
-import operator
 import struct
 import warnings
 
@@ -249,7 +248,10 @@ class Param(object):
     @property
     def num_elements(self):
         '''Return the number of elements in this parameter's array value.'''
-        return reduce(operator.mul, self.dimensions, 1)
+        e = 1
+        for d in self.dimensions:
+            e *= d
+        return e
 
     @property
     def total_bytes(self):
@@ -441,7 +443,7 @@ class Group(dict):
             1 + len(self.name) + # size of name and name bytes
             2 + # next offset marker
             1 + len(self.desc) + # size of desc and desc bytes
-            sum(p.binary_size() for p in self.itervalues()))
+            sum(p.binary_size() for p in self.values()))
 
     def write(self, group_id, handle):
         '''Write this parameter group, with parameters, to a file handle.
@@ -458,7 +460,7 @@ class Group(dict):
         handle.write(struct.pack('<h', 3 + len(self.desc)))
         handle.write(struct.pack('B', len(self.desc)))
         handle.write(self.desc)
-        for param in self.itervalues():
+        for param in self.values():
             param.write(group_id, handle)
 
     def get_int8(self, key):
@@ -676,7 +678,7 @@ class Manager(dict):
 
     def parameter_blocks(self):
         '''Compute the size (in 512B blocks) of the parameter section.'''
-        bytes = 4. + sum(g.binary_size() for g in self.itervalues())
+        bytes = 4. + sum(g.binary_size() for g in self.values())
         return int(np.ceil(bytes / 512))
 
     def frame_rate(self):
@@ -763,14 +765,14 @@ class Reader(Manager):
         # boundary issues.
         bytes = self._handle.read(512 * parameter_blocks - 4)
         while bytes:
-            buf = cStringIO.StringIO(bytes)
+            buf = io.BytesIO(bytes)
 
             chars_in_name, group_id = struct.unpack('bb', buf.read(2))
             if group_id == 0 or chars_in_name == 0:
                 # we've reached the end of the parameter section.
                 break
 
-            name = buf.read(abs(chars_in_name)).upper()
+            name = buf.read(abs(chars_in_name)).decode('ascii').upper()
             offset_to_next, = struct.unpack('<h', buf.read(2))
 
             if group_id > 0:
@@ -803,11 +805,11 @@ class Reader(Manager):
         Parameters
         ----------
         copy : bool
-            Set this to False if the reader should always return a reference to
-            the same data buffers. The default is False, which causes the reader
-            to return a unique data buffer for each frame. This is somewhat
-            slower, but avoids the nasty appearance that the file is filled with
-            the last frame of data.
+            If False, the reader returns a reference to the same data buffers
+            for every frame. The default is True, which causes the reader to
+            return a unique data buffer for each frame. Set this to False if you
+            consume frames as you iterate over them, or True if you store them
+            for later.
 
         Returns
         -------
@@ -931,7 +933,7 @@ class Writer(Manager):
 
         # groups
         self._handle.write(struct.pack('BBBB', 0, 0, self.parameter_blocks(), 84))
-        id_groups = sorted((i, g) for i, g in self.iteritems() if isinstance(i, int))
+        id_groups = sorted((i, g) for i, g in self.items() if isinstance(i, int))
         for group_id, group in id_groups:
             group.write(group_id, self._handle)
 
@@ -990,71 +992,64 @@ class Writer(Manager):
         # POINT group
         ppf = len(points)
         point_group = self.add_group(1, 'POINT', 'POINT group')
-        point_group.add_param('USED', desc='Number of 3d markers',
-                              data_size=2,
-                              bytes=struct.pack('<H', ppf))
-        point_group.add_param('FRAMES', desc='frame count',
-                              data_size=2,
-                              bytes=struct.pack('<H', min(65535, frame_count)))
-        point_group.add_param('DATA_START', desc='data block number',
-                              data_size=2,
-                              bytes=struct.pack('<H', 0))
-        point_group.add_param('SCALE', desc='3d scale factor',
-                              data_size=4,
-                              bytes=struct.pack('<f', point_scale_factor))
-        point_group.add_param('RATE', desc='3d data capture rate',
-                              data_size=4,
-                              bytes=struct.pack('<f', point_frame_rate))
-        point_group.add_param('X_SCREEN', desc='X_SCREEN parameter',
-                              data_size=-1,
-                              dimensions=[2],
-                              bytes='+X')
-        point_group.add_param('Y_SCREEN', desc='Y_SCREEN parameter',
-                              data_size=-1,
-                              dimensions=[2],
-                              bytes='+Z')
-        point_group.add_param('UNITS', desc='3d data units',
-                              data_size=-1,
-                              dimensions=[len(point_units)],
-                              bytes=point_units)
-        point_group.add_param('LABELS', desc='labels',
-                              data_size=-1,
-                              dimensions=[5, ppf],
-                              bytes=''.join('M%03d ' % i for i in xrange(ppf)))
-        point_group.add_param('DESCRIPTIONS', desc='descriptions',
-                              data_size=-1,
-                              dimensions=[16, ppf],
-                              bytes=' ' * 16 * ppf)
+        point_group.add_param(
+            'USED', desc='Number of 3d markers', data_size=2,
+            bytes=struct.pack('<H', ppf))
+        point_group.add_param(
+            'FRAMES', desc='frame count', data_size=2,
+            bytes=struct.pack('<H', min(65535, frame_count)))
+        point_group.add_param(
+            'DATA_START', desc='data block number', data_size=2,
+            bytes=struct.pack('<H', 0))
+        point_group.add_param(
+            'SCALE', desc='3d scale factor', data_size=4,
+            bytes=struct.pack('<f', point_scale_factor))
+        point_group.add_param(
+            'RATE', desc='3d data capture rate', data_size=4,
+            bytes=struct.pack('<f', point_frame_rate))
+        point_group.add_param(
+            'X_SCREEN', desc='X_SCREEN parameter',
+            data_size=-1, dimensions=[2], bytes='+X')
+        point_group.add_param(
+            'Y_SCREEN', desc='Y_SCREEN parameter',
+            data_size=-1, dimensions=[2], bytes='+Z')
+        point_group.add_param(
+            'UNITS', desc='3d data units', data_size=-1,
+            dimensions=[len(point_units)], bytes=point_units)
+        point_group.add_param(
+            'LABELS', desc='labels', data_size=-1, dimensions=[5, ppf],
+            bytes=''.join('M%03d ' % i for i in xrange(ppf)))
+        point_group.add_param(
+            'DESCRIPTIONS', desc='descriptions', data_size=-1,
+            dimensions=[16, ppf], bytes=' ' * 16 * ppf)
 
         # ANALOG group
         apf = len(analog)
         analog_group = self.add_group(2, 'ANALOG', 'ANALOG group')
-        analog_group.add_param('USED', desc='analog channel count',
-                               data_size=2,
-                               bytes=struct.pack('<H', apf))
-        analog_group.add_param('RATE', desc='analog frame rate',
-                               data_size=4,
-                               bytes=struct.pack('<f', analog_frame_rate))
-        analog_group.add_param('GEN_SCALE', desc='analog general scale factor',
-                               data_size=4,
-                               bytes=struct.pack('<f', gen_scale))
-        analog_group.add_param('SCALE', desc='analog channel scale factors',
-                               data_size=4,
-                               dimensions=[0])
-        analog_group.add_param('OFFSET', desc='analog channel offsets',
-                               data_size=2,
-                               dimensions=[0])
+        analog_group.add_param(
+            'USED', desc='analog channel count', data_size=2,
+            bytes=struct.pack('<H', apf))
+        analog_group.add_param(
+            'RATE', desc='analog frame rate', data_size=4,
+            bytes=struct.pack('<f', analog_frame_rate))
+        analog_group.add_param(
+            'GEN_SCALE', desc='analog general scale factor', data_size=4,
+            bytes=struct.pack('<f', gen_scale))
+        analog_group.add_param(
+            'SCALE', desc='analog channel scale factors', data_size=4,
+            dimensions=[0])
+        analog_group.add_param(
+            'OFFSET', desc='analog channel offsets', data_size=2,
+            dimensions=[0])
 
         # TRIAL group
         trial_group = self.add_group(3, 'TRIAL', 'TRIAL group')
-        trial_group.add_param('ACTUAL_START_FIELD', desc='actual start frame',
-                              data_size=2,
-                              dimensions=[2],
-                              bytes=struct.pack('<I', 1))
-        trial_group.add_param('ACTUAL_END_FIELD', desc='actual end frame',
-                              data_size=2,
-                              dimensions=[2],
-                              bytes=struct.pack('<I', frame_count))
+        trial_group.add_param(
+            'ACTUAL_START_FIELD', desc='actual start frame', data_size=2,
+            dimensions=[2], bytes=struct.pack('<I', 1))
+        trial_group.add_param(
+            'ACTUAL_END_FIELD', desc='actual end frame', data_size=2,
+            dimensions=[2], bytes=struct.pack('<I', frame_count))
 
         # sync parameter information to header.
         blocks = self.parameter_blocks()
