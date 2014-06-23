@@ -866,7 +866,7 @@ class Reader(Manager):
             gen_scale = param.float_value
 
         self._handle.seek((self.header.data_block - 1) * 512)
-        for frame_no in xrange(self.first_frame(), self.last_frame() + 1):
+        for frame_no in range(self.first_frame(), self.last_frame() + 1):
             raw = np.fromfile(self._handle, dtype=point_dtype,
                 count=4 * self.header.point_count).reshape((ppf, 4))
 
@@ -1018,7 +1018,7 @@ class Writer(Manager):
             dimensions=[len(point_units)], bytes=point_units)
         point_group.add_param(
             'LABELS', desc='labels', data_size=-1, dimensions=[5, ppf],
-            bytes=''.join('M%03d ' % i for i in xrange(ppf)))
+            bytes=''.join('M%03d ' % i for i in range(ppf)))
         point_group.add_param(
             'DESCRIPTIONS', desc='descriptions', data_size=-1,
             dimensions=[16, ppf], bytes=' ' * 16 * ppf)
