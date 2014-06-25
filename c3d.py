@@ -214,31 +214,12 @@ class Param(object):
                  dimensions=None,
                  bytes='',
                  handle=None):
-        '''Set up a new parameter with at least a name.
-
-        name : str
-            The name of the parameter.
-        desc : str, optional
-            The description of the parameter.
-        bytes_per_element : int, optional
-            For array data, this describes the size of each element of data. For
-            string data (including arrays of strings), this should be -1.
-        dimensions : list of int, optional
-            For array data, this describes the dimensions of the array, stored
-            in row-major order.
-        bytes : str, optional
-            The raw bytes for this parameter. Use struct.pack() to construct
-            this value, or just pass the raw string data for string parameters.
-        handle : file handle, optional
-            If provided, the data for the parameter will be read from this
-            file handle. The handle must be readable.
-        '''
+        '''Set up a new parameter, only the name is required.'''
         self.name = name
         self.desc = desc
         self.bytes_per_element = bytes_per_element
         self.dimensions = dimensions or []
         self.bytes = bytes
-
         if handle:
             self.read(handle)
 
@@ -263,11 +244,11 @@ class Param(object):
         return (
             1 + # group_id
             2 + # next offset marker
-            1 + len(self.name) + # size of name and name bytes
+            1 + len(self.name.encode('utf-8')) + # size of name and name bytes
             1 + # data size
             1 + len(self.dimensions) + # size of dimensions and dimension bytes
             self.total_bytes + # data
-            1 + len(self.desc) # size of desc and desc bytes
+            1 + len(self.desc.encode('utf-8')) # size of desc and desc bytes
             )
 
     def write(self, group_id, handle):
@@ -280,16 +261,18 @@ class Param(object):
         handle : file handle
             An open, writable, binary file handle.
         '''
-        handle.write(struct.pack('bb', len(self.name), group_id))
-        handle.write(self.name)
-        handle.write(struct.pack('<h', self.binary_size() - 2 - len(self.name)))
+        name = self.name.encode('utf-8')
+        handle.write(struct.pack('bb', len(name), group_id))
+        handle.write(name)
+        handle.write(struct.pack('<h', self.binary_size() - 2 - len(name)))
         handle.write(struct.pack('b', self.bytes_per_element))
         handle.write(struct.pack('B', len(self.dimensions)))
         handle.write(struct.pack('B' * len(self.dimensions), *self.dimensions))
         if self.bytes:
             handle.write(self.bytes)
-        handle.write(struct.pack('B', len(self.desc)))
-        handle.write(self.desc)
+        desc = self.desc.encode('utf-8')
+        handle.write(struct.pack('B', len(desc)))
+        handle.write(desc)
 
     def read(self, handle):
         '''Read binary data for this parameter from a file handle.
@@ -304,7 +287,7 @@ class Param(object):
         if self.total_bytes:
             self.bytes = handle.read(self.total_bytes)
         size, = struct.unpack('B', handle.read(1))
-        self.desc = size and handle.read(size) or ''
+        self.desc = size and handle.read(size).decode('utf-8') or ''
 
     def _as(self, fmt):
         '''Unpack the raw bytes of this param using the given struct format.'''
@@ -346,9 +329,14 @@ class Param(object):
         return self._as('f')
 
     @property
-    def string_value(self):
+    def bytes_value(self):
         '''Get the param as a raw byte string.'''
         return self.bytes
+
+    @property
+    def string_value(self):
+        '''Get the param as a unicode string.'''
+        return self.bytes.decode('utf-8')
 
     def _as_array(self, fmt):
         '''Unpack the raw bytes of this param using the given data format.'''
@@ -394,12 +382,20 @@ class Param(object):
         return self._as_array('f')
 
     @property
-    def string_array(self):
+    def bytes_array(self):
         '''Get the param as a array of raw byte strings.'''
+        assert len(self.dimensions) == 2, \
+            '{}: cannot get value as bytes array!'.format(self.name)
+        l, n = self.dimensions
+        return [self.bytes[i*l:(i+1)*l] for i in range(n)]
+
+    @property
+    def string_array(self):
+        '''Get the param as a array of unicode strings.'''
         assert len(self.dimensions) == 2, \
             '{}: cannot get value as string array!'.format(self.name)
         l, n = self.dimensions
-        return [self.bytes[i*l:(i+1)*l] for i in range(n)]
+        return [self.bytes[i*l:(i+1)*l].decode('utf-8') for i in range(n)]
 
 
 class Group(dict):
@@ -440,9 +436,9 @@ class Group(dict):
         '''Return the number of bytes to store this group and its parameters.'''
         return (
             1 + # group_id
-            1 + len(self.name) + # size of name and name bytes
+            1 + len(self.name.encode('utf-8')) + # size of name and name bytes
             2 + # next offset marker
-            1 + len(self.desc) + # size of desc and desc bytes
+            1 + len(self.desc.encode('utf-8')) + # size of desc and desc bytes
             sum(p.binary_size() for p in self.values()))
 
     def write(self, group_id, handle):
@@ -490,6 +486,10 @@ class Group(dict):
     def get_float(self, key):
         '''Get the value of the given parameter as a 32-bit float.'''
         return self[key.upper()].float_value
+
+    def get_bytes(self, key):
+        '''Get the value of the given parameter as a byte array.'''
+        return self[key.upper()].bytes_value
 
     def get_string(self, key):
         '''Get the value of the given parameter as a string.'''
@@ -672,6 +672,10 @@ class Manager(dict):
         '''Get a parameter value as a 32-bit float.'''
         return self[key].float_value
 
+    def get_bytes(self, key):
+        '''Get a parameter value as a byte string.'''
+        return self[key].bytes_value
+
     def get_string(self, key):
         '''Get a parameter value as a string.'''
         return self[key].string_value
@@ -772,7 +776,7 @@ class Reader(Manager):
                 # we've reached the end of the parameter section.
                 break
 
-            name = buf.read(abs(chars_in_name)).decode('ascii').upper()
+            name = buf.read(abs(chars_in_name)).decode('utf-8').upper()
             offset_to_next, = struct.unpack('<h', buf.read(2))
 
             if group_id > 0:
