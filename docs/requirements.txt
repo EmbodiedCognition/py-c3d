@@ -1,2 +1,2 @@
 numpydoc
-sphinx-rtd-theme
+sphinx-better-theme
