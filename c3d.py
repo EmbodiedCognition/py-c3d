@@ -1,23 +1,3 @@
-# Copyright (c) 2010 Leif Johnson <leif@leifjohnson.net>
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-
 '''A Python library for reading and writing C3D files.'''
 
 import array
@@ -832,7 +812,6 @@ class Reader(Manager):
             value is the number of cameras that observed the point in question.
             Both the fourth and fifth values are -1 if the point is considered
             to be invalid.
-
         '''
         ppf = self.points_per_frame()
         apf = self.analog_per_frame()
@@ -936,7 +915,8 @@ class Writer(Manager):
         assert self._handle.tell() == 512
 
         # groups
-        self._handle.write(struct.pack('BBBB', 0, 0, self.parameter_blocks(), 84))
+        self._handle.write(
+            struct.pack('BBBB', 0, 0, self.parameter_blocks(), PROCESSOR_INTEL))
         id_groups = sorted((i, g) for i, g in self.items() if isinstance(i, int))
         for group_id, group in id_groups:
             group.write(group_id, self._handle)
