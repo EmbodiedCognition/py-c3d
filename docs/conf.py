@@ -1,9 +1,8 @@
 import os
 import sys
 
-import sphinx_rtd_theme
+import better
 
-#needs_sphinx = '1.0'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
@@ -15,80 +14,49 @@ extensions = [
     'numpydoc',
     ]
 autosummary_generate = True
-autodoc_default_flags = ['members', 'inherited-members']
-templates_path = ['_templates']
+autodoc_default_flags = ['members']
+numpydoc_show_class_members = False
+numpydoc_show_inherited_class_members = True
 source_suffix = '.rst'
 source_encoding = 'utf-8-sig'
 master_doc = 'index'
-project = u'c3d'
-copyright = u'2013, Leif Johnson'
-version = '0.1.0'
+project = u'C3D'
+copyright = u'2015, Leif Johnson'
+version = '0.1'
 release = '0.1.0'
-#language = None
-#today = ''
-#today_fmt = '%B %d, %Y'
 exclude_patterns = ['_build']
-#default_role = None
-#add_function_parentheses = True
-#add_module_names = True
-#show_authors = False
-pygments_style = 'sphinx'
-#modindex_common_prefix = []
+templates_path = ['_templates']
+pygments_style = 'tango'
 
-html_theme = 'sphinx_rtd_theme'
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+html_theme = 'better'
+html_theme_path = [better.better_theme_path]
+html_theme_options = dict(
+  rightsidebar=False,
+  inlinecss='',
+  cssfiles=['_static/style-tweaks.css'],
+  showheader=True,
+  showrelbartop=True,
+  showrelbarbottom=True,
+  linktotheme=True,
+  sidebarwidth='15rem',
+  textcolor='#111',
+  headtextcolor='#333',
+  footertextcolor='#333',
+  ga_ua='',
+  ga_domain='',
+)
+html_short_title = 'Home'
 html_static_path = ['_static']
-#html_title = None
-#html_short_title = None
-#html_logo = None
-#html_favicon = None
-#html_last_updated_fmt = '%b %d, %Y'
-#html_use_smartypants = True
-#html_sidebars = {}
-#html_additional_pages = {}
-#html_domain_indices = True
-#html_use_index = True
-#html_split_index = False
-#html_show_sourcelink = True
-#html_show_sphinx = True
-#html_show_copyright = True
-#html_use_opensearch = ''
-#html_file_suffix = None
-htmlhelp_basename = 'c3ddoc'
 
-latex_elements = {
-#'papersize': 'letterpaper',
-#'pointsize': '10pt',
-#'preamble': '',
+def h(xs):
+    return ['{}.html'.format(x) for x in xs.split()]
+html_sidebars = {
+    'index': h('gitwidgets globaltoc sourcelink searchbox'),
+    '**': h('gitwidgets localtoc sourcelink searchbox'),
 }
-latex_documents = [
-  ('index', 'c3d.tex', u'c3d Documentation',
-   u'Leif Johnson', 'manual'),
-]
-#latex_logo = None
-#latex_use_parts = False
-#latex_show_pagerefs = False
-#latex_show_urls = False
-#latex_appendices = []
-#latex_domain_indices = True
 
-man_pages = [
-    ('index', 'c3d', u'c3d Documentation',
-     [u'Leif Johnson'], 1)
-]
-#man_show_urls = False
-
-texinfo_documents = [
-  ('index',
-   'c3d',
-   u'c3d Documentation',
-   u'Leif Johnson',
-   'c3d',
-   'One line description of project.',
-   'Miscellaneous'),
-]
-#texinfo_appendices = []
-#texinfo_domain_indices = True
-#texinfo_show_urls = 'footnote'
-
-intersphinx_mapping = {'http://docs.python.org/': None}
+intersphinx_mapping = {
+    'python': ('http://docs.python.org/', None),
+    'numpy': ('http://docs.scipy.org/doc/numpy/', None),
+    'scipy': ('http://docs.scipy.org/doc/scipy/reference/', None),
+}

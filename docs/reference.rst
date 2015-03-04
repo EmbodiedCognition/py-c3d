@@ -9,5 +9,5 @@ Reference
 .. autosummary::
    :toctree: generated/
 
-   c3d.Reader
-   c3d.Writer
+   Reader
+   Writer
