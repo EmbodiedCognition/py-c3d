@@ -897,27 +897,58 @@ class Reader(Manager):
 
 
 class Writer(Manager):
-    '''This class manages the task of writing metadata and frames to a C3D file.
+    '''This class writes metadata and frames to a C3D file.
+
+    For example, to read an existing C3D file, apply some sort of data
+    processing to the frames, and write out another C3D file::
 
     >>> r = c3d.Reader(open('data.c3d', 'rb'))
-    >>> frames = smooth_frames(r.read_frames())
-    >>> w = c3d.Writer(open('smoothed.c3d', 'wb'))
-    >>> w.write_from_reader(frames, r)
+    >>> w = c3d.Writer()
+    >>> w.add_frames(process_frames_somehow(r.read_frames()))
+    >>> with open('smoothed.c3d', 'wb') as handle:
+    >>>     w.write(handle)
+
+    Parameters
+    ----------
+    point_frame_rate : float, optional
+        The frame rate of the data. Defaults to 480.
+    analog_frame_rate : float, optional
+        The number of analog samples per frame. Defaults to 0.
+    point_scale_factor : float, optional
+        The scale factor for point data. Defaults to -1 (i.e., "check the
+        POINT:SCALE parameter").
+    point_units : str, optional
+        The units that the point numbers represent. Defaults to ``'mm  '``.
+    gen_scale : float, optional
+        General scaling factor for data. Defaults to 1.
     '''
 
-    def __init__(self, handle):
-        '''Initialize a new Writer with a file handle.
+    def __init__(self,
+                 point_frame_rate=480.,
+                 analog_frame_rate=0.,
+                 point_scale_factor=-1.,
+                 point_units='mm  ',
+                 gen_scale=1.):
+        '''Set metadata for this writer.
+
+        '''
+        super(Writer, self).__init__()
+        self.point_frame_rate = point_frame_rate
+        self.analog_frame_rate = analog_frame_rate
+        self.point_scale_factor = point_scale_factor
+        self.point_units = point_units
+        self.gen_scale = gen_scale
+        self._frames = []
+
+    def add_frames(self, frames):
+        '''Add frames to this writer instance.
 
         Parameters
         ----------
-        handle : file handle
-            Write metadata and C3D motion frames to the given file handle. This
-            handle is assumed to be `seek`-able and `write`-able. The handle
-            must remain open for the life of the `Writer` instance. The `Writer`
-            does not `close` the handle.
+        frames : sequence of (point, analog) tuples
+            A sequence of frame data to add to the writer.
         '''
-        super(Writer, self).__init__()
-        self._handle = handle
+        self._frames.extend(frames)
 
     def _pad_block(self):
         '''Pad the file with 0s to the end of the next block boundary.'''
@@ -925,72 +956,78 @@ class Writer(Manager):
         if extra:
             self._handle.write('\x00' * (512 - extra))
 
-    def write_metadata(self):
-        '''Write metadata for this file to our file handle.'''
-        self.check_metadata()
-
-        # header
-        self.header.write(self._handle)
-        self._pad_block()
-        assert self._handle.tell() == 512
-
-        # groups
-        self._handle.write(struct.pack('BBBB', 0, 0, self.parameter_blocks(), 84))
-        id_groups = sorted((i, g) for i, g in self.items() if isinstance(i, int))
-        for group_id, group in id_groups:
-            group.write(group_id, self._handle)
-
-        # padding
-        self._pad_block()
-        while self._handle.tell() != 512 * (self.header.data_block - 1):
-            self._handle.write('\x00' * 512)
-
-    def write_frames(self, frames):
-        '''Write the given list of frame data to our file handle.
-
-        frames : sequence of frame data
-            A sequence of (points, analog) tuples, each containing data for one
-            frame.
-        '''
-        assert self._handle.tell() == 512 * (self.header.data_block - 1)
-        format = 'fi'[self.scale_factor() >= 0]
-        for p, a in frames:
-            point = array.array(format)
-            point.extend(p.flatten())
-            point.tofile(self._handle)
-            analog = array.array(format)
-            analog.extend(a)
-            analog.tofile(self._handle)
-        self._pad_block()
-
-    def write_like_phasespace(self, frames, frame_count,
-                              point_frame_rate=480.0,
-                              analog_frame_rate=0.0,
-                              point_scale_factor=-1.0,
-                              point_units='mm  ',
-                              gen_scale=1.0,
-                              ):
-        '''Write a set of frames to a file so it looks like Phasespace wrote it.
+    def _write_metadata(self, handle):
+        '''Write metadata to a file handle.
 
         Parameters
         ----------
-        frames : sequence of frame data
-            The sequence of frames to write.
-        frame_count : int
-            The number of frames to write.
-        point_frame_rate : float
-            The frame rate of the data.
-        analog_frame_rate : float
-            The number of analog samples per frame.
-        point_scale_factor : float
-            The scale factor for point data.
-        point_units : str
-            The units that the point numbers represent.
+        handle : file
+            Write metadata and C3D motion frames to the given file handle. The
+            writer does not close the handle.
         '''
-        try:
-            points, analog = iter(frames).next()
-        except StopIteration:
+        self.check_metadata()
+
+        # header
+        self.header.write(handle)
+        self._pad_block()
+        assert handle.tell() == 512
+
+        # groups
+        handle.write(struct.pack('BBBB', 0, 0, self.parameter_blocks(), 84))
+        id_groups = sorted((i, g) for i, g in self.items() if isinstance(i, int))
+        for group_id, group in id_groups:
+            group.write(group_id, handle)
+
+        # padding
+        self._pad_block()
+        while handle.tell() != 512 * (self.header.data_block - 1):
+            handle.write('\x00' * 512)
+
+    def _write_frames(self, handle):
+        '''Write our frame data to the given file handle.
+
+        Parameters
+        ----------
+        handle : file
+            Write metadata and C3D motion frames to the given file handle. The
+            writer does not close the handle.
+        '''
+        assert handle.tell() == 512 * (self.header.data_block - 1)
+        scale = abs(self.scale_factor())
+        is_float = self.scale_factor() < 0
+        point_dtype = [np.int16, np.float32][is_float]
+        point_scale = [scale, 1][is_float]
+        point_format = 'if'[is_float]
+        raw = np.empty((self.points_per_frame(), 4))
+        for points, analog in self._frames:
+            valid = points[:, 3] > -1
+            raw[~valid, 3] = -1
+            raw[valid, :3] = points[valid, :3] / self.point_scale_factor
+            raw[valid, 3] = (
+                ((points[valid, 4]).astype(np.uint8) << 8) |
+                (points[valid, 3] / scale).astype(np.uint16)
+            )
+            point = array.array(point_format)
+            point.extend(raw.flatten())
+            point.tofile(handle)
+            analog = array.array(point_format)
+            analog.extend(analog)
+            analog.tofile(handle)
+        self._pad_block()
+
+    def write(self, handle):
+        '''Write metadata and point + analog frames to a file handle.
+
+        Parameters
+        ----------
+        handle : file
+            Write metadata and C3D motion frames to the given file handle. The
+            writer does not close the handle.
+        '''
+        if not self._frames:
             return
+
+        points, analog = self._frames[0]
 
         # POINT group
         ppf = len(points)
@@ -1000,16 +1037,16 @@ class Writer(Manager):
             bytes=struct.pack('<H', ppf))
         point_group.add_param(
             'FRAMES', desc='frame count', data_size=2,
-            bytes=struct.pack('<H', min(65535, frame_count)))
+            bytes=struct.pack('<H', min(65535, len(self._frames))))
         point_group.add_param(
             'DATA_START', desc='data block number', data_size=2,
             bytes=struct.pack('<H', 0))
         point_group.add_param(
             'SCALE', desc='3d scale factor', data_size=4,
-            bytes=struct.pack('<f', point_scale_factor))
+            bytes=struct.pack('<f', self.point_scale_factor))
         point_group.add_param(
             'RATE', desc='3d data capture rate', data_size=4,
-            bytes=struct.pack('<f', point_frame_rate))
+            bytes=struct.pack('<f', self.point_frame_rate))
         point_group.add_param(
             'X_SCREEN', desc='X_SCREEN parameter',
             data_size=-1, dimensions=[2], bytes='+X')
@@ -1018,7 +1055,7 @@ class Writer(Manager):
             data_size=-1, dimensions=[2], bytes='+Z')
         point_group.add_param(
             'UNITS', desc='3d data units', data_size=-1,
-            dimensions=[len(point_units)], bytes=point_units)
+            dimensions=[len(self.point_units)], bytes=self.point_units)
         point_group.add_param(
             'LABELS', desc='labels', data_size=-1, dimensions=[5, ppf],
             bytes=''.join('M%03d ' % i for i in range(ppf)))
@@ -1034,10 +1071,10 @@ class Writer(Manager):
             bytes=struct.pack('<H', apf))
         analog_group.add_param(
             'RATE', desc='analog frame rate', data_size=4,
-            bytes=struct.pack('<f', analog_frame_rate))
+            bytes=struct.pack('<f', self.analog_frame_rate))
         analog_group.add_param(
             'GEN_SCALE', desc='analog general scale factor', data_size=4,
-            bytes=struct.pack('<f', gen_scale))
+            bytes=struct.pack('<f', self.gen_scale))
         analog_group.add_param(
             'SCALE', desc='analog channel scale factors', data_size=4,
             dimensions=[0])
@@ -1052,26 +1089,18 @@ class Writer(Manager):
             dimensions=[2], bytes=struct.pack('<I', 1))
         trial_group.add_param(
             'ACTUAL_END_FIELD', desc='actual end frame', data_size=2,
-            dimensions=[2], bytes=struct.pack('<I', frame_count))
+            dimensions=[2], bytes=struct.pack('<I', len(self._frames)))
 
         # sync parameter information to header.
         blocks = self.parameter_blocks()
         point_group['DATA_START'].bytes = struct.pack('<H', 2 + blocks)
 
         self.header.data_block = 2 + blocks
-        self.header.frame_rate = point_frame_rate
-        self.header.last_frame = min(frame_count, 65535)
+        self.header.frame_rate = self.point_frame_rate
+        self.header.last_frame = min(len(self._frames), 65535)
         self.header.point_count = ppf
         self.header.analog_count = apf
-        self.header.scale_factor = point_scale_factor
+        self.header.scale_factor = self.point_scale_factor
 
-        self.write_metadata()
-        self.write_frames(frames)
-
-    def write_from_reader(self, frames, reader):
-        '''Write a file with the same metadata and number of frames as a Reader.
-
-        frames: A sequence of frames to write.
-        reader: Copy metadata from this reader to the output file.
-        '''
-        self.write_like_phasespace(frames, reader.end_field(), reader.frame_rate())
+        self._write_metadata(handle)
+        self._write_frames(handle)
