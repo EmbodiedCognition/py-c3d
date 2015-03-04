@@ -497,7 +497,7 @@ class Group(dict):
         return self[key.upper()].string_value
 
 
-class Manager(dict):
+class Manager(object):
     '''A base class for managing C3D file metadata.
 
     This class manages a C3D header (which contains some stock metadata fields)
