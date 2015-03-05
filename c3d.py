@@ -399,7 +399,7 @@ class Param(object):
         return [self.bytes[i*l:(i+1)*l].decode('utf-8') for i in range(n)]
 
 
-class Group(dict):
+class Group(object):
     '''A group of parameters from a C3D file.
 
     In C3D files, parameters are organized in groups. Each group has a name, a
@@ -416,9 +416,27 @@ class Group(dict):
     def __init__(self, name=None, desc=None):
         self.name = name
         self.desc = desc
+        self._params = {}
 
     def __repr__(self):
         return '<Group: {}>'.format(self.desc)
+
+    def get(self, key, default=None):
+        '''Get a parameter by key.
+
+        Parameters
+        ----------
+        key : any
+            Parameter key to look up in this group.
+        default : any, optional
+            Value to return if the key is not found. Defaults to None.
+
+        Returns
+        -------
+        param : :class:`Param`
+            A parameter from the current group.
+        '''
+        return self._params.get(key, default)
 
     def add_param(self, name, **kwargs):
         '''Add a parameter to this group.
@@ -431,7 +449,7 @@ class Group(dict):
 
         Additional keyword arguments will be passed to the `Param` constructor.
         '''
-        self[name.upper()] = Param(name.upper(), **kwargs)
+        self._params[name.upper()] = Param(name.upper(), **kwargs)
 
     def binary_size(self):
         '''Return the number of bytes to store this group and its parameters.'''
@@ -440,7 +458,7 @@ class Group(dict):
             1 + len(self.name.encode('utf-8')) + # size of name and name bytes
             2 + # next offset marker
             1 + len(self.desc.encode('utf-8')) + # size of desc and desc bytes
-            sum(p.binary_size() for p in self.values()))
+            sum(p.binary_size() for p in self._params.values()))
 
     def write(self, group_id, handle):
         '''Write this parameter group, with parameters, to a file handle.
@@ -457,44 +475,44 @@ class Group(dict):
         handle.write(struct.pack('<h', 3 + len(self.desc)))
         handle.write(struct.pack('B', len(self.desc)))
         handle.write(self.desc)
-        for param in self.values():
+        for param in self._params.values():
             param.write(group_id, handle)
 
     def get_int8(self, key):
         '''Get the value of the given parameter as an 8-bit signed integer.'''
-        return self[key.upper()].int8_value
+        return self._params[key.upper()].int8_value
 
     def get_uint8(self, key):
         '''Get the value of the given parameter as an 8-bit unsigned integer.'''
-        return self[key.upper()].uint8_value
+        return self._params[key.upper()].uint8_value
 
     def get_int16(self, key):
         '''Get the value of the given parameter as a 16-bit signed integer.'''
-        return self[key.upper()].int16_value
+        return self._params[key.upper()].int16_value
 
     def get_uint16(self, key):
         '''Get the value of the given parameter as a 16-bit unsigned integer.'''
-        return self[key.upper()].uint16_value
+        return self._params[key.upper()].uint16_value
 
     def get_int32(self, key):
         '''Get the value of the given parameter as a 32-bit signed integer.'''
-        return self[key.upper()].int32_value
+        return self._params[key.upper()].int32_value
 
     def get_uint32(self, key):
         '''Get the value of the given parameter as a 32-bit unsigned integer.'''
-        return self[key.upper()].uint32_value
+        return self._params[key.upper()].uint32_value
 
     def get_float(self, key):
         '''Get the value of the given parameter as a 32-bit float.'''
-        return self[key.upper()].float_value
+        return self._params[key.upper()].float_value
 
     def get_bytes(self, key):
         '''Get the value of the given parameter as a byte array.'''
-        return self[key.upper()].bytes_value
+        return self._params[key.upper()].bytes_value
 
     def get_string(self, key):
         '''Get the value of the given parameter as a string.'''
-        return self[key.upper()].string_value
+        return self._params[key.upper()].string_value
 
 
 class Manager(object):
@@ -513,6 +531,7 @@ class Manager(object):
     def __init__(self, header=None):
         '''Set up a new Manager with a Header.'''
         self.header = header or Header()
+        self._groups = {}
 
     def check_metadata(self):
         '''Ensure that the metadata in our file is self-consistent.'''
@@ -576,12 +595,12 @@ class Manager(object):
         KeyError
             If a group with a duplicate ID or name already exists.
         '''
-        if group_id in self:
+        if group_id in self._groups:
             raise KeyError(group_id)
         name = name.upper()
-        if name in self:
+        if name in self._groups:
             raise KeyError(name)
-        group = self[name] = self[group_id] = Group(name, desc)
+        group = self._groups[name] = self._groups[group_id] = Group(name, desc)
         return group
 
     def get(self, group, default=None):
@@ -604,85 +623,58 @@ class Manager(object):
             Either a group or parameter with the specified name(s). If neither
             is found, returns the default value.
         '''
-        try:
-            return self[group]
-        except KeyError:
-            return default
-
-    def __getitem__(self, group):
-        '''Get a group or parameter.
-
-        Parameters
-        ----------
-        group : str
-            If this string contains a colon (:) or a period (.), then the part
-            before the punctuation will be used to retrieve a group, and the
-            part after the punctuation will be used to retrieve a parameter from
-            that group. If this string does not contain a period, then just a
-            group will be returned.
-
-        Returns
-        -------
-        value : :class:`Group` or :class:`Param`
-            Either a group or parameter with the specified name(s).
-
-        Raises
-        ------
-        KeyError
-            If no group and parameter with the given identifiers are found.
-        '''
         if isinstance(group, int):
-            return super(Manager, self).__getitem__(group)
+            return self._groups.get(group, default)
         group = group.upper()
         param = None
         if '.' in group:
             group, param = group.split('.', 1)
         if ':' in group:
             group, param = group.split(':', 1)
-        group = super(Manager, self).__getitem__(group)
+        group = self._groups.get(group, default)
         if param is not None:
-            return group[param]
+            return group.get(param, default)
         return group
 
     def get_int8(self, key):
         '''Get a parameter value as an 8-bit signed integer.'''
-        return self[key].int8_value
+        return self.get(key).int8_value
 
     def get_uint8(self, key):
         '''Get a parameter value as an 8-bit unsigned integer.'''
-        return self[key].uint8_value
+        return self.get(key).uint8_value
 
     def get_int16(self, key):
         '''Get a parameter value as a 16-bit signed integer.'''
-        return self[key].int16_value
+        return self.get(key).int16_value
 
     def get_uint16(self, key):
         '''Get a parameter value as a 16-bit unsigned integer.'''
-        return self[key].uint16_value
+        return self.get(key).uint16_value
 
     def get_int32(self, key):
         '''Get a parameter value as a 32-bit signed integer.'''
-        return self[key].int32_value
+        return self.get(key).int32_value
 
     def get_uint32(self, key):
         '''Get a parameter value as a 32-bit unsigned integer.'''
-        return self[key].uint32_value
+        return self.get(key).uint32_value
 
     def get_float(self, key):
         '''Get a parameter value as a 32-bit float.'''
-        return self[key].float_value
+        return self.get(key).float_value
 
     def get_bytes(self, key):
         '''Get a parameter value as a byte string.'''
-        return self[key].bytes_value
+        return self.get(key).bytes_value
 
     def get_string(self, key):
         '''Get a parameter value as a string.'''
-        return self[key].string_value
+        return self.get(key).string_value
 
     def parameter_blocks(self):
         '''Compute the size (in 512B blocks) of the parameter section.'''
-        bytes = 4. + sum(g.binary_size() for g in self.values())
+        bytes = 4. + sum(g.binary_size() for g in self._groups.values())
         return int(np.ceil(bytes / 512))
 
     def frame_rate(self):
@@ -782,7 +774,7 @@ class Reader(Manager):
             if group_id > 0:
                 # we've just started reading a parameter. if its group doesn't
                 # exist, create a blank one. add the parameter to the group.
-                self.setdefault(group_id, Group()).add_param(name, handle=buf)
+                self._groups.setdefault(group_id, Group()).add_param(name, handle=buf)
             else:
                 # we've just started reading a group. if a group with the
                 # appropriate id exists already (because we've already created
@@ -795,7 +787,7 @@ class Reader(Manager):
                 if group is not None:
                     group.name = name
                     group.desc = desc
-                    self[name] = group
+                    self._groups[name] = group
                 else:
                     self.add_group(group_id, name, desc)
 
@@ -974,7 +966,8 @@ class Writer(Manager):
 
         # groups
         handle.write(struct.pack('BBBB', 0, 0, self.parameter_blocks(), 84))
-        id_groups = sorted((i, g) for i, g in self.items() if isinstance(i, int))
+        id_groups = sorted(
+            (i, g) for i, g in self._groups.items() if isinstance(i, int))
         for group_id, group in id_groups:
             group.write(group_id, handle)
 
