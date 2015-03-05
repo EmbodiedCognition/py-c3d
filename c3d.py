@@ -416,7 +416,7 @@ class Group(object):
     def __init__(self, name=None, desc=None):
         self.name = name
         self.desc = desc
-        self._params = {}
+        self.params = {}
 
     def __repr__(self):
         return '<Group: {}>'.format(self.desc)
@@ -436,7 +436,7 @@ class Group(object):
         param : :class:`Param`
             A parameter from the current group.
         '''
-        return self._params.get(key, default)
+        return self.params.get(key, default)
 
     def add_param(self, name, **kwargs):
         '''Add a parameter to this group.
@@ -449,7 +449,7 @@ class Group(object):
 
         Additional keyword arguments will be passed to the `Param` constructor.
         '''
-        self._params[name.upper()] = Param(name.upper(), **kwargs)
+        self.params[name.upper()] = Param(name.upper(), **kwargs)
 
     def binary_size(self):
         '''Return the number of bytes to store this group and its parameters.'''
@@ -458,7 +458,7 @@ class Group(object):
             1 + len(self.name.encode('utf-8')) + # size of name and name bytes
             2 + # next offset marker
             1 + len(self.desc.encode('utf-8')) + # size of desc and desc bytes
-            sum(p.binary_size() for p in self._params.values()))
+            sum(p.binary_size() for p in self.params.values()))
 
     def write(self, group_id, handle):
         '''Write this parameter group, with parameters, to a file handle.
@@ -475,44 +475,44 @@ class Group(object):
         handle.write(struct.pack('<h', 3 + len(self.desc)))
         handle.write(struct.pack('B', len(self.desc)))
         handle.write(self.desc)
-        for param in self._params.values():
+        for param in self.params.values():
             param.write(group_id, handle)
 
     def get_int8(self, key):
         '''Get the value of the given parameter as an 8-bit signed integer.'''
-        return self._params[key.upper()].int8_value
+        return self.params[key.upper()].int8_value
 
     def get_uint8(self, key):
         '''Get the value of the given parameter as an 8-bit unsigned integer.'''
-        return self._params[key.upper()].uint8_value
+        return self.params[key.upper()].uint8_value
 
     def get_int16(self, key):
         '''Get the value of the given parameter as a 16-bit signed integer.'''
-        return self._params[key.upper()].int16_value
+        return self.params[key.upper()].int16_value
 
     def get_uint16(self, key):
         '''Get the value of the given parameter as a 16-bit unsigned integer.'''
-        return self._params[key.upper()].uint16_value
+        return self.params[key.upper()].uint16_value
 
     def get_int32(self, key):
         '''Get the value of the given parameter as a 32-bit signed integer.'''
-        return self._params[key.upper()].int32_value
+        return self.params[key.upper()].int32_value
 
     def get_uint32(self, key):
         '''Get the value of the given parameter as a 32-bit unsigned integer.'''
-        return self._params[key.upper()].uint32_value
+        return self.params[key.upper()].uint32_value
 
     def get_float(self, key):
         '''Get the value of the given parameter as a 32-bit float.'''
-        return self._params[key.upper()].float_value
+        return self.params[key.upper()].float_value
 
     def get_bytes(self, key):
         '''Get the value of the given parameter as a byte array.'''
-        return self._params[key.upper()].bytes_value
+        return self.params[key.upper()].bytes_value
 
     def get_string(self, key):
         '''Get the value of the given parameter as a string.'''
-        return self._params[key.upper()].string_value
+        return self.params[key.upper()].string_value
 
 
 class Manager(object):
@@ -531,7 +531,7 @@ class Manager(object):
     def __init__(self, header=None):
         '''Set up a new Manager with a Header.'''
         self.header = header or Header()
-        self._groups = {}
+        self.groups = {}
 
     def check_metadata(self):
         '''Ensure that the metadata in our file is self-consistent.'''
@@ -595,12 +595,12 @@ class Manager(object):
         KeyError
             If a group with a duplicate ID or name already exists.
         '''
-        if group_id in self._groups:
+        if group_id in self.groups:
             raise KeyError(group_id)
         name = name.upper()
-        if name in self._groups:
+        if name in self.groups:
             raise KeyError(name)
-        group = self._groups[name] = self._groups[group_id] = Group(name, desc)
+        group = self.groups[name] = self.groups[group_id] = Group(name, desc)
         return group
 
     def get(self, group, default=None):
@@ -624,16 +624,16 @@ class Manager(object):
             is found, returns the default value.
         '''
         if isinstance(group, int):
-            return self._groups.get(group, default)
+            return self.groups.get(group, default)
         group = group.upper()
         param = None
         if '.' in group:
             group, param = group.split('.', 1)
         if ':' in group:
             group, param = group.split(':', 1)
-        if group not in self._groups:
+        if group not in self.groups:
             return default
-        group = self._groups[group]
+        group = self.groups[group]
         if param is not None:
             return group.get(param, default)
         return group
@@ -676,7 +676,7 @@ class Manager(object):
 
     def parameter_blocks(self):
         '''Compute the size (in 512B blocks) of the parameter section.'''
-        bytes = 4. + sum(g.binary_size() for g in self._groups.values())
+        bytes = 4. + sum(g.binary_size() for g in self.groups.values())
         return int(np.ceil(bytes / 512))
 
     def frame_rate(self):
@@ -776,7 +776,7 @@ class Reader(Manager):
             if group_id > 0:
                 # we've just started reading a parameter. if its group doesn't
                 # exist, create a blank one. add the parameter to the group.
-                self._groups.setdefault(group_id, Group()).add_param(name, handle=buf)
+                self.groups.setdefault(group_id, Group()).add_param(name, handle=buf)
             else:
                 # we've just started reading a group. if a group with the
                 # appropriate id exists already (because we've already created
@@ -789,7 +789,7 @@ class Reader(Manager):
                 if group is not None:
                     group.name = name
                     group.desc = desc
-                    self._groups[name] = group
+                    self.groups[name] = group
                 else:
                     self.add_group(group_id, name, desc)
 
@@ -969,7 +969,7 @@ class Writer(Manager):
         # groups
         handle.write(struct.pack('BBBB', 0, 0, self.parameter_blocks(), 84))
         id_groups = sorted(
-            (i, g) for i, g in self._groups.items() if isinstance(i, int))
+            (i, g) for i, g in self.groups.items() if isinstance(i, int))
         for group_id, group in id_groups:
             group.write(group_id, handle)
 
