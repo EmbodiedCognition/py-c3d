@@ -15,10 +15,11 @@ climate.add_arg('input', default='-', metavar='FILE', nargs=argparse.REMAINDER,
 
 def print_metadata(reader):
     print('Header information:\n{}'.format(reader.header))
-    for key, g in sorted((k, v) for k, v in reader.items() if isinstance(k, str)):
+    groups = ((k, v) for k, v in reader._groups.items() if isinstance(k, str))
+    for key, g in sorted(groups):
         if not isinstance(key, int):
             print('')
-            for key, p in sorted(g.items()):
+            for key, p in sorted(g._params.items()):
                 print_param(g, p)
 
 
