@@ -631,7 +631,9 @@ class Manager(object):
             group, param = group.split('.', 1)
         if ':' in group:
             group, param = group.split(':', 1)
-        group = self._groups.get(group, default)
+        if group not in self._groups:
+            return default
+        group = self._groups[group]
         if param is not None:
             return group.get(param, default)
         return group
