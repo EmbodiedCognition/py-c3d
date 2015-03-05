@@ -46,6 +46,20 @@ point data---and, optionally, a ``numpy`` array of analog data---and adds it to
 an internal data buffer. The :func:`write <c3d.Writer.write>` method serializes
 all of the frame data to a C3D binary file.
 
+Command-Line Scripts
+====================
+
+The ``c3d`` package also contains several command-line scripts.
+
+Two of these scripts convert C3D binary data to other formats:
+- ``c3d2csv``: Converts C3D data to comma-separated values.
+- ``c3d2npz``: Converts C3D data to serialized ``numpy`` arrays.
+
+The ``c3d-metadata`` script simply prints out the metadata from a C3D file.
+
+Finally, the ``c3d-viewer`` script provides a basic OpenGL viewer for C3D data.
+This script depends on ``pyglet``.
+
 .. toctree::
    :maxdepth: 2
 
