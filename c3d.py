@@ -947,7 +947,8 @@ class Writer(Manager):
         assert handle.tell() == 512
 
         # groups
-        handle.write(struct.pack('BBBB', 0, 0, self.parameter_blocks(), 84))
+        handle.write(struct.pack(
+            'BBBB', 0, 0, self.parameter_blocks(), PROCESSOR_INTEL))
         id_groups = sorted(
             (i, g) for i, g in self.groups.items() if isinstance(i, int))
         for group_id, group in id_groups:
