@@ -12,10 +12,8 @@ import pyglet
 
 from pyglet.gl import *
 
-FLAGS = argparse.ArgumentParser()
-
-FLAGS.add_argument('inputs', nargs=argparse.REMAINDER, metavar='FILE',
-                   help='show these c3d files')
+climate.add_arg('inputs', nargs=argparse.REMAINDER, metavar='FILE',
+                help='show these c3d files')
 
 BLACK = (0, 0, 0)
 WHITE = (1, 1, 1)
@@ -244,13 +242,13 @@ class Viewer(pyglet.window.Window):
         pyglet.app.run()
 
 
-if __name__ == '__main__':
-    args = FLAGS.parse_args()
-    if not args:
-        FLAGS.error('no input file provided!')
-
+def main(args):
     for filename in args.inputs:
         try:
             Viewer(c3d.Reader(open(filename, 'rb'))).mainloop()
         except StopIteration:
             pass
+
+
+if __name__ == '__main__':
+    climate.call(main)
