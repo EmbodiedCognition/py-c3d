@@ -671,12 +671,18 @@ class Manager(object):
     num_points = points_per_frame
 
     def analog_per_frame(self):
-        return self.get_uint16('ANALOG:USED')
+        try:
+            return self.get_uint16('ANALOG:USED')
+        except AttributeError:
+            return 0
 
     num_analog = analog_per_frame
 
     def analog_frame_rate(self):
-        return self.get_float('ANALOG:RATE')
+        try:
+            return self.get_float('ANALOG:RATE')
+        except AttributeError:
+            return 0
 
     def point_labels(self):
         return self.get('POINT:LABELS').string_array
