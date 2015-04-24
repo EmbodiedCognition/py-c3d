@@ -3,10 +3,10 @@ import setuptools
 
 setuptools.setup(
     name='c3d',
-    version='0.2.2',
+    version='0.2.3',
     py_modules=['c3d'],
     author='Leif Johnson',
-    author_email='leif@leifjohnson.net',
+    author_email='leif@lmjohns3.com',
     description='A library for manipulating C3D binary files',
     long_description=open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'README.rst')).read(),
     license='MIT',
