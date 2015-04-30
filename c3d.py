@@ -992,16 +992,16 @@ class Writer(Manager):
             writer does not close the handle.
         '''
         assert handle.tell() == 512 * (self.header.data_block - 1)
-        scale = abs(self.scale_factor())
-        is_float = self.scale_factor() < 0
+        scale = abs(self.point_scale)
+        is_float = self.point_scale < 0
         point_dtype = [np.int16, np.float32][is_float]
         point_scale = [scale, 1][is_float]
         point_format = 'if'[is_float]
-        raw = np.empty((self.points_per_frame(), 4))
+        raw = np.empty((self.point_used, 4), point_dtype)
         for points, analog in self._frames:
             valid = points[:, 3] > -1
             raw[~valid, 3] = -1
-            raw[valid, :3] = points[valid, :3] / self.point_scale_factor
+            raw[valid, :3] = points[valid, :3] / self._point_scale
             raw[valid, 3] = (
                 ((points[valid, 4]).astype(np.uint8) << 8) |
                 (points[valid, 3] / scale).astype(np.uint16)
