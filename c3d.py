@@ -863,8 +863,10 @@ class Reader(Manager):
 
         self._handle.seek((self.header.data_block - 1) * 512)
         for frame_no in range(self.first_frame(), self.last_frame() + 1):
-            raw = np.fromfile(self._handle, dtype=point_dtype,
-                count=4 * self.header.point_count).reshape((ppf, 4))
+            n = 4 * self.header.point_count
+            raw = np.fromstring(self._handle.read(n * point_bytes),
+                                dtype=point_dtype,
+                                count=n).reshape((self.point_used, 4))
 
             points[:, :3] = raw[:, :3] * point_scale
 
