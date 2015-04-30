@@ -84,20 +84,13 @@ class Viewer(pyglet.window.Window):
             config = screen.get_best_config(Config())
 
         super(Viewer, self).__init__(
-            width=1000, height=600, resizable=True, vsync=False, config=config)
+            width=800, height=450, resizable=True, vsync=False, config=config)
 
         self._frames = c3d_reader.read_frames(copy=False)
-        self._frame_rate = c3d_reader.frame_rate()
-
-        print(c3d_reader.header)
-        for gn, g in c3d_reader.items():
-            if isinstance(gn, int):
-                continue
-            for pn, p in g.items():
-                print(gn, pn, p)
+        self._frame_rate = c3d_reader.header.frame_rate
 
         self._maxlen = 16
-        self._trails = [[] for _ in range(c3d_reader.num_points())]
+        self._trails = [[] for _ in range(c3d_reader.point_used)]
         self._reset_trails()
 
         self.trace = trace

@@ -669,31 +669,33 @@ class Manager(object):
         bytes = 4. + sum(g.binary_size() for g in self.groups.values())
         return int(np.ceil(bytes / 512))
 
-    def frame_rate(self):
+    @property
+    def point_rate(self):
         return self.get_float('POINT:RATE')
 
-    def scale_factor(self):
+    @property
+    def point_scale(self):
         return self.get_float('POINT:SCALE')
 
-    def points_per_frame(self):
+    @property
+    def point_used(self):
         return self.get_uint16('POINT:USED')
 
-    num_points = points_per_frame
-
-    def analog_per_frame(self):
+    @property
+    def analog_used(self):
         try:
             return self.get_uint16('ANALOG:USED')
         except AttributeError:
             return 0
 
-    num_analog = analog_per_frame
-
-    def analog_frame_rate(self):
+    @property
+    def analog_rate(self):
         try:
             return self.get_float('ANALOG:RATE')
         except AttributeError:
             return 0
 
+    @property
     def point_labels(self):
         return self.get('POINT:LABELS').string_array
 
