@@ -195,7 +195,7 @@ class Param(object):
                  desc='',
                  bytes_per_element=1,
                  dimensions=None,
-                 bytes='',
+                 bytes=b'',
                  handle=None):
         '''Set up a new parameter, only the name is required.'''
         self.name = name
@@ -452,11 +452,13 @@ class Group(object):
         handle : file handle
             An open, writable, binary file handle.
         '''
-        handle.write(struct.pack('bb', len(self.name), -group_id))
-        handle.write(self.name)
-        handle.write(struct.pack('<h', 3 + len(self.desc)))
-        handle.write(struct.pack('B', len(self.desc)))
-        handle.write(self.desc)
+        name = self.name.encode('utf-8')
+        desc = self.desc.encode('utf-8')
+        handle.write(struct.pack('bb', len(name), -group_id))
+        handle.write(name)
+        handle.write(struct.pack('<h', 3 + len(desc)))
+        handle.write(struct.pack('B', len(desc)))
+        handle.write(desc)
         for param in self.params.values():
             param.write(group_id, handle)
 
@@ -938,11 +940,11 @@ class Writer(Manager):
         '''
         self._frames.extend(frames)
 
-    def _pad_block(self):
+    def _pad_block(self, handle):
         '''Pad the file with 0s to the end of the next block boundary.'''
-        extra = self._handle.tell() % 512
+        extra = handle.tell() % 512
         if extra:
-            self._handle.write('\x00' * (512 - extra))
+            handle.write(b'\x00' * (512 - extra))
 
     def _write_metadata(self, handle):
         '''Write metadata to a file handle.
@@ -957,7 +959,7 @@ class Writer(Manager):
 
         # header
         self.header.write(handle)
-        self._pad_block()
+        self._pad_block(handle)
         assert handle.tell() == 512
 
         # groups
@@ -969,9 +971,9 @@ class Writer(Manager):
             group.write(group_id, handle)
 
         # padding
-        self._pad_block()
+        self._pad_block(handle)
         while handle.tell() != 512 * (self.header.data_block - 1):
-            handle.write('\x00' * 512)
+            handle.write(b'\x00' * 512)
 
     def _write_frames(self, handle):
         '''Write our frame data to the given file handle.
@@ -1003,7 +1005,7 @@ class Writer(Manager):
             analog = array.array(point_format)
             analog.extend(analog)
             analog.tofile(handle)
-        self._pad_block()
+        self._pad_block(handle)
 
     def write(self, handle):
         '''Write metadata and point + analog frames to a file handle.
