@@ -24,15 +24,17 @@ class Header(object):
     data_block : int
         Index of the 512-byte block where data starts.
     point_count : int
-        Number of motion capture points recorded in this file.
+        Number of motion capture channels recorded in this file.
     analog_count : int
-        Number of analog channels recorded in this file.
+        Number of analog values recorded per frame of 3D point data.
     first_frame : int
         Index of the first frame of data.
     last_frame : int
         Index of the last frame of data.
-    sample_per_frame : int
-        Number of samples per frame. Seems to be unused in Phasespace files.
+    analog_per_frame : int
+        Number of analog frames per frame of 3D point data. The analog frame
+        rate (ANALOG:RATE) apparently equals the point frame rate (POINT:RATE)
+        times this value.
     frame_rate : float
         The frame rate of the recording, in frames per second.
     scale_factor : float
@@ -72,7 +74,7 @@ class Header(object):
 
         self.first_frame = 1
         self.last_frame = 1
-        self.sample_per_frame = 0
+        self.analog_per_frame = 0
         self.frame_rate = 60.0
 
         self.max_gap = 0
@@ -106,12 +108,12 @@ class Header(object):
                                  self.max_gap,
                                  self.scale_factor,
                                  self.data_block,
-                                 self.sample_per_frame,
+                                 self.analog_per_frame,
                                  self.frame_rate,
-                                 '',
+                                 b'',
                                  self.long_event_labels and 0x3039 or 0x0,
                                  self.label_block,
-                                 ''))
+                                 b''))
 
     def __str__(self):
         '''Return a string representation of this Header's attributes.'''
@@ -124,7 +126,7 @@ class Header(object):
           max_gap: {0.max_gap}
      scale_factor: {0.scale_factor}
        data_block: {0.data_block}
- sample_per_frame: {0.sample_per_frame}
+ analog_per_frame: {0.analog_per_frame}
        frame_rate: {0.frame_rate}
 long_event_labels: {0.long_event_labels}
       label_block: {0.label_block}'''.format(self)
@@ -157,7 +159,7 @@ long_event_labels: {0.long_event_labels}
          self.max_gap,
          self.scale_factor,
          self.data_block,
-         self.sample_per_frame,
+         self.analog_per_frame,
          self.frame_rate,
          _,
          self.long_event_labels,
@@ -515,41 +517,47 @@ class Manager(object):
 
     def check_metadata(self):
         '''Ensure that the metadata in our file is self-consistent.'''
-        assert self.header.point_count == self.points_per_frame(), (
-            'inconsistent point count! {} header != {} parameter'.format(
+        assert self.header.point_count == self.point_used, (
+            'inconsistent point count! {} header != {} POINT:USED'.format(
                 self.header.point_count,
-                self.points_per_frame(),
+                self.point_used,
             ))
 
-        assert self.header.scale_factor == self.scale_factor(), (
-            'inconsistent scale factor! {} header != {} parameter'.format(
+        assert self.header.scale_factor == self.point_scale, (
+            'inconsistent scale factor! {} header != {} POINT:SCALE'.format(
                 self.header.scale_factor,
-                self.scale_factor(),
+                self.point_scale,
             ))
 
-        assert self.header.frame_rate == self.frame_rate(), (
-            'inconsistent frame rate! {} header != {} parameter'.format(
+        assert self.header.frame_rate == self.point_rate, (
+            'inconsistent frame rate! {} header != {} POINT:RATE'.format(
                 self.header.frame_rate,
-                self.frame_rate(),
+                self.point_rate,
             ))
 
-        apf = self.analog_per_frame() * self.analog_frame_rate() / self.frame_rate()
-        assert self.header.analog_count == apf, (
-            'inconsistent analog count! {} header != {} analog per frame * '
-            '{} analog-fps / {} point-fps'.format(
+        ratio = self.analog_rate / self.point_rate
+        assert True or self.header.analog_per_frame == ratio, (
+            'inconsistent analog rate! {} header != {} analog-fps / {} point-fps'.format(
+                self.header.analog_per_frame,
+                self.analog_rate,
+                self.point_rate,
+            ))
+
+        count = self.analog_used * self.header.analog_per_frame
+        assert True or self.header.analog_count == count, (
+            'inconsistent analog count! {} header != {} analog used * {} per-frame'.format(
                 self.header.analog_count,
-                self.analog_per_frame(),
-                self.analog_frame_rate(),
-                self.frame_rate(),
+                self.analog_used,
+                self.header.analog_per_frame,
             ))
 
         start = self.get_uint16('POINT:DATA_START')
         assert self.header.data_block == start, (
-            'inconsistent data block! {} header != {} parameter'.format(
+            'inconsistent data block! {} header != {} POINT:DATA_START'.format(
                 self.header.data_block, start))
 
         for name in ('POINT:LABELS', 'POINT:DESCRIPTIONS',
-                     'ANALOG:USED', 'ANALOG:LABELS', 'ANALOG:DESCRIPTIONS'):
+                     'ANALOG:LABELS', 'ANALOG:DESCRIPTIONS'):
             if self.get(name) is None:
                 warnings.warn('missing parameter {}'.format(name))
 
@@ -890,11 +898,11 @@ class Writer(Manager):
 
     Parameters
     ----------
-    point_frame_rate : float, optional
+    point_rate : float, optional
         The frame rate of the data. Defaults to 480.
-    analog_frame_rate : float, optional
+    analog_rate : float, optional
         The number of analog samples per frame. Defaults to 0.
-    point_scale_factor : float, optional
+    point_scale : float, optional
         The scale factor for point data. Defaults to -1 (i.e., "check the
         POINT:SCALE parameter").
     point_units : str, optional
@@ -904,20 +912,20 @@ class Writer(Manager):
     '''
 
     def __init__(self,
-                 point_frame_rate=480.,
-                 analog_frame_rate=0.,
-                 point_scale_factor=-1.,
+                 point_rate=480.,
+                 analog_rate=0.,
+                 point_scale=-1.,
                  point_units='mm  ',
                  gen_scale=1.):
         '''Set metadata for this writer.
 
         '''
         super(Writer, self).__init__()
-        self.point_frame_rate = point_frame_rate
-        self.analog_frame_rate = analog_frame_rate
-        self.point_scale_factor = point_scale_factor
-        self.point_units = point_units
-        self.gen_scale = gen_scale
+        self._point_rate = point_rate
+        self._analog_rate = analog_rate
+        self._point_scale = point_scale
+        self._point_units = point_units
+        self._gen_scale = gen_scale
         self._frames = []
 
     def add_frames(self, frames):
