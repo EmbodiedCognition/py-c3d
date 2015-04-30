@@ -825,35 +825,36 @@ class Reader(Manager):
             Both the fourth and fifth values are -1 if the point is considered
             to be invalid.
         '''
-        ppf = self.points_per_frame()
-        apf = self.analog_per_frame()
+        scale = abs(self.point_scale)
+        is_float = self.point_scale < 0
 
-        scale = abs(self.scale_factor())
-        is_float = self.scale_factor() < 0
-
+        point_bytes = [2, 4][is_float]
         point_dtype = [np.int16, np.float32][is_float]
         point_scale = [scale, 1][is_float]
-        points = np.zeros((ppf, 5), float)
+        points = np.zeros((self.point_used, 5), float)
 
         # TODO: handle ANALOG:BITS parameter here!
         p = self.get('ANALOG:FORMAT')
         analog_unsigned = p and p.string_value.strip().upper() == 'UNSIGNED'
         analog_dtype = np.int16
+        analog_bytes = 2
         if is_float:
             analog_dtype = np.float32
+            analog_bytes = 4
         elif analog_unsigned:
             analog_dtype = np.uint16
+            analog_bytes = 2
         analog = np.array([], float)
 
-        offsets = np.zeros((apf, ), int)
+        offsets = np.zeros((self.analog_used, 1), int)
         param = self.get('ANALOG:OFFSET')
         if param is not None:
-            offsets = param.int16_array[:apf]
+            offsets = param.int16_array[:self.analog_used, None]
 
-        scales = np.ones((apf, ), float)
+        scales = np.ones((self.analog_used, 1), float)
         param = self.get('ANALOG:SCALE')
         if param is not None:
-            scales = param.float_array[:apf]
+            scales = param.float_array[:self.analog_used, None]
 
         gen_scale = 1.
         param = self.get('ANALOG:GEN_SCALE')
@@ -878,8 +879,10 @@ class Reader(Manager):
             points[valid, 4] = sum((c & (1 << k)) >> k for k in range(8, 17))
 
             if self.header.analog_count > 0:
-                raw = np.fromfile(self._handle, dtype=analog_dtype,
-                    count=self.header.analog_count).reshape((-1, apf))
+                n = self.header.analog_count
+                raw = np.fromstring(self._handle.read(n * analog_bytes),
+                                    dtype=analog_dtype,
+                                    count=n).reshape((self.analog_used, -1))
                 analog = (raw.astype(float) - offsets) * scales * gen_scale
 
             if copy:
