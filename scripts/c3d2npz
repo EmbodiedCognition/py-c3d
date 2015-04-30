@@ -4,7 +4,6 @@
 
 from __future__ import print_function
 
-import argparse
 import c3d
 import climate
 import gzip
@@ -13,7 +12,7 @@ import sys
 
 logging = climate.get_logger('c3d2npz')
 
-climate.add_arg('input', default='-', metavar='FILE', nargs=argparse.REMAINDER,
+climate.add_arg('input', default='-', metavar='FILE', nargs='+',
                 help='process data from this input FILE')
 
 

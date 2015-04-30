@@ -4,7 +4,6 @@
 
 from __future__ import print_function
 
-import argparse
 import c3d
 import climate
 import sys
@@ -20,7 +19,7 @@ climate.add_arg('-e', '--end', default='\\n', metavar='K',
 climate.add_arg('-s', '--sep', default=',', metavar='C',
                 help='write C between fields in a record')
 
-climate.add_arg('input', default='-', metavar='FILE', nargs=argparse.REMAINDER,
+climate.add_arg('input', default='-', metavar='FILE', nargs='+',
                 help='process data from this input FILE')
 
 

@@ -4,21 +4,21 @@
 
 from __future__ import print_function
 
-import argparse
 import c3d
 import climate
 import sys
 
-climate.add_arg('input', default='-', metavar='FILE', nargs=argparse.REMAINDER,
+climate.add_arg('input', default='-', metavar='FILE', nargs='+',
                 help='process C3D data from this input FILE')
 
 
 def print_metadata(reader):
     print('Header information:\n{}'.format(reader.header))
-    for key, g in sorted((k, v) for k, v in reader.items() if isinstance(k, str)):
+    groups = ((k, v) for k, v in reader.groups.items() if isinstance(k, str))
+    for key, g in sorted(groups):
         if not isinstance(key, int):
             print('')
-            for key, p in sorted(g.items()):
+            for key, p in sorted(g.params.items()):
                 print_param(g, p)
 
 

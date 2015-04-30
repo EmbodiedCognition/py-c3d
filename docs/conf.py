@@ -30,7 +30,23 @@ pygments_style = 'tango'
 
 html_theme = 'better'
 html_theme_path = [better.better_theme_path]
+html_theme_options = dict(
+  rightsidebar=False,
+  inlinecss='',
+  cssfiles=['_static/style-tweaks.css'],
+  showheader=True,
+  showrelbartop=True,
+  showrelbarbottom=True,
+  linktotheme=True,
+  sidebarwidth='15rem',
+  textcolor='#111',
+  headtextcolor='#333',
+  footertextcolor='#333',
+  ga_ua='',
+  ga_domain='',
+)
 html_short_title = 'Home'
+html_static_path = ['_static']
 
 def h(xs):
     return ['{}.html'.format(x) for x in xs.split()]
