@@ -2,7 +2,6 @@
 
 '''A simple OpenGL viewer for C3D files.'''
 
-import argparse
 import c3d
 import climate
 import collections
@@ -12,8 +11,7 @@ import pyglet
 
 from pyglet.gl import *
 
-climate.add_arg('inputs', nargs=argparse.REMAINDER, metavar='FILE',
-                help='show these c3d files')
+climate.add_arg('inputs', nargs='+', metavar='FILE', help='show these c3d files')
 
 BLACK = (0, 0, 0)
 WHITE = (1, 1, 1)
