@@ -341,32 +341,32 @@ class Param(object):
 
     @property
     def int16_array(self):
-        '''Get the param as a array of 16-bit signed integers.'''
+        '''Get the param as an array of 16-bit signed integers.'''
         return self._as_array('h')
 
     @property
     def uint16_array(self):
-        '''Get the param as a array of 16-bit unsigned integers.'''
+        '''Get the param as an array of 16-bit unsigned integers.'''
         return self._as_array('H')
 
     @property
     def int32_array(self):
-        '''Get the param as a array of 32-bit signed integers.'''
+        '''Get the param as an array of 32-bit signed integers.'''
         return self._as_array('i')
 
     @property
     def uint32_array(self):
-        '''Get the param as a array of 32-bit unsigned integers.'''
+        '''Get the param as an array of 32-bit unsigned integers.'''
         return self._as_array('I')
 
     @property
     def float_array(self):
-        '''Get the param as a array of 32-bit floats.'''
+        '''Get the param as an array of 32-bit floats.'''
         return self._as_array('f')
 
     @property
     def bytes_array(self):
-        '''Get the param as a array of raw byte strings.'''
+        '''Get the param as an array of raw byte strings.'''
         assert len(self.dimensions) == 2, \
             '{}: cannot get value as bytes array!'.format(self.name)
         l, n = self.dimensions
