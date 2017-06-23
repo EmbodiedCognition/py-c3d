@@ -1,5 +1,7 @@
 '''A Python module for reading and writing C3D files.'''
 
+from __future__ import unicode_literals
+
 import array
 import io
 import numpy as np
@@ -266,7 +268,7 @@ class Param(object):
         self.bytes_per_element, = struct.unpack('b', handle.read(1))
         dims, = struct.unpack('B', handle.read(1))
         self.dimensions = [struct.unpack('B', handle.read(1))[0] for _ in range(dims)]
-        self.bytes = ''
+        self.bytes = b''
         if self.total_bytes:
             self.bytes = handle.read(self.total_bytes)
         size, = struct.unpack('B', handle.read(1))
