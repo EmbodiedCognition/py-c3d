@@ -886,7 +886,7 @@ class Reader(Manager):
                 n = self.header.analog_count
                 raw = np.fromstring(self._handle.read(n * analog_bytes),
                                     dtype=analog_dtype,
-                                    count=n).reshape((self.analog_used, -1))
+                                    count=n).reshape((-1, self.analog_used)).T
                 analog = (raw.astype(float) - offsets) * scales * gen_scale
 
             if copy:
