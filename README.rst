@@ -35,7 +35,7 @@ Library
 To use the C3D library, just import the package and create a ``Reader`` or
 ``Writer`` depending on your intended usage
 
-.. code-block::python
+.. code-block:: python
 
     import c3d
 
