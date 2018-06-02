@@ -5,25 +5,23 @@
 from __future__ import print_function
 
 import c3d
-import climate
+import argparse
 import gzip
 import numpy as np
 import sys
+from tempfile import TemporaryFile
 
-logging = climate.get_logger('c3d2npz')
-
-climate.add_arg('input', default='-', metavar='FILE', nargs='+',
-                help='process data from this input FILE')
-
+parser = argparse.ArgumentParser(description='Convert a C3D file to NPZ (numpy binary) format.')
+parser.add_argument('input', default='-', metavar='FILE', nargs='+', help='process data from this input FILE')
 
 def convert(filename, args):
     input = sys.stdin
     outname = '-'
-    output = sys.stdout
+    output = TemporaryFile()
     if filename != '-':
         input = open(filename, 'rb')
         outname = filename.replace('.c3d', '.npz')
-        output = gzip.open(outname, 'wb')
+        
     points = []
     analog = []
     for i, (_, p, a) in enumerate(c3d.Reader(input).read_frames()):
@@ -32,11 +30,12 @@ def convert(filename, args):
         if i and not i % 10000:
             logging.info('%s: extracted %d point frames',
                          outname, len(points))
+    
     np.savez(output, points=points, analog=analog)
-    logging.info('%s: saved %dx%s points, %dx%s analog',
-                 outname,
-                 len(points), points[0].shape,
-                 len(analog), analog[0].shape if len(analog) else ())
+    print(outname + ': saved', len(points), "x", str(points[0].shape), "points,", 
+        len(analog), analog[0].shape, 'analog' if len(analog) else ()
+    )
+    
     if filename != '-':
         input.close()
         output.close()
@@ -48,4 +47,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    climate.call(main)
+    main(parser.parse_args())
