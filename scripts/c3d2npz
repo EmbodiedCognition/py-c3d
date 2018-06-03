@@ -23,7 +23,6 @@ def convert(filename, args):
         input = open(filename, 'rb')
         outname = filename.replace('.c3d', '.npz')
         
-    #old
     points = []
     analog = []
     for i, (_, p, a) in enumerate(c3d.Reader(input).read_frames()):
@@ -33,7 +32,6 @@ def convert(filename, args):
             logging.debug('%s: extracted %d point frames', outname, len(points))
 
     np.savez(outname, points=points, analog=analog)
-    
     print(outname + ': saved', len(points), "x", str(points[0].shape), "points,", 
         len(analog), analog[0].shape, 'analog' if len(analog) else ()
     )
