@@ -5,10 +5,11 @@
 from __future__ import print_function
 
 import c3d
-import climate
+import argparse
 import sys
 
-climate.add_arg('input', default='-', metavar='FILE', nargs='+',
+parser = argparse.ArgumentParser(description='Display C3D group and parameter information.')
+parser.add_argument('input', default='-', metavar='FILE', nargs='+',
                 help='process C3D data from this input FILE')
 
 
@@ -70,4 +71,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    climate.call(main)
+    main(parser.parse_args())

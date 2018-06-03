@@ -5,23 +5,16 @@
 from __future__ import print_function
 
 import c3d
-import climate
 import sys
+import argparse
 
-climate.add_arg('-a', '--include-analog', action='store_true',
-                help='output analog values after point positions')
-climate.add_arg('-c', '--include-camera', action='store_true',
-                help='output camera count with each point position')
-climate.add_arg('-r', '--include-error', action='store_true',
-                help='output error value with each point position')
-climate.add_arg('-e', '--end', default='\\n', metavar='K',
-                help='write K between records')
-climate.add_arg('-s', '--sep', default=',', metavar='C',
-                help='write C between fields in a record')
-
-climate.add_arg('input', default='-', metavar='FILE', nargs='+',
-                help='process data from this input FILE')
-
+parser = argparse.ArgumentParser(description='Convert a C3D file to CSV (text) format.')
+parser.add_argument('-a', '--include-analog', action='store_true', help='output analog values after point positions')
+parser.add_argument('-c', '--include-camera', action='store_true', help='output camera count with each point position')
+parser.add_argument('-r', '--include-error', action='store_true', help='output error value with each point position')
+parser.add_argument('-e', '--end', default='\\n', metavar='K', help='write K between records')
+parser.add_argument('-s', '--sep', default=',', metavar='C', help='write C between fields in a record')
+parser.add_argument('input', default='-', metavar='FILE', nargs='+', help='process data from this input FILE')
 
 def convert(filename, args, sep, end):
     input = sys.stdin
@@ -43,7 +36,6 @@ def convert(filename, args, sep, end):
             fields.extend(str(x) for x in analog.flatten())
         print(*fields, sep=sep, end=end, file=output)
 
-
 def main(args):
     sep = args.sep.replace('\\t', '\t').replace('TAB', '\t')
     end = args.end.replace(
@@ -52,6 +44,5 @@ def main(args):
     for filename in args.input:
         convert(filename, args, sep, end)
 
-
 if __name__ == '__main__':
-    climate.call(main)
+    main(parser.parse_args())
