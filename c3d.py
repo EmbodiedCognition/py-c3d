@@ -701,6 +701,10 @@ class Manager(object):
     def point_labels(self):
         return self.get('POINT:LABELS').string_array
 
+    @property
+    def analog_labels(self):
+        return self.get('ANALOG:LABELS').string_array
+
     def first_frame(self):
         # this is a hack for phasespace files ... should put it in a subclass.
         param = self.get('TRIAL:ACTUAL_START_FIELD')
