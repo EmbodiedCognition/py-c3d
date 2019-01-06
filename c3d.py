@@ -800,6 +800,7 @@ class Reader(Manager):
 
         self.check_metadata()
 
+    # taken and adopted from https://stackoverflow.com/questions/14935610/efficient-translation-to-python-of-matlab-fread
     def fromfileskip(self, shape, counts, skip, dtype):
         """
         fid    : file object,    Should be open binary file.
