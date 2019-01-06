@@ -8,7 +8,6 @@ import numpy as np
 import struct
 import warnings
 
-
 PROCESSOR_INTEL = 84
 PROCESSOR_DEC = 85
 PROCESSOR_MIPS = 86
@@ -801,6 +800,27 @@ class Reader(Manager):
 
         self.check_metadata()
 
+    def fromfileskip(self, shape, counts, skip, dtype):
+        """
+        fid    : file object,    Should be open binary file.
+        shape  : tuple of ints,  This is the desired shape of each data block.
+               For a 2d array with xdim,ydim = 3000,2000 and xdim = fastest 
+               dimension, then shape = (2000,3000).
+        counts : int, Number of times to read a data block.
+        skip   : int, Number of bytes to skip between reads.
+        dtype  : np.dtype object, Type of each binary element.
+        """
+        fid = self._handle
+        data = np.zeros((counts,)  + shape)
+        print(data.shape)
+        for c in np.arange(counts):
+        block = np.fromfile(fid, dtype=dtype, count=np.product(shape))
+        
+        data[c] = block.reshape(shape)
+        fid.seek( fid.tell() + skip)
+
+        return data
+
     def read_frames(self, copy=True):
         '''Iterate over the data frames from our C3D file handle.
 
@@ -867,13 +887,31 @@ class Reader(Manager):
         if param is not None:
             gen_scale = param.float_value
 
-        self._handle.seek((self.header.data_block - 1) * 512)
-        for frame_no in range(self.first_frame(), self.last_frame() + 1):
-            n = 4 * self.header.point_count
-            raw = np.fromstring(self._handle.read(n * point_bytes),
-                                dtype=point_dtype,
-                                count=n).reshape((self.point_used, 4))
+        n_frames = self.last_frame() - self.first_frame() + 1
 
+        # at the end of every block an amount of analog values multiplied with the byte size value of a float (4) is used to skip
+        skip = self.header.analog_count * 4 
+        # set the file handle at the appropriate position.
+        self._handle.seek((self.header.data_block - 1) * 512)
+        # obtain all point values
+        all_points = self.fromfileskip(shape = (self.point_used, 4), counts = n_frames, skip = skip, dtype = np.float32 )
+        
+        # at the end of every block an amount of point values and it's x, y, z values and the 4th word multiplied with a float is used to skip
+        skip = self.point_used * 4 * 4
+        # set the file handle at the appropriate position.
+        self._handle.seek((self.header.data_block - 1) * 512 + skip)
+        # the amount of analog values in a frame for a single channel
+        single_channel_analog = int(self.header.analog_per_frame / self.header.analog_per_frame)
+        # obtain all analog values
+        all_analog = self.fromfileskip(shape = (self.header.analog_count,), counts = n_frames, skip = skip, dtype = np.float32 )
+        # reshape for appropriate dimensions
+        all_analog = all_analog.reshape(n_frames, self.header.analog_per_frame, int(self.header.analog_count / self.header.analog_per_frame)).transpose(0,2,1)
+        
+        frames = np.arange(n_frames)
+        for idx, (f_points, f_analog) in enumerate(zip(all_points, all_analog)):
+            frame_no = frames[idx]
+            
+            raw = f_points
             points[:, :3] = raw[:, :3] * point_scale
 
             valid = raw[:, 3] > -1
@@ -887,17 +925,12 @@ class Reader(Manager):
             points[valid, 4] = sum((c & (1 << k)) >> k for k in range(8, 17))
 
             if self.header.analog_count > 0:
-                n = self.header.analog_count
-                raw = np.fromstring(self._handle.read(n * analog_bytes),
-                                    dtype=analog_dtype,
-                                    count=n).reshape((-1, self.analog_used)).T
-                analog = (raw.astype(float) - offsets) * scales * gen_scale
-
+                analog = (f_analog.astype(float) - offsets) * scales * gen_scale
+            
             if copy:
                 yield frame_no, points.copy(), analog.copy()
             else:
                 yield frame_no, points, analog
-
 
 class Writer(Manager):
     '''This class writes metadata and frames to a C3D file.
