@@ -901,8 +901,6 @@ class Reader(Manager):
         skip = self.point_used * 4 * 4
         # set the file handle at the appropriate position.
         self._handle.seek((self.header.data_block - 1) * 512 + skip)
-        # the amount of analog values in a frame for a single channel
-        single_channel_analog = int(self.header.analog_per_frame / self.header.analog_per_frame)
         # obtain all analog values
         all_analog = self.fromfileskip(shape = (self.header.analog_count,), counts = n_frames, skip = skip, dtype = np.float32 )
         # reshape for appropriate dimensions
