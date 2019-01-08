@@ -891,18 +891,18 @@ class Reader(Manager):
         # set the file handle at the appropriate position.
         self._handle.seek((self.header.data_block - 1) * 512)
         # obtain all point values
-        all_points = self.fromfileskip(shape = (self.point_used, 4), counts = n_frames, skip = skip, dtype = np.float32 )
+        all_points = self.fromfileskip(shape = (self.point_used, 4), counts = n_frames, skip = skip, dtype = point_dtype)
         
         # at the end of every block an amount of point values and it's x, y, z values and the 4th word multiplied with a float is used to skip
-        skip = self.point_used * 4 * 4
+        skip = self.point_used * n_words * point_bytes
         # set the file handle at the appropriate position.
         self._handle.seek((self.header.data_block - 1) * 512 + skip)
         # the amount of analog values in a frame for a single channel
 
-        apf = self.header.analog_per_frame
-        nc = int(self.header.analog_count / apf)
+        apf = self.header.analog_per_frame # analog per frame
+        nc = int(self.header.analog_count / apf) # number of channels
         # obtain all analog values
-        all_analog = self.fromfileskip(shape = (self.header.analog_count,), counts = n_frames, skip = skip, dtype = np.float32 )
+        all_analog = self.fromfileskip(shape = (self.header.analog_count,), counts = n_frames, skip = skip, dtype = analog_dtype)
         
         # reshape for appropriate dimensions
         all_analog = all_analog.T.reshape(apf, n_frames, nc).transpose(1,2,0)
