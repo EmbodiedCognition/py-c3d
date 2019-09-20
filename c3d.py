@@ -870,7 +870,7 @@ class Reader(Manager):
         self._handle.seek((self.header.data_block - 1) * 512)
         for frame_no in range(self.first_frame(), self.last_frame() + 1):
             n = 4 * self.header.point_count
-            raw = np.fromstring(self._handle.read(n * point_bytes),
+            raw = np.frombuffer(self._handle.read(n * point_bytes),
                                 dtype=point_dtype,
                                 count=n).reshape((self.point_used, 4))
 
@@ -888,7 +888,7 @@ class Reader(Manager):
 
             if self.header.analog_count > 0:
                 n = self.header.analog_count
-                raw = np.fromstring(self._handle.read(n * analog_bytes),
+                raw = np.frombuffer(self._handle.read(n * analog_bytes),
                                     dtype=analog_dtype,
                                     count=n).reshape((-1, self.analog_used)).T
                 analog = (raw.astype(float) - offsets) * scales * gen_scale
