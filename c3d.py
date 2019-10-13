@@ -870,7 +870,7 @@ class Reader(Manager):
         self._handle.seek((self.header.data_block - 1) * 512)
         for frame_no in range(self.first_frame(), self.last_frame() + 1):
             n = 4 * self.header.point_count
-            raw = np.fromstring(self._handle.read(n * point_bytes),
+            raw = np.frombuffer(self._handle.read(n * point_bytes),
                                 dtype=point_dtype,
                                 count=n).reshape((self.point_used, 4))
 
@@ -888,7 +888,7 @@ class Reader(Manager):
 
             if self.header.analog_count > 0:
                 n = self.header.analog_count
-                raw = np.fromstring(self._handle.read(n * analog_bytes),
+                raw = np.frombuffer(self._handle.read(n * analog_bytes),
                                     dtype=analog_dtype,
                                     count=n).reshape((-1, self.analog_used)).T
                 analog = (raw.astype(float) - offsets) * scales * gen_scale
@@ -1020,7 +1020,7 @@ class Writer(Manager):
             analog.tofile(handle)
         self._pad_block(handle)
 
-    def write(self, handle):
+    def write(self, handle, labels):
         '''Write metadata and point + analog frames to a file handle.
 
         Parameters
@@ -1053,6 +1053,11 @@ class Writer(Manager):
         ppf = len(points)
 
         # POINT group
+
+        # Get longest label name
+        label_max_size = 0
+        label_max_size = max(label_max_size, len(label) for label in labels)
+
         group = self.add_group(1, 'POINT', 'POINT group')
         add('USED', 'Number of 3d markers', 2, '<H', ppf)
         add('FRAMES', 'frame count', 2, '<H', min(65535, len(self._frames)))
@@ -1062,7 +1067,8 @@ class Writer(Manager):
         add_str('X_SCREEN', 'X_SCREEN parameter', '+X', 2)
         add_str('Y_SCREEN', 'Y_SCREEN parameter', '+Y', 2)
         add_str('UNITS', '3d data units', self._point_units, len(self._point_units))
-        add_str('LABELS', 'labels', ''.join('M%03d ' % i for i in range(ppf)), 5, ppf)
+        add_str('LABELS', 'labels', ''.join(labels[i].ljust(label_max_size)
+                for i in range(ppf)), abel_max_size, ppf)
         add_str('DESCRIPTIONS', 'descriptions', ' ' * 16 * ppf, 16, ppf)
 
         # ANALOG group
