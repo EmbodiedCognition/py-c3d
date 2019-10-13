@@ -71,8 +71,11 @@ def sphere_vertices(n=2):
 
 class Viewer(pyglet.window.Window):
     def __init__(self, c3d_reader, trace=None, paused=False):
-        platform = pyglet.window.get_platform()
-        display = platform.get_default_display()
+        if pyglet.version > '1.3':
+            display = pyglet.canvas.get_display()
+        else:
+            platform = pyglet.window.get_platform()
+            display = platform.get_default_display()
         screen = display.get_default_screen()
         try:
             config = screen.get_best_config(Config(
@@ -216,7 +219,7 @@ class Viewer(pyglet.window.Window):
 
     def _next_frame(self):
         try:
-            return self._frames.next()
+            return next(self._frames)
         except StopIteration:
             pyglet.app.exit()
 
