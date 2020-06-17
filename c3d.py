@@ -328,13 +328,12 @@ class Param(object):
 		'''Unpack the raw bytes of this param using the given struct format.'''
 		return np.frombuffer(self.bytes, dtype=dtype)[0]
 
-    def _as_array(self, fmt):
-        '''Unpack the raw bytes of this param using the given data format.'''
-        assert self.dimensions, \
-            '{}: cannot get value as {} array!'.format(self.name, fmt)
-        elems = array.array(fmt)
-        elems.fromstring(self.bytes)
-        return np.array(elems).reshape(self.dimensions)
+	def _as_array(self, dtype):
+		'''Unpack the raw bytes of this param using the given data format.'''
+		assert self.dimensions, \
+			'{}: cannot get value as {} array!'.format(self.name, dtype)
+		elems = np.frombuffer(self.bytes, dtype=dtype)
+		return elems.reshape(self.dimensions[::-1]) # Reverse shape as data is stored in fortran format
 
 	def _as_any(self, dtype):
 		'''Unpack the raw bytes of this param as either array or single value.'''
