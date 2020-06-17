@@ -13,8 +13,9 @@ PROCESSOR_INTEL = 84
 PROCESSOR_DEC = 85
 PROCESSOR_MIPS = 86
 
-def CONVERT_FLOAT(int_32):
-    # Converts 32 bits stored as a integer to a float representation
+def CONVERT_FLOAT(uint_32):
+    '''Unpacks 32 bit unsigned int to a IEEE float representation
+    '''
     return struct.unpack('f', struct.pack("<I", int_32))[0]
 def DEC_to_IEEE(uint_32):
     '''Convert the 32 bit representation of a DEC float to IEEE format.
