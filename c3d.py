@@ -837,30 +837,35 @@ class Reader(Manager):
 
 		# metadata header
 		buf = self._handle.read(4)
-		_, _, parameter_blocks, processor = struct.unpack('BBBB', buf)
-		if processor != PROCESSOR_INTEL:
-			raise ValueError(
-				'we only read Intel C3D files (got processor {})'.
-				format(processor))
-
+		_, _, parameter_blocks, self.processor = struct.unpack('BBBB', buf)
+		self.header.processor_convert(self.processor)
+		if self.processor == PROCESSOR_MIPS:
+		    raise ValueError(
+		        'Only supporting Intel and DEC C3D files (got processor {})'.
+		        format(self.processor))
 		# read all parameter blocks as a single chunk to avoid block
 		# boundary issues.
-		bytes = self._handle.read(512 * parameter_blocks - 4)
-		while bytes:
-			buf = io.BytesIO(bytes)
-
-			chars_in_name, group_id = struct.unpack('bb', buf.read(2))
+		#bytes = self._handle.read(512 * parameter_blocks - 4)
+		start_byte = self._handle.tell()
+        # TODO: replace endbyte = start_byte + 512 * parameter_blocks - 4
+		while self._handle.tell() < start_byte + 512 * parameter_blocks - 4:
+			chars_in_name, group_id = struct.unpack('bb', self._handle.read(2))
 			if group_id == 0 or chars_in_name == 0:
 				# we've reached the end of the parameter section.
 				break
 
-			name = buf.read(abs(chars_in_name)).decode('utf-8').upper()
-			offset_to_next, = struct.unpack('<h', buf.read(2))
+			name = self._handle.read(abs(chars_in_name)).decode('utf-8').upper()
+			offset_to_next, = struct.unpack('<h', self._handle.read(2))
+
+            # Read the byte segment associated with the parameter and create a
+            # separate binary stream object from the data
+			bytes = self._handle.read(offset_to_next-2)
+			buf = io.BytesIO(bytes)
 
 			if group_id > 0:
 				# we've just started reading a parameter. if its group doesn't
 				# exist, create a blank one. add the parameter to the group.
-				self.groups.setdefault(group_id, Group()).add_param(name, handle=buf)
+				self.groups.setdefault(group_id, Group()).add_param(name, handle=buf, proc=self.processor)
 			else:
 				# we've just started reading a group. if a group with the
 				# appropriate id exists already (because we've already created
@@ -876,8 +881,7 @@ class Reader(Manager):
 					self.groups[name] = group
 				else:
 					self.add_group(group_id, name, desc)
-
-			bytes = bytes[2 + abs(chars_in_name) + offset_to_next:]
+			#bytes = bytes[2 + abs(chars_in_name) + offset_to_next:]
 
 		self.check_metadata()
 
@@ -978,6 +982,13 @@ class Reader(Manager):
 			else:
 				yield frame_no, points, analog
 
+	@property
+	def proc_type(self):
+		"""
+		Get the processory type associated with the data format in the file.
+		"""
+		processor_type = ['PROCESSOR_INTEL', 'PROCESSOR_DEC', 'PROCESSOR_MIPS']
+		return processor_type[self.processor-PROCESSOR_INTEL]
 
 class Writer(Manager):
 	'''This class writes metadata and frames to a C3D file.
