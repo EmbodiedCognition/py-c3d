@@ -90,6 +90,7 @@ class Header(object):
 		POINTS:ACTUAL_END_FIELD parameters.
 	'''
 
+    # Read/Write header formats, reads values as unsigned int's for conversion.
 	BINARY_FORMAT_WRITE = '<BBHHHHHfHHf270sHH214s'
 	BINARY_FORMAT_READ = '<BBHHHHHIHHI270sHH214s'
 
