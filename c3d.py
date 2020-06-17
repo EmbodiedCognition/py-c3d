@@ -16,35 +16,57 @@ PROCESSOR_MIPS = 86
 def CONVERT_FLOAT(int_32):
     # Converts 32 bits stored as a integer to a float representation
     return struct.unpack('f', struct.pack("<I", int_32))[0]
-def DEC_to_IEEE(int_32):
+def DEC_to_IEEE(uint_32):
+    '''Convert the 32 bit representation of a DEC float to IEEE format.
+
+    Params:
+    ----
+    uint_32 : Numpy array of (or single) 32 bit unsigned integer(s) containing
+        the DEC single precision float point bits.
+    Returns : IEEE formated floating point of the same shape as the input.
+    '''
 
     # Follows the bit pattern found:
     # 	http://home.fnal.gov/~yang/Notes/ieee_vs_dec_float.txt
     # Further formating descriptions can be found:
     # 	http://www.irig106.org/docs/106-07/appendixO.pdf
-    # The difference between the two references is that in the first ref.
-    # the first & second 16 bit words are placed in inverted order which seem correct
-    # (either the bit alignment is wrong in the second reference or there are different DEC representaitons)
-    # Code is a fixed (bit alignment) version from:
+    # The difference between the two references is that in the first ref. the first
+    # & second 16 bit words are placed in inverted order which seem correct (either
+    # the bit alignment is wrong in the second reference or there are different DEC
+    # representations)
+    # The implementation follows an implementation from (but with corrected bit pattern):
     # https://stackoverflow.com/questions/1797806/parsing-a-hex-formated-dec-32-bit-single-precision-floating-point-value-in-pytho
 
-    # Warning! Unsure about managing NaN numbers.
+    # Warning! Unsure if NaN numbers are managed appropriately.
 
     # Shuffle the first two bit words from DEC bit representation to an ordered representation.
-    # Note that the most significant fraction bits are placed in the first 7 bits
+    # Note that the most significant fraction bits are placed in the first 7 bits.
+    #
+    # Below are the DEC layout in accordance with the references:
     # ___________________________________________________________________________________
-    # |		Fraction (16:0)		|	SIGN	|	Exponent (8:0)	|	Fraction (23:17)	|
+    # |		Mantissa (16:0)		|	SIGN	|	Exponent (8:0)	|	Mantissa (23:17)	|
     # ___________________________________________________________________________________
-    # 32-					  -16	 15	   14-				  -7|6-					   -0
-    if int_32 == 0: return 0.0 # 0 if exponent, mantissa and sign == 0
+    # |32-					  -16|	 15	   |14-				  -7|6-					  -0|
+    #
+    # Legend:
+    # _______________________________________________________
+    # | Part (left bit of segment : right bit) | Part | ..
+    # _______________________________________________________
+    # |Bit adress -     ..       - Bit adress | Bit adress - ..
+    ####
+
     # Swap the first and last 16  bits for a consistent alignment of the fraction
-    reshuffled = ((int_32 & 0xFFFF0000) >> 16) | ((int_32 & 0x0000FFFF) << 16)
-    # After the shuffle the bits are grouped in the order: SIGN-Exponent-Fraction
+    reshuffled = ((uint_32 & 0xFFFF0000) >> 16) | ((uint_32 & 0x0000FFFF) << 16)
+    # After the shuffle each part are in little-endian and ordered as: SIGN-Exponent-Fraction
     signbit = (reshuffled & 0x80000000) >> 31
     exp_bits = (reshuffled & 0x7F800000) >> 23
-    exponent = exp_bits - 128
-    mantissa = ((reshuffled & 0x007FFFFF) | 0x00800000) / 16777216.0 	# 0.1F = (F | 2^23) / 2^24
-    result = pow(-1, signbit) * mantissa * pow(2.0, exponent) 			# SIGN * 0.1F * 2^(E-128)
+    # Evaluate as floating point (ensures there are no undef. behaviors or nasty conversions).
+    exponent = np.float32(exp_bits) - 128
+    fraction = np.float32((reshuffled & 0x007FFFFF) | 0x00800000) / 16777216.0 	# 0.1F = (F | 2^23) / 2^24
+    sign = 1.0-2.0*np.float32(signbit)
+    result = sign * fraction * np.power(2.0, exponent) 			                # SIGN * 0.1F * 2^(E-128)
+    # if exponent, mantissa and sign == 0 return 0.0
+    result *= uint_32 != 0
     return result
 #end DEC_to_IEEE()
 
@@ -438,8 +460,7 @@ class Param(object):
         if self.isDEC:
             arr = self.uint32_array
             out = np.zeros(arr.shape)
-            for idx in np.ndindex(arr.shape):
-                out[idx] = DEC_to_IEEE(arr[idx])
+            out = DEC_to_IEEE(arr)
         else:
             out = self._as_array(np.float32)
         return out
@@ -965,8 +986,7 @@ class Reader(Manager):
                 # Read point 4 byte words in float-32 format
                 if self.processor == PROCESSOR_DEC:
                     # Convert each word to IEEE float
-                    for idx in np.ndindex(raw.shape):
-                        points[idx] = DEC_to_IEEE(raw[idx])
+                    points[:,:4] = DEC_to_IEEE(raw)[:]
                 elif self.processor == PROCESSOR_INTEL:
                     points[:,:4] = np.fromstring(raw_bytes, dtype=np.float32, count=n).reshape((self.point_used, 4))[:,:4]
 
@@ -1190,7 +1210,7 @@ class Writer(Manager):
 
         # Get longest label name
         label_max_size = 0
-        label_max_size = max(label_max_size, len(label) for label in labels)
+        label_max_size = max(label_max_size, [len(label) for label in labels])
 
         group = self.add_group(1, 'POINT', 'POINT group')
         add('USED', 'Number of 3d markers', 2, '<H', ppf)
