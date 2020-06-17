@@ -214,7 +214,6 @@ long_event_labels: {0.long_event_labels}
 			self.frame_rate = CONVERT_FLOAT(self.frame_rate)
 
 
-
 class Param(object):
 	'''A class representing a single named parameter from a C3D file.
 
@@ -238,6 +237,7 @@ class Param(object):
 
 	def __init__(self,
 				 name,
+				 proc=PROCESSOR_INTEL,
 				 desc='',
 				 bytes_per_element=1,
 				 dimensions=None,
@@ -245,6 +245,7 @@ class Param(object):
 				 handle=None):
 		'''Set up a new parameter, only the name is required.'''
 		self.name = name
+		self.proc = proc
 		self.desc = desc
 		self.bytes_per_element = bytes_per_element
 		self.dimensions = dimensions or []
@@ -254,7 +255,12 @@ class Param(object):
 
 	def __repr__(self):
 		return '<Param: {}>'.format(self.desc)
-
+	@property
+	def isIEEE(self):
+		return self.proc == PROCESSOR_INTEL
+	@property
+	def isDEC(self):
+		return self.proc == PROCESSOR_DEC
 	@property
 	def num_elements(self):
 		'''Return the number of elements in this parameter's array value.'''
@@ -315,47 +321,75 @@ class Param(object):
 		self.bytes = b''
 		if self.total_bytes:
 			self.bytes = handle.read(self.total_bytes)
-		size, = struct.unpack('B', handle.read(1))
-		self.desc = size and handle.read(size).decode('utf-8') or ''
+		desc_size, = struct.unpack('B', handle.read(1))
+		self.desc = desc_size and handle.read(desc_size).decode('utf-8') or ''
 
-	def _as(self, fmt):
+	def _as(self, dtype):
 		'''Unpack the raw bytes of this param using the given struct format.'''
-		return struct.unpack('<' + fmt, self.bytes)[0]
+		return np.frombuffer(self.bytes, dtype=dtype)[0]
 
+    def _as_array(self, fmt):
+        '''Unpack the raw bytes of this param using the given data format.'''
+        assert self.dimensions, \
+            '{}: cannot get value as {} array!'.format(self.name, fmt)
+        elems = array.array(fmt)
+        elems.fromstring(self.bytes)
+        return np.array(elems).reshape(self.dimensions)
+
+	def _as_any(self, dtype):
+		'''Unpack the raw bytes of this param as either array or single value.'''
+		if 0 in self.dimensions[:]: 		# Check if any dimension is 0 (empty buffer)
+			return [] 						# Buffer is empty
+
+		if len(self.dimensions) == 0:		# Parse data as a single value
+			if dtype == np.float32:			# Floats need to be parsed separately!
+				return self.float_value
+			return self._as(dtype)
+		else:								# Parse data as array
+			if dtype == np.float32:
+				data = self.float_array
+			else:
+				data = self._as_array(dtype)
+			if len(self.dimensions) < 2:	# Check if data is contained in a single dimension
+				return data.flatten()
+			return data
 	@property
 	def int8_value(self):
 		'''Get the param as an 8-bit signed integer.'''
-		return self._as('b')
+		return self._as(np.int8)
 
 	@property
 	def uint8_value(self):
 		'''Get the param as an 8-bit unsigned integer.'''
-		return self._as('B')
+		return self._as(np.uint8)
 
 	@property
 	def int16_value(self):
 		'''Get the param as a 16-bit signed integer.'''
-		return self._as('h')
+		return self._as(np.int16)
 
 	@property
 	def uint16_value(self):
 		'''Get the param as a 16-bit unsigned integer.'''
-		return self._as('H')
+		return self._as(np.uint16)
 
 	@property
 	def int32_value(self):
 		'''Get the param as a 32-bit signed integer.'''
-		return self._as('i')
+		return self._as(np.int32)
 
 	@property
 	def uint32_value(self):
 		'''Get the param as a 32-bit unsigned integer.'''
-		return self._as('I')
+		return self._as(np.uint32)
 
 	@property
 	def float_value(self):
 		'''Get the param as a 32-bit float.'''
-		return self._as('f')
+		if self.isDEC:
+			return DEC_to_IEEE(self._as(np.uint32))
+		else:
+			return self._as(np.float32)
 
 	@property
 	def bytes_value(self):
@@ -367,48 +401,48 @@ class Param(object):
 		'''Get the param as a unicode string.'''
 		return self.bytes.decode('utf-8')
 
-	def _as_array(self, fmt):
-		'''Unpack the raw bytes of this param using the given data format.'''
-		assert self.dimensions, \
-			'{}: cannot get value as {} array!'.format(self.name, fmt)
-		elems = array.array(fmt)
-		elems.fromstring(self.bytes)
-		return np.array(elems).reshape(self.dimensions)
-
 	@property
 	def int8_array(self):
 		'''Get the param as an array of 8-bit signed integers.'''
-		return self._as_array('b')
+		return self._as_array(np.int8)
 
 	@property
 	def uint8_array(self):
 		'''Get the param as an array of 8-bit unsigned integers.'''
-		return self._as_array('B')
+		return self._as_array(np.uint8)
 
 	@property
 	def int16_array(self):
 		'''Get the param as an array of 16-bit signed integers.'''
-		return self._as_array('h')
+		return self._as_array(np.int16)
 
 	@property
 	def uint16_array(self):
 		'''Get the param as an array of 16-bit unsigned integers.'''
-		return self._as_array('H')
+		return self._as_array(np.uint16)
 
 	@property
 	def int32_array(self):
 		'''Get the param as an array of 32-bit signed integers.'''
-		return self._as_array('i')
+		return self._as_array(np.int32)
 
 	@property
 	def uint32_array(self):
 		'''Get the param as an array of 32-bit unsigned integers.'''
-		return self._as_array('I')
+		return self._as_array(np.uint32)
 
 	@property
 	def float_array(self):
 		'''Get the param as an array of 32-bit floats.'''
-		return self._as_array('f')
+		# Convert float data if not IEEE processor
+		if self.isDEC:
+			arr = self.uint32_array
+			out = np.zeros(arr.shape)
+			for idx in np.ndindex(arr.shape):
+				out[idx] = DEC_to_IEEE(arr[idx])
+		else:
+			out = self._as_array(np.float32)
+		return out
 
 	@property
 	def bytes_array(self):
