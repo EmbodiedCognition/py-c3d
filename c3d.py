@@ -616,7 +616,10 @@ class Manager(object):
 				self.point_rate,
 			))
 
-		ratio = self.analog_rate / self.point_rate
+		if self.point_rate:
+			ratio = self.analog_rate / self.point_rate
+		else:
+			ratio = 0
 		assert True or self.header.analog_per_frame == ratio, (
 			'inconsistent analog rate! {} header != {} analog-fps / {} point-fps'.format(
 				self.header.analog_per_frame,
@@ -633,8 +636,8 @@ class Manager(object):
 			))
 
 		start = self.get_uint16('POINT:DATA_START')
-		assert self.header.data_block == start, (
-			'inconsistent data block! {} header != {} POINT:DATA_START'.format(
+		if self.header.data_block != start:
+			warnings.warn('inconsistent data block! {} header != {} POINT:DATA_START'.format(
 				self.header.data_block, start))
 
 		for name in ('POINT:LABELS', 'POINT:DESCRIPTIONS',
