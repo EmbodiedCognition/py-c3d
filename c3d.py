@@ -49,7 +49,6 @@ def DEC_to_IEEE(int_32):
 #end DEC_to_IEEE()
 
 
-
 class Header(object):
 	'''Header information from a C3D file.
 
@@ -91,7 +90,8 @@ class Header(object):
 		POINTS:ACTUAL_END_FIELD parameters.
 	'''
 
-	BINARY_FORMAT = '<BBHHHHHfHHf270sHH214s'
+	BINARY_FORMAT_WRITE = '<BBHHHHHfHHf270sHH214s'
+	BINARY_FORMAT_READ = '<BBHHHHHIHHI270sHH214s'
 
 	def __init__(self, handle=None):
 		'''Create a new Header object.
@@ -136,7 +136,7 @@ class Header(object):
 			handle must be writeable.
 		'''
 		handle.seek(0)
-		handle.write(struct.pack(self.BINARY_FORMAT,
+		handle.write(struct.pack(self.BINARY_FORMAT_WRITE,
 								 self.parameter_block,
 								 0x50,
 								 self.point_count,
@@ -202,9 +202,17 @@ long_event_labels: {0.long_event_labels}
 		 _,
 		 self.long_event_labels,
 		 self.label_block,
-		 _) = struct.unpack(self.BINARY_FORMAT, handle.read(512))
-
+		 _) = struct.unpack(self.BINARY_FORMAT_READ, handle.read(512))
 		assert magic == 80, 'C3D magic {} != 80 !'.format(magic)
+
+	def processor_convert(self, proc):
+		if proc == PROCESSOR_DEC:
+			self.scale_factor = DEC_to_IEEE(self.scale_factor)
+			self.frame_rate = DEC_to_IEEE(self.frame_rate)
+		elif proc == PROCESSOR_INTEL:
+			self.scale_factor = CONVERT_FLOAT(self.scale_factor)
+			self.frame_rate = CONVERT_FLOAT(self.frame_rate)
+
 
 
 class Param(object):
