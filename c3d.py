@@ -13,6 +13,42 @@ PROCESSOR_INTEL = 84
 PROCESSOR_DEC = 85
 PROCESSOR_MIPS = 86
 
+def CONVERT_FLOAT(int_32):
+	# Converts 32 bits stored as a integer to a float representation
+	return struct.unpack('f', struct.pack("<I", int_32))[0]
+def DEC_to_IEEE(int_32):
+
+	# Follows the bit pattern found:
+	# 	http://home.fnal.gov/~yang/Notes/ieee_vs_dec_float.txt
+	# Further formating descriptions can be found:
+	# 	http://www.irig106.org/docs/106-07/appendixO.pdf
+	# The difference between the two references is that in the first ref.
+	# the first & second 16 bit words are placed in inverted order which seem correct
+	# (either the bit alignment is wrong in the second reference or there are different DEC representaitons)
+	# Code is a fixed (bit alignment) version from:
+	# https://stackoverflow.com/questions/1797806/parsing-a-hex-formated-dec-32-bit-single-precision-floating-point-value-in-pytho
+
+	# Warning! Unsure about managing NaN numbers.
+
+	# Shuffle the first two bit words from DEC bit representation to an ordered representation.
+	# Note that the most significant fraction bits are placed in the first 7 bits
+	# ___________________________________________________________________________________
+	# |		Fraction (16:0)		|	SIGN	|	Exponent (8:0)	|	Fraction (23:17)	|
+	# ___________________________________________________________________________________
+	# 32-					  -16	 15	   14-				  -7|6-					   -0
+	if int_32 == 0: return 0.0 # 0 if exponent, mantissa and sign == 0
+	# Swap the first and last 16  bits for a consistent alignment of the fraction
+	reshuffled = ((int_32 & 0xFFFF0000) >> 16) | ((int_32 & 0x0000FFFF) << 16)
+	# After the shuffle the bits are grouped in the order: SIGN-Exponent-Fraction
+	signbit = (reshuffled & 0x80000000) >> 31
+	exp_bits = (reshuffled & 0x7F800000) >> 23
+	exponent = exp_bits - 128
+	mantissa = ((reshuffled & 0x007FFFFF) | 0x00800000) / 16777216.0 	# 0.1F = (F | 2^23) / 2^24
+	result = pow(-1, signbit) * mantissa * pow(2.0, exponent) 			# SIGN * 0.1F * 2^(E-128)
+	return result
+#end DEC_to_IEEE()
+
+
 
 class Header(object):
     '''Header information from a C3D file.
