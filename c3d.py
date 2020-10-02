@@ -13,10 +13,10 @@ PROCESSOR_INTEL = 84
 PROCESSOR_DEC = 85
 PROCESSOR_MIPS = 86
 
-def CONVERT_FLOAT(uint_32):
+def CONVERT_FLOAT_IEEE(uint_32):
     '''Unpacks 32 bit unsigned int to a IEEE float representation
     '''
-    return struct.unpack('f', struct.pack("<I", uint_32))[0]
+    return struct.unpack('f', struct.pack("<I", uint_32))
 def DEC_to_IEEE(uint_32):
     '''Convert the 32 bit representation of a DEC float to IEEE format.
 
@@ -234,8 +234,8 @@ long_event_labels: {0.long_event_labels}
             self.scale_factor = DEC_to_IEEE(self.scale_factor)
             self.frame_rate = DEC_to_IEEE(self.frame_rate)
         elif proc == PROCESSOR_INTEL:
-            self.scale_factor = CONVERT_FLOAT(self.scale_factor)
-            self.frame_rate = CONVERT_FLOAT(self.frame_rate)
+            self.scale_factor = CONVERT_FLOAT_IEEE(self.scale_factor)
+            self.frame_rate = CONVERT_FLOAT_IEEE(self.frame_rate)
 
 
 class Param(object):
@@ -987,9 +987,9 @@ class Reader(Manager):
                 # Read point 4 byte words in float-32 format
                 if self.processor == PROCESSOR_DEC:
                     # Convert each word to IEEE float
-                    points[:,:4] = DEC_to_IEEE(raw)[:]
+                    points[:,:3] = DEC_to_IEEE(raw)[:]
                 elif self.processor == PROCESSOR_INTEL:
-                    points[:,:4] = np.fromstring(raw_bytes, dtype=np.float32, count=n).reshape((self.point_used, 4))[:,:4]
+                    points[:,:3] = CONVERT_FLOAT_IEEE(raw[:, :3]) #np.fromstring(raw_bytes, dtype=np.float32, count=n).reshape((self.point_used, 4))[:,:4]
 
                 # Parse the camera-observed bits and residual.
                 # However, there seem to be different ways this process is interpreted,
