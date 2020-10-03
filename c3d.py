@@ -1375,7 +1375,7 @@ class Writer(Manager):
 
         # Get longest label name
         label_max_size = 0
-        label_max_size = max(label_max_size, [len(label) for label in labels])
+        label_max_size = max(label_max_size, np.max([len(label) for label in labels]))
 
         group = self.add_group(1, 'POINT', 'POINT group')
         add('USED', 'Number of 3d markers', 2, '<H', ppf)
@@ -1387,7 +1387,7 @@ class Writer(Manager):
         add_str('Y_SCREEN', 'Y_SCREEN parameter', '+Y', 2)
         add_str('UNITS', '3d data units', self._point_units, len(self._point_units))
         add_str('LABELS', 'labels', ''.join(labels[i].ljust(label_max_size)
-                for i in range(ppf)), abel_max_size, ppf)
+                for i in range(ppf)), label_max_size, ppf)
         add_str('DESCRIPTIONS', 'descriptions', ' ' * 16 * ppf, 16, ppf)
 
         # ANALOG group

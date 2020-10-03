@@ -1,15 +1,21 @@
 import c3d
-import climate
+import importlib
+climate_spec = importlib.util.find_spec("climate")
+if climate_spec:
+    import climate
 import io
 import os
 import tempfile
 import unittest
 import urllib
+import urllib.request
 import zipfile
+import numpy as np
 
-logging = climate.get_logger('test')
-
-climate.enable_default_logging()
+# If climate exist
+if climate_spec:
+    logging = climate.get_logger('test')
+    climate.enable_default_logging()
 
 TEMP = os.path.join(tempfile.gettempdir(), 'c3d-test')
 ZIPS = (
@@ -24,6 +30,7 @@ class Base(unittest.TestCase):
             os.makedirs(TEMP)
         for url, target in ZIPS:
             fn = os.path.join(TEMP, target)
+            print(fn)
             if not os.path.isfile(fn):
                 try:
                     urllib.urlretrieve(url, fn)
@@ -138,6 +145,8 @@ class ReaderTest(Base):
 
 class WriterTest(Base):
     def test_paramsd(self):
+
+
         r = c3d.Reader(self._get('params.zip', 'TESTDPI.c3d'))
         w = c3d.Writer(
             point_rate=r.point_rate,
@@ -146,8 +155,11 @@ class WriterTest(Base):
             gen_scale=r.get_float('ANALOG:GEN_SCALE'),
         )
         w.add_frames((p, a) for _, p, a in r.read_frames())
+
+        ldata = r.get('POINT', None).get('LABELS', None)._as_any(np.uint8)#.flatten()
+        l = [word.tostring().decode("ascii").strip() for word in ldata]
         h = io.BytesIO()
-        w.write(h)
+        w.write(h, l)
 
 
 if __name__ == '__main__':
