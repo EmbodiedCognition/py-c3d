@@ -1088,8 +1088,12 @@ class Reader(Manager):
         scale_mag = abs(self.point_scale)
         is_float = self.point_scale < 0
 
-        point_word_bytes = [2, 4][is_float]
-        point_dtype = [self.dtypes.int16, self.dtypes.uint32][is_float]
+        if is_float:
+            point_word_bytes = 4
+            point_dtype = self.dtypes.uint32
+        else:
+            point_word_bytes = 2
+            point_dtype = self.dtypes.int16
         points = np.zeros((self.point_used, 5), float)
 
         # TODO: handle ANALOG:BITS parameter here!
@@ -1315,9 +1319,14 @@ class Writer(Manager):
         assert handle.tell() == 512 * (self.header.data_block - 1)
         scale = abs(self.point_scale)
         is_float = self.point_scale < 0
-        point_dtype = [np.int16, np.float32][is_float]
-        point_scale = [scale, 1][is_float]
-        point_format = 'if'[is_float]
+        if is_float:
+            point_dtype = np.float32
+            point_format = 'f'
+            point_scale = 1.0
+        else:
+            point_dtype = np.int16
+            point_format = 'i'
+            point_scale = scale
         raw = np.empty((self.point_used, 4), point_dtype)
         for points, analog in self._frames:
             valid = points[:, 3] > -1
