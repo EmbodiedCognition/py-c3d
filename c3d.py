@@ -890,6 +890,8 @@ class Manager(object):
 
     @property
     def point_rate(self):
+        ''' Number of sampled 3D coordinates per second.
+        '''
         try:
             return self.get_float('POINT:RATE')
         except AttributeError:
@@ -904,6 +906,8 @@ class Manager(object):
 
     @property
     def point_used(self):
+        ''' Number of sampled 3D point coordinates per frame.
+        '''
         try:
             return self.get_uint16('POINT:USED')
         except AttributeError:
@@ -911,6 +915,8 @@ class Manager(object):
 
     @property
     def analog_used(self):
+        ''' Number of analog measurements, or channels, within each analog data sample.
+        '''
         try:
             return self.get_uint16('ANALOG:USED')
         except AttributeError:
@@ -918,10 +924,22 @@ class Manager(object):
 
     @property
     def analog_rate(self):
+        '''  Total number of analog data samples per 3D frame (point sample)
+        '''
         try:
             return self.get_float('ANALOG:RATE')
         except AttributeError:
             return 0
+
+    @property
+    def analog_per_frame(self):
+        '''  Number of analog samples per 3D frame (point sample)
+        '''
+        return int(self.analog_rate / self.point_rate)
+
+    @property
+    def analog_sample_count(self):
+        return int(self.frame_count * self.analog_rate)
 
     @property
     def point_labels(self):
@@ -931,6 +949,11 @@ class Manager(object):
     def analog_labels(self):
         return self.get('ANALOG:LABELS').string_array
 
+    @property
+    def frame_count(self):
+        return self.last_frame - self.first_frame + 1 # Add 1 since range is inclusive [first, last]
+
+    @property
     def first_frame(self):
         # Start frame seems to be less of an issue to determine.
         # this is a hack for phasespace files ... should put it in a subclass.
@@ -939,6 +962,7 @@ class Manager(object):
             return param.uint32_value
         return self.header.first_frame
 
+    @property
     def last_frame(self):
         # Number of frames can be represented in many formats, first check if valid header values
         if self.header.first_frame < self.header.last_frame and self.header.last_frame != 65535:
@@ -1127,7 +1151,7 @@ class Reader(Manager):
         # Seek to the start point of the data blocks
         self._handle.seek((self.header.data_block - 1) * 512)
         # Parse the data blocks
-        for frame_no in range(self.first_frame(), self.last_frame() + 1):
+        for frame_no in range(self.first_frame, self.last_frame + 1):
             n_word = 4 * self.point_used
             n_tot_word = 4 * self.header.point_count
 
