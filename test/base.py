@@ -149,8 +149,9 @@ class Base(unittest.TestCase):
 
 
         nsampled_coordinates = areader.point_used * areader.frame_count
+        nsampled_analog = areader.analog_used * analog_count
 
-        # Compare point data
+        # Compare point data (coordinates)
         c = ['X', 'Y', 'Z']
         for i in range(3):
             axis_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, 0], bpoint[:, 0]))
@@ -164,3 +165,10 @@ class Base(unittest.TestCase):
             'Error in camera bit flags, number of samples with flag diff: {} of {}'.format(cam_diff, nsampled_coordinates)
         assert residual_diff == 0, \
             'Error in sample residuals, number of residual diff: {} of {}'.format(residual_diff, nsampled_coordinates)
+
+
+        # Compare analog
+
+        analog_diff = nsampled_analog - np.sum(np.isclose(aanalog, banalog))
+        assert analog_diff == 0, \
+            'Mismatched analog samples, number of sampled diff: {} of {}'.format(analog_diff, nsampled_analog)
