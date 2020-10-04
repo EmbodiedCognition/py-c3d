@@ -51,6 +51,50 @@ def UNPACK_FLOAT_MIPS(uint_32):
     '''Unpacks a single 32 bit unsigned int to a IEEE float representation
     '''
     return struct.unpack('f', struct.pack(">I", uint_32))[0]
+
+
+def DEC_to_IEEE(uint_32):
+    '''Convert the 32 bit representation of a DEC float to IEEE format.
+
+    Params:
+    ----
+    uint_32 : 32 bit unsigned integer containing the DEC single precision float point bits.
+    Returns : IEEE formated floating point of the same shape as the input.
+    '''
+
+
+    # Follows the bit pattern found:
+    # 	http://home.fnal.gov/~yang/Notes/ieee_vs_dec_float.txt
+    # Further formating descriptions can be found:
+    # 	http://www.irig106.org/docs/106-07/appendixO.pdf
+    # In accodance with the first ref. first & second 16 bit words are placed
+    # in a big endian 16 bit word representation, and needs to be inverted.
+    # Second reference describe the DEC->IEEE conversion.
+
+    # Warning! Unsure if NaN numbers are managed appropriately.
+
+    # Shuffle the first two bit words from DEC bit representation to an ordered representation.
+    # Note that the most significant fraction bits are placed in the first 7 bits.
+    #
+    # Below are the DEC layout in accordance with the references:
+    # ___________________________________________________________________________________
+    # |		Mantissa (16:0)		|	SIGN	|	Exponent (8:0)	|	Mantissa (23:17)	|
+    # ___________________________________________________________________________________
+    # |32-					  -16|	 15	   |14-				  -7|6-					  -0|
+    #
+    # Legend:
+    # _______________________________________________________
+    # | Part (left bit of segment : right bit) | Part | ..
+    # _______________________________________________________
+    # |Bit adress -     ..       - Bit adress | Bit adress - ..
+    ####
+
+    # Swap the first and last 16  bits for a consistent alignment of the fraction
+    reshuffled = ((uint_32 & 0xFFFF0000) >> 16) | ((uint_32 & 0x0000FFFF) << 16)
+    # After the shuffle each part are in little-endian and ordered as: SIGN-Exponent-Fraction
+    exp_bits = ((reshuffled & 0xFF000000) - 1) & 0xFF000000
+    reshuffled = (reshuffled & 0x00FFFFFF) | exp_bits
+    return UNPACK_FLOAT_IEEE(reshuffled)
 def DEC_to_IEEE_BYTES(bytes):
     '''Convert byte array containing 32 bit DEC floats to IEEE format.
 
@@ -101,24 +145,26 @@ def DEC_to_IEEE_BYTES(bytes):
                          dtype=np.float32,
                          count=int(len(bytes) / 4))
 
-
-def DEC_to_IEEE(uint_32):
+def DEC_to_IEEE_REFERENCE(uint_32):
     '''Convert the 32 bit representation of a DEC float to IEEE format.
 
     Params:
     ----
-    uint_32 : 32 bit unsigned integer containing the DEC single precision float point bits.
+    uint_32 : Numpy array of (or single) 32 bit unsigned integer(s) containing
+        the DEC single precision float point bits.
     Returns : IEEE formated floating point of the same shape as the input.
     '''
-
-
+    ##
     # Follows the bit pattern found:
     # 	http://home.fnal.gov/~yang/Notes/ieee_vs_dec_float.txt
     # Further formating descriptions can be found:
     # 	http://www.irig106.org/docs/106-07/appendixO.pdf
-    # In accodance with the first ref. first & second 16 bit words are placed
-    # in a big endian 16 bit word representation, and needs to be inverted.
-    # Second reference describe the DEC->IEEE conversion.
+    # The difference between the two references is that in the first ref. the first
+    # & second 16 bit words are placed in inverted order which seem correct (either
+    # the bit alignment is wrong in the second reference or there are different DEC
+    # representations)
+    # The implementation follows an implementation from (but with corrected bit pattern):
+    # https://stackoverflow.com/questions/1797806/parsing-a-hex-formated-dec-32-bit-single-precision-floating-point-value-in-pytho
 
     # Warning! Unsure if NaN numbers are managed appropriately.
 
@@ -141,9 +187,17 @@ def DEC_to_IEEE(uint_32):
     # Swap the first and last 16  bits for a consistent alignment of the fraction
     reshuffled = ((uint_32 & 0xFFFF0000) >> 16) | ((uint_32 & 0x0000FFFF) << 16)
     # After the shuffle each part are in little-endian and ordered as: SIGN-Exponent-Fraction
-    exp_bits = ((reshuffled & 0xFF000000) - 1) & 0xFF000000
-    reshuffled = (reshuffled & 0x00FFFFFF) | exp_bits
-    return UNPACK_FLOAT_IEEE(reshuffled)
+    signbit = (reshuffled & 0x80000000) >> 31
+    exp_bits = (reshuffled & 0x7F800000) >> 23
+    # Evaluate as floating point (ensures there are no undef. behaviors or nasty conversions).
+    exponent = np.float32(exp_bits) - 128
+    fraction = np.float32((reshuffled & 0x007FFFFF) | 0x00800000) / 16777216.0 	# 0.1F = (F | 2^23) / 2^24
+    sign = 1.0-2.0*np.float32(signbit)
+    result = sign * fraction * np.power(2.0, exponent) 			                # SIGN * 0.1F * 2^(E-128)
+    # if exponent, mantissa and sign == 0 return 0.0
+    result *= uint_32 != 0
+    return result
+#end DEC_to_IEEE()
 
 
 class Header(object):
@@ -151,7 +205,7 @@ class Header(object):
 
     Attributes
     ----------
-    label_block : int
+    event_block : int
         Index of the 512-byte block where labels (metadata) are found.
     parameter_block : int
         Index of the 512-byte block where parameters (metadata) are found.
@@ -188,9 +242,9 @@ class Header(object):
     '''
 
     # Read/Write header formats, read values as unsigned ints rather then floats.
-    BINARY_FORMAT_WRITE = '<BBHHHHHfHHf270sHH214s'
-    BINARY_FORMAT_READ = '<BBHHHHHIHHI270sHH214s'
-    BINARY_FORMAT_READ_BIG_ENDIAN = '>BBHHHHHIHHI270sHH214s'
+    BINARY_FORMAT_WRITE =           '<BBHHHHHfHHf274sHHH164s44s'
+    BINARY_FORMAT_READ =            '<BBHHHHHIHHI274sHHH164s44s'
+    BINARY_FORMAT_READ_BIG_ENDIAN = '>BBHHHHHIHHI274sHHH164s44s'
 
     def __init__(self, handle=None):
         '''Create a new Header object.
@@ -202,7 +256,6 @@ class Header(object):
             handle. The handle must be seek-able and readable. If `handle` is
             not given, Header attributes are initialized with default values.
         '''
-        self.label_block = 0
         self.parameter_block = 2
         self.data_block = 3
 
@@ -217,6 +270,12 @@ class Header(object):
         self.max_gap = 0
         self.scale_factor = -1.0
         self.long_event_labels = False
+        self.event_count = 0
+
+        self.event_block = b''
+        self.event_timings = np.zeros(0, dtype=np.float32)
+        self.event_disp_flags = np.zeros(0, dtype=np.bool)
+        self.event_labels = []
 
         if handle:
             self.read(handle)
@@ -236,6 +295,7 @@ class Header(object):
         '''
         handle.seek(0)
         handle.write(struct.pack(self.BINARY_FORMAT_WRITE,
+                                 # Pack vars:
                                  self.parameter_block,
                                  0x50,
                                  self.point_count,
@@ -248,8 +308,10 @@ class Header(object):
                                  self.analog_per_frame,
                                  self.frame_rate,
                                  b'',
-                                 self.long_event_labels and 0x3039 or 0x0,
-                                 self.label_block,
+                                 self.long_event_labels and 0x3039 or 0x0, # If True write long_event_key else 0
+                                 self.event_count,
+                                 0x0,
+                                 self.event_block,
                                  b''))
 
     def __str__(self):
@@ -266,7 +328,7 @@ class Header(object):
  analog_per_frame: {0.analog_per_frame}
        frame_rate: {0.frame_rate}
 long_event_labels: {0.long_event_labels}
-      label_block: {0.label_block}'''.format(self)
+      event_block: {0.event_block}'''.format(self)
 
     def read(self, handle, fmt=BINARY_FORMAT_READ):
         '''Read and parse binary header data from a file handle.
@@ -289,6 +351,8 @@ long_event_labels: {0.long_event_labels}
             If the magic byte from the header is not 80 (the C3D magic value).
         '''
         handle.seek(0)
+        raw = handle.read(512)
+
         (self.parameter_block,
          magic,
          self.point_count,
@@ -302,24 +366,61 @@ long_event_labels: {0.long_event_labels}
          self.frame_rate,
          _,
          self.long_event_labels,
-         self.label_block,
-         _) = struct.unpack(fmt, handle.read(512))
+         self.event_count,
+         __,
+         self.event_block,
+         _) = struct.unpack(fmt, raw)
+
+        # Check magic number if reading in little endian
         assert magic == 80, 'C3D magic {} != 80 !'.format(magic)
+
+        # Check long event key
+        self.long_event_labels = self.long_event_labels == 0x3039
 
     def processor_convert(self, proc, handle):
         ''' Interprets the header once the processor type has been determined.
         '''
+
         if proc == PROCESSOR_DEC:
             self.scale_factor = DEC_to_IEEE(self.scale_factor)
             self.frame_rate = DEC_to_IEEE(self.frame_rate)
+            float_unpack = DEC_to_IEEE
         elif proc == PROCESSOR_INTEL:
             self.scale_factor = UNPACK_FLOAT_IEEE(self.scale_factor)
             self.frame_rate = UNPACK_FLOAT_IEEE(self.frame_rate)
+            float_unpack = UNPACK_FLOAT_IEEE
         elif proc == PROCESSOR_MIPS:
-            # Reread in big-endian
+            # Re-read in big-endian
             self.read(handle, Header.BINARY_FORMAT_READ_BIG_ENDIAN)
+            # Then unpack
             self.scale_factor = UNPACK_FLOAT_IEEE(self.scale_factor)
             self.frame_rate = UNPACK_FLOAT_IEEE(self.frame_rate)
+            float_unpack = UNPACK_FLOAT_IEEE
+
+        self.interpret_events(proc, float_unpack)
+
+    def interpret_events(self, proc, float_unpack):
+
+        time_bytes = self.event_block[:72]
+        disp_bytes = self.event_block[72:90]
+        label_bytes = self.event_block[92:]
+
+        if proc == PROCESSOR_MIPS:
+            unpack_fmt = '>I'
+        else:
+            unpack_fmt = '<I'
+
+        read_count = self.event_count
+        self.event_timings = np.zeros(read_count, dtype=np.float32)
+        self.event_disp_flags = np.zeros(read_count, dtype=np.bool)
+        self.event_labels = [''] * read_count
+        for i in range(read_count):
+            ilong = i*4
+            # Unpack
+            self.event_disp_flags[i] = disp_bytes[i] > 0
+            self.event_timings[i] = float_unpack(struct.unpack(unpack_fmt, time_bytes[ilong:ilong+4])[0])
+            self.event_labels[i] = str(label_bytes[ilong:ilong+4])
+
 
 
 class Param(object):
@@ -1165,6 +1266,8 @@ class Reader(Manager):
                 if self.processor == PROCESSOR_DEC:
                     # Convert each of the first 6 16-bit words from DEC to IEEE float
                     points[:,:4] = DEC_to_IEEE_BYTES(raw_bytes).reshape((self.point_used, 4))
+                    #points[:,:4] = DEC_to_IEEE_REFERENCE(
+                    #    np.frombuffer(raw_bytes, dtype=np.uint32, count=N_point)).reshape((int(self.point_used), 4))
                 else:  # If IEEE or MIPS:
                     # Re-read the raw byte representation directly
                     points[:,:4] = np.frombuffer(raw_bytes,

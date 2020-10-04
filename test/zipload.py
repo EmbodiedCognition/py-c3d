@@ -9,12 +9,8 @@ import zipfile
 
 TEMP = os.path.join(tempfile.gettempdir(), 'c3d-test')
 ZIPS = (
-    ('https://www.c3d.org/data/sample01.zip', 'formats.zip'),
-    ('https://www.c3d.org/data/sample07.zip', 'analog.zip'),
-    ('https://www.c3d.org/data/sample08.zip', 'params.zip'),
-)
-ZIPS = (
     ('https://www.c3d.org/data/sample01.zip', 'sample01.zip'),
+    ('https://www.c3d.org/data/sample02.zip', 'sample02.zip'),
     ('https://www.c3d.org/data/sample07.zip', 'sample07.zip'),
     ('https://www.c3d.org/data/sample08.zip', 'sample08.zip'),
 )

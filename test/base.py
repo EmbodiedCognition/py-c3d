@@ -1,5 +1,6 @@
 import unittest
 import numpy as np
+import warnings
 from test.zipload import Zipload
 
 
@@ -45,10 +46,6 @@ class Base(unittest.TestCase):
 
         aheader = areader.header
         bheader = breader.header
-
-        assert aheader.label_block == bheader.label_block, \
-            '{}, label_block: {} {}, {} {}'.format(test_label,
-            alabel, aheader.label_block, blabel, bheader.label_block)
         assert aheader.parameter_block == bheader.parameter_block, \
             '{}, parameter_block: {} {}, {} {}'.format(test_label,
             alabel, aheader.parameter_block, blabel, bheader.parameter_block)
@@ -82,6 +79,31 @@ class Base(unittest.TestCase):
         assert aheader.long_event_labels == bheader.long_event_labels, \
             '{}, long_event_labels: {} {}, {} {}'.format(test_label,
             alabel, aheader.long_event_labels, blabel, bheader.long_event_labels)
+
+        event_mismatch = max(0, bheader.event_count - aheader.event_count)
+        for i in range(aheader.event_count):
+            event_label = aheader.event_labels[i]
+            if event_label in bheader.event_labels:
+                lindex = bheader.event_labels.index(event_label)
+                assert aheader.event_disp_flags[i] == bheader.event_disp_flags[lindex], \
+                    '{}, event_disp_flag {}: {} {}, {} {}'.format(test_label, event_label,
+                    alabel, aheader.event_disp_flags[i], blabel, bheader.event_disp_flags[lindex])
+                assert np.isclose(aheader.event_timings[i], bheader.event_timings[lindex], atol=1e-7), \
+                    '{}, event_timings {}: {} {}, {} {}'.format(test_label, event_label,
+                    alabel, aheader.event_timings[i], blabel, bheader.event_timings[lindex])
+            else:
+                event_mismatch += 1
+
+        # Validate event differences, up to a few labels can be mismatched
+        err_str = '''{}, label missmatch in event_block. File {} had {} and {} had {} with no match'''.format(
+            test_label, alabel, [l for l in aheader.event_labels if l not in bheader.event_labels],
+            blabel, [l for l in bheader.event_labels  if l not in aheader.event_labels])
+        if event_mismatch > 0:
+            if event_mismatch <= 2:
+                warnings.warn(err_str, ImportWarning)
+            else:
+                assert False, err_str
+
 
         if areal:
             assert aheader.scale_factor < 0.0, \
@@ -124,10 +146,11 @@ class Base(unittest.TestCase):
         # Return data frames
         return point_frames, analog_frames
 
-
-    def compare_data(areader, breader):
+    def compare_data(areader, breader, alabel, blabel):
         ''' Ensure data in reader a & b are equivalent.
         '''
+        # Number of scale factors data can deviate
+        equal_scale_fac = 2.01
 
         # Check frame count
         assert areader.frame_count == breader.frame_count, 'Expected frame count to be equal was {} and {}'.format(\
@@ -140,6 +163,9 @@ class Base(unittest.TestCase):
         assert areader.analog_sample_count == breader.analog_sample_count,\
                'Expected analog sample count to be equal was {} and {}'.format(\
                areader.analog_sample_count, breader.analog_sample_count)
+        assert np.abs(areader.point_scale) == np.abs(breader.point_scale),\
+                'Expected coordinate scale to be equal was {} and {}'.format(\
+                np.abs(areader.point_scale), np.abs(breader.point_scale))
 
         # Fetch file params/data
         frame_count = areader.frame_count
@@ -147,6 +173,10 @@ class Base(unittest.TestCase):
         apoint, aanalog = Base.load_data(areader)
         bpoint, banalog = Base.load_data(breader)
 
+        # Debug, diff
+        #mask = np.abs(apoint - bpoint) > 1e-5
+        #print(apoint[mask])
+        #print(bpoint[mask])
 
         nsampled_coordinates = areader.point_used * areader.frame_count
         nsampled_analog = areader.analog_used * analog_count
@@ -154,21 +184,32 @@ class Base(unittest.TestCase):
         # Compare point data (coordinates)
         c = ['X', 'Y', 'Z']
         for i in range(3):
-            axis_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, 0], bpoint[:, 0]))
+            axis_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, 0], bpoint[:, 0],
+                atol=equal_scale_fac*abs(areader.point_scale)))
             assert axis_diff == 0, \
-                'Mismatched coordinates on {} axis, number of sampled diff: {} of {}'.format(
-                c[i], axis_diff, nsampled_coordinates)
+                'Mismatched coordinates on {} axis for {} and {}, number of sampled diff: {} of {}'.format(
+                c[i], alabel, blabel, axis_diff, nsampled_coordinates)
         # Word 4 (residual + camera bits)
-        cam_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, 3], bpoint[:, 3]))
-        residual_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, 4], bpoint[:, 4]))
-        assert cam_diff == 0, \
-            'Error in camera bit flags, number of samples with flag diff: {} of {}'.format(cam_diff, nsampled_coordinates)
+        residual_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, 3], bpoint[:, 3]))
+        cam_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, 4], bpoint[:, 4], atol=1.001))
+        cam_diff_non_equal = nsampled_coordinates - np.sum(np.isclose(apoint[:, 4], bpoint[:, 4]))
+
+        # Cam bit errors (warn if non identical, allow 1 cam bit diff, might be bad DEC implementation, or bad data)
+        if cam_diff_non_equal > 0:
+            assert cam_diff == 0, 'Mismatch error in camera bit flags for {} and {}, number of samples with flag diff:\
+            {} of {}'.format(alabel, blabel, cam_diff, nsampled_coordinates)
+            err_str = 'Mismatch in camera bit flags between {} and {}, number of samples with flag diff:\
+                {} of {}'.format(alabel, blabel, cam_diff_non_equal, nsampled_coordinates)
+            warnings.warn(err_str, RuntimeWarning)
+        # Residual assert
         assert residual_diff == 0, \
-            'Error in sample residuals, number of residual diff: {} of {}'.format(residual_diff, nsampled_coordinates)
+            'Error in sample residuals between {} and {}, number of residual diff: {} of {}'.format(
+                alabel, blabel, residual_diff, nsampled_coordinates)
 
 
         # Compare analog
 
         analog_diff = nsampled_analog - np.sum(np.isclose(aanalog, banalog))
         assert analog_diff == 0, \
-            'Mismatched analog samples, number of sampled diff: {} of {}'.format(analog_diff, nsampled_analog)
+            'Mismatched analog samples between {} and {}, number of sampled diff: {} of {}'.format(
+                alabel, blabel, analog_diff, nsampled_analog)
