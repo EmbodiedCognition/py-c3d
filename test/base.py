@@ -147,6 +147,7 @@ class Base(unittest.TestCase):
         apoint, aanalog = Base.load_data(areader)
         bpoint, banalog = Base.load_data(breader)
 
+
         nsampled_coordinates = areader.point_used * areader.frame_count
 
         # Compare point data

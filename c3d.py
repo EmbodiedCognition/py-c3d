@@ -1118,7 +1118,7 @@ class Reader(Manager):
         else:
             point_word_bytes = 2
             point_dtype = self.dtypes.int16
-        points = np.zeros((self.point_used, 5), float)
+        points = np.zeros((self.point_used, 5), np.float32)
 
         # TODO: handle ANALOG:BITS parameter here!
         p = self.get('ANALOG:FORMAT')
@@ -1168,15 +1168,15 @@ class Reader(Manager):
                 # (the fourth column is still not a float32 representation)
                 if self.processor == PROCESSOR_DEC:
                     # Convert each of the first 6 16-bit words from DEC to IEEE float
-                    points[:,:3] = DEC_to_IEEE_BYTES(raw_bytes).reshape((self.point_used, 4))[:self.point_used,:3]
+                    points[:,:4] = DEC_to_IEEE_BYTES(raw_bytes).reshape((self.point_used, 4))
                     # Slightly slower:
                     #points[:,:3] = DEC_to_IEEE(raw[:self.point_used,:3])
                 else:  # If IEEE or MIPS:
                     # Re-read the raw byte representation directly rather then convert the
                     # 3 first columns in the uint32 representation.
-                    points[:,:3] = np.frombuffer(raw_bytes,
+                    points[:,:4] = np.frombuffer(raw_bytes,
                                                  dtype=self.dtypes.float32,
-                                                 count=n_word).reshape((self.point_used, 4))[:self.point_used,:3]
+                                                 count=n_word).reshape((int(self.point_used), 4))
 
 
 
@@ -1187,24 +1187,23 @@ class Reader(Manager):
                 # 2) Intepret as floating-point -> Convert (round) to integer -> ...
                 # Second option was found in exported files as converted to float it represented a value of -1.0
 
-                # Invalid sample if residual is equal to -1.
                 # Notes:
+                # - Invalid sample if residual is equal to -1.
                 # - A residual of 0.0 represent modeled data (filtered or interpolated).
                 # - The same format should be used internally when a float or integer representation is used,
                 #   with the difference that the words are 16 and 8 bit respectively (see the MLS guide).
+                # - While words are 16 bit, residual and camera mask is always interpreted as 8 packed in a single word!
+
+                #
                 # - Invalidation appear to either set the int32 sign-bit (creating a negative value but not -1 specifically) or
                 #   a floating point value of -1 (method #2), where the sign is defined in the most signficant bit of the last 2 bytes.
                 #   Therefor, both sign bits are cheked introducing a issue when residual is large (i.e. greater then 01111111).
                 #   This issue could plausibly be checked by verifying 0 coordinate vectors, and/or i might have missed/missunderstood something.
-                valid = (raw[:,3] & 0x80008000) == 0
-                c = raw[valid,3]
 
+                last_word = points[:, 3].astype(np.int32)
+                valid = (last_word & 0x80008000) == 0
                 points[~valid, 3:5] = -1.0
-
-                # Mask the 2 low bytes as residual bits (righmost bits)
-                points[valid, 3] = (c & 0x0000ffff).astype(float) * scale_mag
-                # Sum high bits as camera-observation count
-                points[valid, 4] = sum((c & (1 << k)) >> k for k in range(16, 32))
+                c = last_word[valid]
 
             else: # 16 bit int representation
                 # Read point 2 byte words in int-16 format
@@ -1215,11 +1214,12 @@ class Reader(Manager):
                 points[~valid, 3:5] = -1
                 c = raw[valid, 3].astype(self.dtypes.uint16)
 
-                # fourth value is floating-point (scaled) error estimate (residual)
-                points[valid, 3] = (c & 0xff).astype(float) * scale_mag
 
-                # fifth value is number of bits set in camera-observation byte
-                points[valid, 4] = sum((c & (1 << k)) >> k for k in range(8, 17))
+            # fourth value is floating-point (scaled) error estimate (residual)
+            points[valid, 3] = (c & 0xff).astype(np.float32) * scale_mag
+
+            # fifth value is number of bits set in camera-observation byte
+            points[valid, 4] = sum((c & (1 << k)) >> k for k in range(8, 17))
 
 
             if self.header.analog_count > 0:

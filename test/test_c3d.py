@@ -16,7 +16,7 @@ if climate_spec:
     climate.enable_default_logging()
 
 
-class ReaderTest(Base):
+class A_ReaderTest(Base):
     def test_format_pi(self):
         r = c3d.Reader(Zipload._get('sample01.zip', 'Eb015pi.c3d'))
         self._log(r)
@@ -83,7 +83,7 @@ class ReaderTest(Base):
             'analog shape: got {}, expected {}'.format(analog.shape, expected)
 
 
-class WriterTest(Base):
+class B_WriterTest(Base):
     def test_paramsd(self):
 
 
@@ -99,7 +99,7 @@ class WriterTest(Base):
         h = io.BytesIO()
         w.write(h, r.point_labels)
 
-class FormatTest(Base):
+class C_FormatTest(Base):
     def test_intel(self):
 
         FMT_INTEL_INT = c3d.Reader(Zipload._get('sample01.zip', 'Eb015pi.c3d'))
@@ -129,8 +129,6 @@ class FormatTest(Base):
 
         print('----------------------------')
         print('DEC FORMAT: OK')
-
-
 
 
     def test_sgi(self):
