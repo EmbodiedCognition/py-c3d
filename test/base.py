@@ -151,6 +151,16 @@ class Base(unittest.TestCase):
         nsampled_coordinates = areader.point_used * areader.frame_count
 
         # Compare point data
-        cam_index_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, 3], bpoint[:, 3]))
-        assert cam_index_diff == 0, \
-            'Error in camera index arrays, number of point diff: {} of {}'.format(cam_index_diff, nsampled_coordinates)
+        c = ['X', 'Y', 'Z']
+        for i in range(3):
+            axis_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, 0], bpoint[:, 0]))
+            assert axis_diff == 0, \
+                'Mismatched coordinates on {} axis, number of sampled diff: {} of {}'.format(
+                c[i], axis_diff, nsampled_coordinates)
+        # Word 4 (residual + camera bits)
+        cam_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, 3], bpoint[:, 3]))
+        residual_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, 4], bpoint[:, 4]))
+        assert cam_diff == 0, \
+            'Error in camera bit flags, number of samples with flag diff: {} of {}'.format(cam_diff, nsampled_coordinates)
+        assert residual_diff == 0, \
+            'Error in sample residuals, number of residual diff: {} of {}'.format(residual_diff, nsampled_coordinates)
