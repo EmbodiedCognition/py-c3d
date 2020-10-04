@@ -1180,13 +1180,7 @@ class Reader(Manager):
 
 
 
-                # Parse the camera-observed bits and residual.
-                # However, there seem to be different ways this process is interpreted,
-                # particularly regarding how invalid samples are represented:
-                # 1) Interpret value as signed int -> mask as two 16-bit words -> interpret
-                # 2) Intepret as floating-point -> Convert (round) to integer -> ...
-                # Second option was found in exported files as converted to float it represented a value of -1.0
-
+                # Parse the camera-observed bits and residuals.
                 # Notes:
                 # - Invalid sample if residual is equal to -1.
                 # - A residual of 0.0 represent modeled data (filtered or interpolated).
@@ -1194,7 +1188,12 @@ class Reader(Manager):
                 #   with the difference that the words are 16 and 8 bit respectively (see the MLS guide).
                 # - While words are 16 bit, residual and camera mask is always interpreted as 8 packed in a single word!
 
-                #
+                # Probably incorrect:
+                # However, there seem to be different ways this process is interpreted,
+                # particularly regarding how invalid samples are represented:
+                # 1) Interpret value as signed int -> mask as two 16-bit words -> interpret
+                # 2) Intepret as floating-point -> Convert (round) to integer -> ...
+                # Second option was found in exported files as converted to float it represented a value of -1.0
                 # - Invalidation appear to either set the int32 sign-bit (creating a negative value but not -1 specifically) or
                 #   a floating point value of -1 (method #2), where the sign is defined in the most signficant bit of the last 2 bytes.
                 #   Therefor, both sign bits are cheked introducing a issue when residual is large (i.e. greater then 01111111).
@@ -1219,7 +1218,7 @@ class Reader(Manager):
             points[valid, 3] = (c & 0xff).astype(np.float32) * scale_mag
 
             # fifth value is number of bits set in camera-observation byte
-            points[valid, 4] = sum((c & (1 << k)) >> k for k in range(8, 17))
+            points[valid, 4] = sum((c & (1 << k)) >> k for k in range(8, 15))
 
 
             if self.header.analog_count > 0:
