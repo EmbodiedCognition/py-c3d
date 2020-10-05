@@ -197,7 +197,7 @@ def DEC_to_IEEE_REFERENCE(uint_32):
     # if exponent, mantissa and sign == 0 return 0.0
     result *= uint_32 != 0
     return result
-#end DEC_to_IEEE()
+#end DEC_to_IEEE_REFERENCE()
 
 
 class Header(object):
