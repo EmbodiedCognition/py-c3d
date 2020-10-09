@@ -227,14 +227,15 @@ class Param(object):
     def binary_size(self):
         '''Return the number of bytes needed to store this parameter.'''
         return (
-            1 + # group_id
-            2 + # next offset marker
-            1 + len(self.name.encode('utf-8')) + # size of name and name bytes
-            1 + # data size
-            1 + len(self.dimensions) + # size of dimensions and dimension bytes
-            self.total_bytes + # data
-            1 + len(self.desc.encode('utf-8')) # size of desc and desc bytes
-            )
+            1 +  # group_id
+            2 +  # next offset marker
+            1 + len(self.name.encode('utf-8')) +  # size of name and name bytes
+            1 +  # data size
+            # size of dimensions and dimension bytes
+            1 + len(self.dimensions) +
+            self.total_bytes +  # data
+            1 + len(self.desc.encode('utf-8'))  # size of desc and desc bytes
+        )
 
     def write(self, group_id, handle):
         '''Write binary data for this parameter to a file handle.
@@ -267,7 +268,8 @@ class Param(object):
         '''
         self.bytes_per_element, = struct.unpack('b', handle.read(1))
         dims, = struct.unpack('B', handle.read(1))
-        self.dimensions = [struct.unpack('B', handle.read(1))[0] for _ in range(dims)]
+        self.dimensions = [struct.unpack('B', handle.read(1))[
+            0] for _ in range(dims)]
         self.bytes = b''
         if self.total_bytes:
             self.bytes = handle.read(self.total_bytes)
@@ -438,10 +440,10 @@ class Group(object):
     def binary_size(self):
         '''Return the number of bytes to store this group and its parameters.'''
         return (
-            1 + # group_id
-            1 + len(self.name.encode('utf-8')) + # size of name and name bytes
-            2 + # next offset marker
-            1 + len(self.desc.encode('utf-8')) + # size of desc and desc bytes
+            1 +  # group_id
+            1 + len(self.name.encode('utf-8')) +  # size of name and name bytes
+            2 +  # next offset marker
+            1 + len(self.desc.encode('utf-8')) +  # size of desc and desc bytes
             sum(p.binary_size() for p in self.params.values()))
 
     def write(self, group_id, handle):
@@ -780,7 +782,8 @@ class Reader(Manager):
             if group_id > 0:
                 # we've just started reading a parameter. if its group doesn't
                 # exist, create a blank one. add the parameter to the group.
-                self.groups.setdefault(group_id, Group()).add_param(name, handle=buf)
+                self.groups.setdefault(
+                    group_id, Group()).add_param(name, handle=buf)
             else:
                 # we've just started reading a group. if a group with the
                 # appropriate id exists already (because we've already created
@@ -1047,7 +1050,8 @@ class Writer(Manager):
                             dimensions=list(dimensions))
 
         def add_empty_array(name, desc, bpe):
-            group.add_param(name, desc=desc, bytes_per_element=bpe, dimensions=[0])
+            group.add_param(name, desc=desc,
+                            bytes_per_element=bpe, dimensions=[0])
 
         points, analog = self._frames[0]
         ppf = len(points)
@@ -1056,7 +1060,7 @@ class Writer(Manager):
 
         # Get longest label name
         label_max_size = 0
-        label_max_size = max(label_max_size, len(label) for label in labels)
+        label_max_size = max((label_max_size, len(label)) for label in labels)
 
         group = self.add_group(1, 'POINT', 'POINT group')
         add('USED', 'Number of 3d markers', 2, '<H', ppf)
@@ -1066,9 +1070,10 @@ class Writer(Manager):
         add('RATE', '3d data capture rate', 4, '<f', self._point_rate)
         add_str('X_SCREEN', 'X_SCREEN parameter', '+X', 2)
         add_str('Y_SCREEN', 'Y_SCREEN parameter', '+Y', 2)
-        add_str('UNITS', '3d data units', self._point_units, len(self._point_units))
+        add_str('UNITS', '3d data units',
+                self._point_units, len(self._point_units))
         add_str('LABELS', 'labels', ''.join(labels[i].ljust(label_max_size)
-                for i in range(ppf)), abel_max_size, ppf)
+                                            for i in range(ppf)), label_max_size, ppf)
         add_str('DESCRIPTIONS', 'descriptions', ' ' * 16 * ppf, 16, ppf)
 
         # ANALOG group

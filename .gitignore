@@ -36,3 +36,9 @@ nosetests.xml
 
 # Sphinx
 docs/_build
+
+# vscode
+.vscode/
+
+# mypy
+.mypy_cache/
