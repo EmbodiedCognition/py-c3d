@@ -137,13 +137,22 @@ def DEC_to_IEEE_BYTES(bytes):
     reshuffled[0::4] = bytes[2::4]
     reshuffled[1::4] = bytes[3::4]
     reshuffled[2::4] = bytes[0::4]
+    reshuffled[3::4] = bytes[1::4] + ((bytes[1::4] & 0x7f == 0) - 1) # Decrement exponent by 2, if exp. > 1
 
-    # Adjust the final column (decrement exponent by 1, if not 0)
-    reshuffled[3::4] = bytes[1::4] + ((bytes[1::4] == 0) - 1)
+
+    # There are different ways to adjust for differences in DEC/IEEE representation
+    # after reshuffle. Two simple methods are:
+    # 1) Decrement exponent bits by 2, then convert to IEEE.
+    # 2) Convert to IEEE directly and divide by four.
+    # 3) Handle edge cases, expensive in python...
+    # However these are simple methods, and do not accurately convert when:
+    # 1) Exponent < 2 (without bias), impossible to decrement exponent without adjusting fraction/mantissa.
+    # 2) Exponent == 0, DEC numbers are then 0 or undefined while IEEE is not. NaN are produced when exponent == 255.
+    # Here method 1) is used, which mean that only small numbers will be represented incorrectly.
 
     return np.frombuffer(reshuffled.tobytes(),
-                         dtype=np.float32,
-                         count=int(len(bytes) / 4))
+                                 dtype=np.float32,
+                                 count=int(len(bytes) / 4))
 
 def DEC_to_IEEE_REFERENCE(uint_32):
     '''Convert the 32 bit representation of a DEC float to IEEE format.
@@ -183,6 +192,11 @@ def DEC_to_IEEE_REFERENCE(uint_32):
     # _______________________________________________________
     # |Bit adress -     ..       - Bit adress | Bit adress - ..
     ####
+    # Eq. bit expressions used below:
+    # E: Exponent
+    # F: Fraction (mantissa)
+    # S: Sign
+
 
     # Swap the first and last 16  bits for a consistent alignment of the fraction
     reshuffled = ((uint_32 & 0xFFFF0000) >> 16) | ((uint_32 & 0x0000FFFF) << 16)
@@ -190,12 +204,16 @@ def DEC_to_IEEE_REFERENCE(uint_32):
     signbit = (reshuffled & 0x80000000) >> 31
     exp_bits = (reshuffled & 0x7F800000) >> 23
     # Evaluate as floating point (ensures there are no undef. behaviors or nasty conversions).
-    exponent = np.float32(exp_bits) - 128
-    fraction = np.float32((reshuffled & 0x007FFFFF) | 0x00800000) / 16777216.0 	# 0.1F = (F | 2^23) / 2^24
-    sign = 1.0 - 2.0*np.float32(signbit)
-    result = sign * fraction * np.power(2.0, exponent) 			                # SIGN * 0.1F * 2^(E-128)
-    # if exponent, mantissa and sign == 0 return 0.0
-    result *= uint_32 != 0
+    exponent = np.float32(exp_bits) - 128                                       # E - 2^7
+    fraction = np.float32((reshuffled & 0x007FFFFF) | 0x00800000) / 0x1000000 	# 0.1F = (F | 2^23) / 2^24
+    sign = np.float32((-1.0)**signbit)                                          # -1^S
+    result = sign * fraction * 2 ** exponent         			                # -1^S * 0.1F * 2^(E-2^7)
+    # if exponent == 0 return 0.0
+    result *= exp_bits != 0
+    # if reshuffled & 0xFF800000 == 0x80000000, then the value is 'undefined' in DEC.
+    # Essentially, if E == 0 and S == 1 then the value is undefined.
+    # Since undefined values are undefined, 0 is returned, even if not NaN would be optimal.
+
     return result
 #end DEC_to_IEEE_REFERENCE()
 
@@ -377,8 +395,9 @@ long_event_labels: {0.long_event_labels}
         # Check long event key
         self.long_event_labels = self.long_event_labels == 0x3039
 
+
     def processor_convert(self, proc, handle):
-        ''' Interprets the header once the processor type has been determined.
+        ''' Function interpreting the header once processor type has been determined.
         '''
 
         if proc == PROCESSOR_DEC:
@@ -390,7 +409,7 @@ long_event_labels: {0.long_event_labels}
             self.frame_rate = UNPACK_FLOAT_IEEE(self.frame_rate)
             float_unpack = UNPACK_FLOAT_IEEE
         elif proc == PROCESSOR_MIPS:
-            # Re-read in big-endian
+            # Re-read header in big-endian
             self.read(handle, Header.BINARY_FORMAT_READ_BIG_ENDIAN)
             # Then unpack
             self.scale_factor = UNPACK_FLOAT_IEEE(self.scale_factor)
@@ -399,8 +418,12 @@ long_event_labels: {0.long_event_labels}
 
         self.interpret_events(proc, float_unpack)
 
-    def interpret_events(self, proc, float_unpack):
 
+    def interpret_events(self, proc, float_unpack):
+        ''' Function interpreting the event section of the header.
+        '''
+
+        # Event section byte blocks
         time_bytes = self.event_block[:72]
         disp_bytes = self.event_block[72:90]
         label_bytes = self.event_block[92:]
@@ -1154,7 +1177,7 @@ class Reader(Manager):
 
             # Read the byte segment associated with the parameter and create a
             # separate binary stream object from the data
-            bytes = self._handle.read(offset_to_next-2)
+            bytes = self._handle.read(offset_to_next - 2)
             buf = io.BytesIO(bytes)
 
             if group_id > 0:
@@ -1308,7 +1331,7 @@ class Reader(Manager):
             points[valid, 3] = (c & 0xff).astype(np.float32) * scale_mag
 
             # fifth value is number of bits set in camera-observation byte
-            points[valid, 4] = sum((c & (1 << k)) >> k for k in range(8, 15))
+            points[valid, 4] = (c >> 8) #sum((c & (1 << k)) >> k for k in range(8, 15))
 
             # Check if analog data exist, and parse if so
             N_analog = self.header.analog_count

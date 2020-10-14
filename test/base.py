@@ -173,11 +173,6 @@ class Base(unittest.TestCase):
         apoint, aanalog = Base.load_data(areader)
         bpoint, banalog = Base.load_data(breader)
 
-        # Debug, diff
-        #mask = np.abs(apoint - bpoint) > 1e-5
-        #print(apoint[mask])
-        #print(bpoint[mask])
-
         nsampled_coordinates = areader.point_used * areader.frame_count
         nsampled_analog = areader.analog_used * analog_count
 
@@ -189,12 +184,13 @@ class Base(unittest.TestCase):
             assert axis_diff == 0, \
                 'Mismatched coordinates on {} axis for {} and {}, number of sampled diff: {} of {}'.format(
                 c[i], alabel, blabel, axis_diff, nsampled_coordinates)
+
         # Word 4 (residual + camera bits)
         residual_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, 3], bpoint[:, 3]))
         cam_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, 4], bpoint[:, 4], atol=1.001))
         cam_diff_non_equal = nsampled_coordinates - np.sum(np.isclose(apoint[:, 4], bpoint[:, 4]))
 
-        # Cam bit errors (warn if non identical, allow 1 cam bit diff, might be bad DEC implementation, or bad data)
+        # Camera bit errors (warn if non identical, allow 1 cam bit diff, might be bad DEC implementation, or bad data)
         if cam_diff_non_equal > 0:
             assert cam_diff == 0, 'Mismatch error in camera bit flags for {} and {}, number of samples with flag diff:\
             {} of {}'.format(alabel, blabel, cam_diff, nsampled_coordinates)
@@ -208,7 +204,6 @@ class Base(unittest.TestCase):
 
 
         # Compare analog
-
         analog_diff = nsampled_analog - np.sum(np.isclose(aanalog, banalog))
         assert analog_diff == 0, \
             'Mismatched analog samples between {} and {}, number of sampled diff: {} of {}'.format(
