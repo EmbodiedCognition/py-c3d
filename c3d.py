@@ -192,7 +192,7 @@ def DEC_to_IEEE_REFERENCE(uint_32):
     # Evaluate as floating point (ensures there are no undef. behaviors or nasty conversions).
     exponent = np.float32(exp_bits) - 128
     fraction = np.float32((reshuffled & 0x007FFFFF) | 0x00800000) / 16777216.0 	# 0.1F = (F | 2^23) / 2^24
-    sign = 1.0-2.0*np.float32(signbit)
+    sign = 1.0 - 2.0*np.float32(signbit)
     result = sign * fraction * np.power(2.0, exponent) 			                # SIGN * 0.1F * 2^(E-128)
     # if exponent, mantissa and sign == 0 return 0.0
     result *= uint_32 != 0
