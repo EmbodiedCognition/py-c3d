@@ -108,6 +108,7 @@ def DEC_to_IEEE_BYTES(bytes):
     # 	http://home.fnal.gov/~yang/Notes/ieee_vs_dec_float.txt
     # Further formating descriptions can be found:
     # 	http://www.irig106.org/docs/106-07/appendixO.pdf
+    #   http://home.kpn.nl/jhm.bonten/computers/bitsandbytes/wordsizes/hidbit.htm
     # In accodance with the first ref. first & second 16 bit words are placed
     # in a big endian 16 bit representation, and needs to be inverted.
     # Second reference describe the DEC->IEEE conversion,
