@@ -154,13 +154,12 @@ def DEC_to_IEEE_BYTES(bytes):
                                  dtype=np.float32,
                                  count=int(len(bytes) / 4))
 
-def DEC_to_IEEE_REFERENCE(uint_32):
+def DEC_to_IEEE_REFERENCE(bytes):
     '''Convert the 32 bit representation of a DEC float to IEEE format.
 
     Params:
     ----
-    uint_32 : Numpy array of (or single) 32 bit unsigned integer(s) containing
-        the DEC single precision float point bits.
+    bytes : Byte array where every 4 bytes represent a single precision DEC float.
     Returns : IEEE formated floating point of the same shape as the input.
     '''
     ##
@@ -197,6 +196,7 @@ def DEC_to_IEEE_REFERENCE(uint_32):
     # F: Fraction (mantissa)
     # S: Sign
 
+    uint_32 = np.frombuffer(bytes, dtype=np.uint32, count=int(len(bytes) / 4))
 
     # Swap the first and last 16  bits for a consistent alignment of the fraction
     reshuffled = ((uint_32 & 0xFFFF0000) >> 16) | ((uint_32 & 0x0000FFFF) << 16)
@@ -1291,9 +1291,8 @@ class Reader(Manager):
                 # (the fourth column is still not a float32 representation)
                 if self.processor == PROCESSOR_DEC:
                     # Convert each of the first 6 16-bit words from DEC to IEEE float
-                    points[:,:4] = DEC_to_IEEE_BYTES(raw_bytes).reshape((self.point_used, 4))
-                    #points[:,:4] = DEC_to_IEEE_REFERENCE(
-                    #    np.frombuffer(raw_bytes, dtype=np.uint32, count=N_point)).reshape((int(self.point_used), 4))
+                    #points[:,:4] = DEC_to_IEEE_BYTES(raw_bytes).reshape((self.point_used, 4))
+                    points[:,:4] = DEC_to_IEEE_REFERENCE(raw_bytes).reshape((int(self.point_used), 4))
                 else:  # If IEEE or MIPS:
                     # Re-read the raw byte representation directly
                     points[:,:4] = np.frombuffer(raw_bytes,
