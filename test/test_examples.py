@@ -8,6 +8,8 @@ from test.base import Base
 from test.zipload import Zipload
 
 class ExampleReadTest():
+    ''' Base class testing if a set of pre-defined files are read or not.
+    '''
 
     def test_a_read(self):
 
@@ -17,9 +19,14 @@ class ExampleReadTest():
 
         for folder, files in self.zip_files:
 
-            for file in files:
-                data = c3d.Reader(Zipload._get(self.ZIP, '{}/{}'.format(folder, file)))
+            print('Validating: {}'.format(folder))
 
+            for file in files:
+                file_path = '{}/{}'.format(folder, file)
+                reader = c3d.Reader(Zipload._get(self.ZIP, file_path))
+                #self._log(reader)
+
+                Base.check_data_in_range(reader, file_path, -10000.0, 10000.0)
 
             print('{} | READ: OK'.format(folder))
 

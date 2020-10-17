@@ -904,10 +904,19 @@ class Manager(object):
             warnings.warn('''no pointer available in POINT:DATA_START indicating the start of the data block, using
                              header pointer as fallback''')
 
-        for name in ('POINT:LABELS', 'POINT:DESCRIPTIONS',
-                     'ANALOG:LABELS', 'ANALOG:DESCRIPTIONS'):
-            if self.get(name) is None:
-                warnings.warn('missing parameter {}'.format(name))
+        def check_parameters(params):
+            for name in params:
+                if self.get(name) is None:
+                    warnings.warn('missing parameter {}'.format(name))
+
+        if self.point_used > 0:
+            check_parameters(('POINT:LABELS', 'POINT:DESCRIPTIONS'))
+        else:
+            warnings.warn('No point data found in file.')
+        if self.analog_used > 0:
+            check_parameters(('ANALOG:LABELS', 'ANALOG:DESCRIPTIONS'))
+        else:
+            warnings.warn('No analog data found in file.')
 
     def add_group(self, group_id, name, desc):
         '''Add a new parameter group.
@@ -1292,8 +1301,8 @@ class Reader(Manager):
                 # (the fourth column is still not a float32 representation)
                 if self.processor == PROCESSOR_DEC:
                     # Convert each of the first 6 16-bit words from DEC to IEEE float
-                    #points[:,:4] = DEC_to_IEEE_BYTES(raw_bytes).reshape((self.point_used, 4))
-                    points[:,:4] = DEC_to_IEEE_REFERENCE(raw_bytes).reshape((int(self.point_used), 4))
+                    points[:,:4] = DEC_to_IEEE_BYTES(raw_bytes).reshape((self.point_used, 4))
+                    #points[:,:4] = DEC_to_IEEE_REFERENCE(raw_bytes).reshape((int(self.point_used), 4))
                 else:  # If IEEE or MIPS:
                     # Re-read the raw byte representation directly
                     points[:,:4] = np.frombuffer(raw_bytes,
@@ -1331,7 +1340,8 @@ class Reader(Manager):
             points[valid, 3] = (c & 0xff).astype(np.float32) * scale_mag
 
             # fifth value is number of bits set in camera-observation byte
-            points[valid, 4] = (c >> 8) #sum((c & (1 << k)) >> k for k in range(8, 15))
+            points[valid, 4] = sum((c & (1 << k)) >> k for k in range(8, 15))
+            #points[valid, 4] = (c >> 8)
 
             # Check if analog data exist, and parse if so
             N_analog = self.header.analog_count

@@ -10,7 +10,6 @@ class Base(unittest.TestCase):
 
 
     def _log(self, r):
-        return
         print(r.header)
         items = ((k, v) for k, v in r.groups.items() if isinstance(k, str))
         fmt = '{0.name:>14s}:{1.name:<14s} {1.desc:36s} {2}'
@@ -132,7 +131,7 @@ class Base(unittest.TestCase):
         nanalog_per_frame_samples = reader.analog_per_frame
 
         # Generate data arrays
-        point_frames = np.zeros([nframe, 5, npoint], dtype=np.float64)
+        point_frames = np.zeros([nframe, npoint, 5], dtype=np.float64)
         analog_frames = np.zeros([nanalog_count, nanalog_channel], dtype=np.float64)
 
         # Start reading POINT and ANALOG blocks
@@ -140,11 +139,19 @@ class Base(unittest.TestCase):
             # Extract columns 0:5
             index = i - first_frame
             aindex = index * nanalog_per_frame_samples
-            point_frames[index] = points.T
+            point_frames[index] = points
             analog_frames[aindex:aindex+nanalog_per_frame_samples] = analog.T
+
+
 
         # Return data frames
         return point_frames, analog_frames
+
+    def create_camera_mask(point_frames):
+        ''' Create a value mask for point data.
+        '''
+        print(point_frames[:, :, 4])
+        return point_frames[:, :, 4] >= 0
 
     def compare_data(areader, breader, alabel, blabel):
         ''' Ensure data in reader a & b are equivalent.
@@ -186,9 +193,9 @@ class Base(unittest.TestCase):
                 c[i], alabel, blabel, axis_diff, nsampled_coordinates)
 
         # Word 4 (residual + camera bits)
-        residual_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, 3], bpoint[:, 3]))
-        cam_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, 4], bpoint[:, 4], atol=1.001))
-        cam_diff_non_equal = nsampled_coordinates - np.sum(np.isclose(apoint[:, 4], bpoint[:, 4]))
+        residual_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, :, 3], bpoint[:, :, 3]))
+        cam_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, :, 4], bpoint[:, :, 4], atol=1.001))
+        cam_diff_non_equal = nsampled_coordinates - np.sum(np.isclose(apoint[:, :, 4], bpoint[:, :, 4]))
 
         # Camera bit errors (warn if non identical, allow 1 cam bit diff, might be bad DEC implementation, or bad data)
         if cam_diff_non_equal > 0:
@@ -208,3 +215,39 @@ class Base(unittest.TestCase):
         assert analog_diff == 0, \
             'Mismatched analog samples between {} and {}, number of sampled diff: {} of {}'.format(
                 alabel, blabel, analog_diff, nsampled_analog)
+
+    def verify_array_has_values(array):
+        ''' Returns true if at least one dimension in the array is 0
+        '''
+        return np.prod(np.shape(array)) > 0
+
+    def verify_array_match_headers(point, analog, reader, label):
+        ''' Check point and analog arrays as fetched from load_data(reader), matches the headers in the reader.
+        '''
+        assert reader.point_used == np.shape(point)[1],\
+            'Mismatch in number of POINT samples for file {}, read {} expected {}'.format(
+             np.shape(point)[1], reader.point_used)
+        assert reader.analog_used == np.shape(analog)[1],\
+            'Mismatch in number of ANALOG samples for file {}, read {} expected {}'.format(
+             np.shape(analog)[1], reader.analog_used)
+
+
+    def check_data_in_range(reader, label, min_range, max_range):
+        point, analog = Base.load_data(reader)
+        Base.verify_array_match_headers(point, analog, reader, label)
+
+        def check(value):
+            return np.all((min_range < point) & (point < max_range))
+
+        # Camera mask
+        if reader.point_used > 0:
+            point_masked = point[Base.create_camera_mask(point)]
+            assert Base.verify_array_has_values(point_masked), 'No registered camera bits for file {}'.format(label)
+            for i in range(5):
+                assert check(point_masked[:, i]),\
+                        "POINT data for column {} was not in range ({}, {}) for file '{}'. Was in range ({}, {})".format(
+                        i, min_range, max_range, label, np.min(point_masked), np.max(point_masked))
+        if reader.analog_used > 0:
+            assert check(analog),\
+                    "ANALOG data was not in range ({}, {}) for file '{}'. Was in range ({}, {})".format(
+                    min_range, max_range, label, np.min(analog), np.max(analog))
