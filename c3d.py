@@ -7,7 +7,6 @@ import io
 import numpy as np
 import struct
 import warnings
-import codecs
 
 
 PROCESSOR_INTEL = 84
@@ -625,8 +624,8 @@ class Param(object):
             Note: This is implemented purely for parsing start/end frames.
         '''
         if self.total_bytes >= 4:
-            value = self.float_value
             # Check if float value representation is an integer
+            value = self.float_value
             if int(value) == value:
                 return value
             return self.uint32_value
@@ -1295,13 +1294,13 @@ class Reader(Manager):
         p = self.get('ANALOG:FORMAT')
         analog_unsigned = p and p.string_value.strip().upper() == 'UNSIGNED'
         analog_dtype = self.dtypes.int16
-        analog_bytes = 2
+        analog_word_bytes = 2
         if analog_unsigned:
             analog_dtype = self.dtypes.uint16
-            analog_bytes = 2
+            analog_word_bytes = 2
         elif is_float:
             analog_dtype = self.dtypes.float32
-            analog_bytes = 4
+            analog_word_bytes = 4
         analog = np.array([], float)
 
         offsets = np.zeros((self.analog_used, 1), int)
@@ -1321,14 +1320,30 @@ class Reader(Manager):
 
         # Seek to the start point of the data blocks
         self._handle.seek((self.header.data_block - 1) * 512)
+        # Number of values (words) read in regard to POINT/ANALOG data
+        N_point = 4 * self.point_used
+        N_analog = self.header.analog_count
+        # Total bytes per frame
+        point_bytes = N_point * point_word_bytes
+        analog_bytes = N_analog * analog_word_bytes
+        tot_bytes = point_bytes + analog_bytes
+        raw_analog = []
         # Parse the data blocks
         for frame_no in range(self.first_frame, self.last_frame + 1):
-            N_point = 4 * self.point_used
-            n_tot_word = 4 * self.header.point_count
-
             # Read the byte data (used) for the block
             raw_bytes = self._handle.read(N_point * point_word_bytes)
-
+            raw_analog = self._handle.read(N_analog * analog_word_bytes)
+            # Verify read pointers (any of the two can be assumed to be 0)
+            if len(raw_bytes) < point_bytes:
+                warnings.warn(
+                    'reached end of file (EOF) while reading POINT data at frame index {} and file pointer {}!'.format(
+                    frame_no - self.first_frame, self._handle.tell()))
+                return
+            if len(raw_analog) < analog_bytes:
+                warnings.warn(
+                    'reached end of file (EOF) while reading POINT data at frame index {} and file pointer {}!'.format(
+                    frame_no - self.first_frame, self._handle.tell()))
+                return
 
             if is_float:
                 # Convert every 4 byte words to a float-32 reprensentation
@@ -1378,9 +1393,7 @@ class Reader(Manager):
             #points[valid, 4] = (c >> 8)
 
             # Check if analog data exist, and parse if so
-            N_analog = self.header.analog_count
             if N_analog > 0:
-                raw_analog = self._handle.read(N_analog * analog_bytes)
                 if is_float and self.processor == PROCESSOR_DEC:
                     # Convert each of the 16-bit words from DEC to IEEE float
                     analog = DEC_to_IEEE_BYTES(raw_analog)
@@ -1399,6 +1412,15 @@ class Reader(Manager):
                 yield frame_no, points.copy(), analog.copy()
             else:
                 yield frame_no, points, analog
+
+        # Function evaluating EOF, note that data section is written in blocks of 512
+        final_byte_index = self._handle.tell()
+        self._handle.seek(0, 2)#os.SEEK_END)
+        # Check if more then 1 block remain
+        if self._handle.tell() - final_byte_index >= 512:
+            warnings.warn('incomplete reading of data blocks. {} bytes remained after all datablocks were read!'.format(
+                self._handle.tell() - final_byte_index))
+
 
     @property
     def proc_type(self):

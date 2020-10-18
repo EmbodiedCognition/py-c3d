@@ -4,6 +4,7 @@ import io
 import os
 import unittest
 import numpy as np
+import test.verify as verify
 from test.base import Base
 from test.zipload import Zipload
 
@@ -31,8 +32,8 @@ class FormatTest():
         proc_type = 'INTEL'
         test_id = '{} format test'.format(proc_type)
 
-        Base.compare_header(test_id, FMT_INTEL_INT, FMT_INTEL_REAL, 'INT', 'REAL', False, True)
-        Base.compare_data(FMT_INTEL_INT, FMT_INTEL_REAL, 'INT', 'REAL')
+        verify.equal_headers(test_id, FMT_INTEL_INT, FMT_INTEL_REAL, 'INT', 'REAL', False, True)
+        Base.data_is_equal(FMT_INTEL_INT, FMT_INTEL_REAL, 'INT', 'REAL')
 
         print('INTEL FORMAT: OK')
 
@@ -46,8 +47,8 @@ class FormatTest():
         proc_type = 'DEC'
         test_id = '{} format test'.format(proc_type)
 
-        Base.compare_header(test_id, FMT_DEC_INT, FMT_DEC_REAL, 'INT', 'REAL', False, True)
-        Base.compare_data(FMT_DEC_INT, FMT_DEC_REAL, 'INT', 'REAL')
+        verify.equal_headers(test_id, FMT_DEC_INT, FMT_DEC_REAL, 'INT', 'REAL', False, True)
+        Base.data_is_equal(FMT_DEC_INT, FMT_DEC_REAL, 'INT', 'REAL')
 
         print('DEC FORMAT: OK')
 
@@ -62,8 +63,8 @@ class FormatTest():
         proc_type = 'SGI'
         test_id = '{} format test'.format(proc_type)
 
-        Base.compare_header(test_id, FMT_SGI_INT, FMT_SGI_REAL, 'INT', 'REAL', False, True)
-        Base.compare_data(FMT_SGI_INT, FMT_SGI_REAL, 'INT', 'REAL')
+        verify.equal_headers(test_id, FMT_SGI_INT, FMT_SGI_REAL, 'INT', 'REAL', False, True)
+        Base.data_is_equal(FMT_SGI_INT, FMT_SGI_REAL, 'INT', 'REAL')
 
         print('SGI FORMAT: OK')
 
@@ -76,13 +77,13 @@ class FormatTest():
         FMT_DEC_INT = c3d.Reader(Zipload._get(self.ZIP, self.DEC_INT))
         FMT_SGI_INT = c3d.Reader(Zipload._get(self.ZIP, self.MIPS_INT))
 
-        Base.compare_header('INTEL-DEC INT format test', FMT_INTEL_INT, FMT_DEC_INT, 'INTEL', 'DEC', False, False)
-        Base.compare_header('INTEL-SGI INT format test', FMT_INTEL_INT, FMT_SGI_INT, 'INTEL', 'SGI', False, False)
-        Base.compare_header('DEC-SGI INT format test', FMT_DEC_INT, FMT_SGI_INT, 'DEC', 'SGI', False, False)
+        verify.equal_headers('INTEL-DEC INT format test', FMT_INTEL_INT, FMT_DEC_INT, 'INTEL', 'DEC', False, False)
+        verify.equal_headers('INTEL-SGI INT format test', FMT_INTEL_INT, FMT_SGI_INT, 'INTEL', 'SGI', False, False)
+        verify.equal_headers('DEC-SGI INT format test', FMT_DEC_INT, FMT_SGI_INT, 'DEC', 'SGI', False, False)
 
-        Base.compare_data(FMT_INTEL_INT, FMT_DEC_INT, 'INTEL', 'DEC')
-        Base.compare_data(FMT_INTEL_INT, FMT_SGI_INT, 'INTEL', 'SGI')
-        Base.compare_data(FMT_DEC_INT, FMT_SGI_INT, 'DEC', 'SGI')
+        Base.data_is_equal(FMT_INTEL_INT, FMT_DEC_INT, 'INTEL', 'DEC')
+        Base.data_is_equal(FMT_INTEL_INT, FMT_SGI_INT, 'INTEL', 'SGI')
+        Base.data_is_equal(FMT_DEC_INT, FMT_SGI_INT, 'DEC', 'SGI')
 
         print('INTEL-DEC-SGI INT FORMAT COMPARISON: OK')
 
@@ -96,13 +97,13 @@ class FormatTest():
         FMT_DEC_REAL = c3d.Reader(Zipload._get(self.ZIP, self.DEC_REAL))
         FMT_SGI_REAL = c3d.Reader(Zipload._get(self.ZIP, self.MIPS_REAL))
 
-        Base.compare_header('INTEL-DEC INT format test', FMT_INTEL_REAL, FMT_DEC_REAL, 'INTEL', 'DEC', True, True)
-        Base.compare_header('INTEL-SGI INT format test', FMT_INTEL_REAL, FMT_SGI_REAL, 'INTEL', 'SGI', True, True)
-        Base.compare_header('DEC-SGI INT format test', FMT_DEC_REAL, FMT_SGI_REAL, 'DEC', 'SGI', True, True)
+        verify.equal_headers('INTEL-DEC INT format test', FMT_INTEL_REAL, FMT_DEC_REAL, 'INTEL', 'DEC', True, True)
+        verify.equal_headers('INTEL-SGI INT format test', FMT_INTEL_REAL, FMT_SGI_REAL, 'INTEL', 'SGI', True, True)
+        verify.equal_headers('DEC-SGI INT format test', FMT_DEC_REAL, FMT_SGI_REAL, 'DEC', 'SGI', True, True)
 
-        Base.compare_data(FMT_INTEL_REAL, FMT_DEC_REAL, 'INTEL', 'DEC')
-        Base.compare_data(FMT_INTEL_REAL, FMT_SGI_REAL, 'INTEL', 'SGI')
-        Base.compare_data(FMT_DEC_REAL, FMT_SGI_REAL, 'DEC', 'SGI')
+        Base.data_is_equal(FMT_INTEL_REAL, FMT_DEC_REAL, 'INTEL', 'DEC')
+        Base.data_is_equal(FMT_INTEL_REAL, FMT_SGI_REAL, 'INTEL', 'SGI')
+        Base.data_is_equal(FMT_DEC_REAL, FMT_SGI_REAL, 'DEC', 'SGI')
 
         print('INTEL-DEC-SGI REAL FORMAT COMPARISON: OK')
 

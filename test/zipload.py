@@ -14,6 +14,8 @@ ZIPS = (
     ('https://www.c3d.org/data/sample02.zip', 'sample02.zip'),
     ('https://www.c3d.org/data/sample07.zip', 'sample07.zip'),
     ('https://www.c3d.org/data/sample08.zip', 'sample08.zip'),
+    ('https://www.c3d.org/data/sample31.zip', 'sample31.zip'),
+    ('https://www.c3d.org/data/Sample36.zip', 'sample36.zip'),
 )
 
 
