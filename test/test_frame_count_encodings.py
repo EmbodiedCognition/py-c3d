@@ -33,7 +33,7 @@ class FrameCountEncodingTest():
 
 
 class AnalogSampleCountEncodingTest():
-    ''' Base class testing if sample count for analog data can be read when encoded differently.
+    ''' Base class testing if sample count for analog data can be read when number of frames is large.
     '''
 
     def test_b_read(self):
