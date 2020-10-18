@@ -7,6 +7,7 @@ import io
 import numpy as np
 import struct
 import warnings
+import codecs
 
 
 PROCESSOR_INTEL = 84
@@ -41,6 +42,19 @@ class DataTypes(object):
             self.int16 = np.int16
             self.int32 = np.int32
             self.int64 = np.int64
+
+    def decode_string(self, bytes):
+        ''' Decode a byte array to a string.
+        '''
+        # Attempt to decode using different decoders
+        decoders =  ['utf-8', 'latin-1']
+        for dec in decoders:
+            try:
+                return bytes.decode(dec)
+            except UnicodeDecodeError:
+                continue
+        # Revert to using default decoder but replace characters
+        return bytes.decode(decoders[0], 'replace')
 
 
 def UNPACK_FLOAT_IEEE(uint_32):
@@ -104,18 +118,24 @@ def DEC_to_IEEE_BYTES(bytes):
     Returns : IEEE formated floating point of the same shape as the input.
     '''
 
+    ##
     # Follows the bit pattern found:
-    # 	http://home.fnal.gov/~yang/Notes/ieee_vs_dec_float.txt
+    # 	1) http://home.fnal.gov/~yang/Notes/ieee_vs_dec_float.txt
     # Further formating descriptions can be found:
-    # 	http://www.irig106.org/docs/106-07/appendixO.pdf
-    #   http://home.kpn.nl/jhm.bonten/computers/bitsandbytes/wordsizes/hidbit.htm
+    # 	2) http://www.irig106.org/docs/106-07/appendixO.pdf
+    #   3) http://home.kpn.nl/jhm.bonten/computers/bitsandbytes/wordsizes/hidbit.htm
+    # The current implementation is similar to the one used for Vicon systems:
+    #   4) http://www.clinicalgaitanalysis.com/faq/c3d.html#Appendix
+    #
     # In accodance with the first ref. first & second 16 bit words are placed
     # in a big endian 16 bit representation, and needs to be inverted.
     # Second reference describe the DEC->IEEE conversion,
-    # in particular the exponent needs to be subtracted by 1.
+    # in particular the exponent needs to be subtracted by 2
+    # (equivalent to dividing by 4).
+    #
+    # Warning! DEC undefined (similar to inf/NaN but not quite) numbers are not managed appropriately (3).
 
-    # Warning! Unsure if NaN numbers are managed appropriately.
-
+    ##
     # Shuffle the first two bit words from DEC bit representation to an ordered representation.
     # Note that the most significant fraction bits are placed in the first 7 bits.
     #
@@ -165,18 +185,22 @@ def DEC_to_IEEE_REFERENCE(bytes):
     '''
     ##
     # Follows the bit pattern found:
-    # 	http://home.fnal.gov/~yang/Notes/ieee_vs_dec_float.txt
+    # 	1) http://home.fnal.gov/~yang/Notes/ieee_vs_dec_float.txt
     # Further formating descriptions can be found:
-    # 	http://www.irig106.org/docs/106-07/appendixO.pdf
-    # The difference between the two references is that in the first ref. the first
-    # & second 16 bit words are placed in inverted order which seem correct (either
-    # the bit alignment is wrong in the second reference or there are different DEC
-    # representations)
-    # The implementation follows an implementation from (but with corrected bit pattern):
-    # https://stackoverflow.com/questions/1797806/parsing-a-hex-formated-dec-32-bit-single-precision-floating-point-value-in-pytho
+    # 	2) http://www.irig106.org/docs/106-07/appendixO.pdf
+    #   3) http://home.kpn.nl/jhm.bonten/computers/bitsandbytes/wordsizes/hidbit.htm
+    # The current implementation is similar to the one used for Vicon systems:
+    #   4) http://www.clinicalgaitanalysis.com/faq/c3d.html#Appendix
+    #
+    # In accodance with the first ref. first & second 16 bit words are placed
+    # in a big endian 16 bit representation, and needs to be inverted.
+    # Second reference describe the DEC->IEEE conversion,
+    # in particular the exponent needs to be subtracted by 2
+    # (equivalent to dividing by 4).
+    #
+    # Warning! DEC undefined (similar to inf/NaN but not quite) numbers are not managed appropriately (3).
 
-    # Warning! Unsure if NaN numbers are managed appropriately.
-
+    ##
     # Shuffle the first two bit words from DEC bit representation to an ordered representation.
     # Note that the most significant fraction bits are placed in the first 7 bits.
     #
@@ -562,7 +586,7 @@ class Param(object):
         if self.total_bytes:
             self.bytes = handle.read(self.total_bytes)
         desc_size, = struct.unpack('B', handle.read(1))
-        self.desc = desc_size and handle.read(desc_size).decode('utf-8') or ''
+        self.desc = desc_size and self.dtype.decode_string(handle.read(desc_size)) or ''
 
     def _as(self, dtype):
         '''Unpack the raw bytes of this param using the given struct format.'''
@@ -657,7 +681,7 @@ class Param(object):
     @property
     def string_value(self):
         '''Get the param as a unicode string.'''
-        return self.bytes.decode('utf-8')
+        return self.dtype.decode_string(self.bytes)
 
     @property
     def int8_array(self):
@@ -712,10 +736,20 @@ class Param(object):
     @property
     def string_array(self):
         '''Get the param as a array of unicode strings.'''
-        assert len(self.dimensions) == 2, \
-            '{}: cannot get value as string array!'.format(self.name)
-        l, n = self.dimensions
-        return [self.bytes[i*l:(i+1)*l].decode('utf-8') for i in range(n)]
+        def recurse_read(dims, off=0):
+            if len(dims) == 1:
+                return self.dtype.decode_string(self.bytes[off:off+dims[0]])
+            else:
+                # Recurse until a single array of strings can be parsed.
+                return [recurse_read(dims[:-1], off=i*np.prod(dims[:-1])) for i in range(dims[-1])]
+
+        # Decode different dimensions
+        if len(self.dimensions) == 0:
+            return []
+        elif len(self.dimensions) == 1:
+            return [self.string_value]
+        else:
+            return recurse_read(self.dimensions)
 
 
 class Group(object):
@@ -1182,7 +1216,7 @@ class Reader(Manager):
             if group_id == 0 or chars_in_name == 0:
                 # we've reached the end of the parameter section.
                 break
-            name = self._handle.read(abs(chars_in_name)).decode('utf-8').upper()
+            name = self.dtypes.decode_string(self._handle.read(abs(chars_in_name))).upper()
             offset_to_next, = struct.unpack(['<h', '>h'][is_mips], self._handle.read(2))
 
             # Read the byte segment associated with the parameter and create a
@@ -1553,6 +1587,7 @@ class Writer(Manager):
         add_str('Y_SCREEN', 'Y_SCREEN parameter', '+Y', 2)
         add_str('UNITS', '3d data units',
                 self._point_units, len(self._point_units))
+
         add_str('LABELS', 'labels', ''.join(labels[i].ljust(label_max_size)
                 for i in range(ppf)), label_max_size, ppf)
         add_str('DESCRIPTIONS', 'descriptions', ' ' * 16 * ppf, 16, ppf)

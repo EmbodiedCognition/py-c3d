@@ -8,8 +8,16 @@ from test.base import Base
 from test.zipload import Zipload
 
 class FormatTest():
+    ''' Test to evaluate INTEL, DEC and SGI/MIPS processor formats using a set of identical files.
+
+        INTEL: IEEE standard floating points and little endian.
+        DEC:   Non-standard floating point representation, standard integer representations.
+        SGI:   IEEE standard but ordered in big endian.
+    '''
 
     def test_a_intel(self):
+        ''' Compare identical INTEL files encoded using both floating-point and integer representations.
+        '''
 
         print('----------------------------')
         print(type(self))
@@ -29,6 +37,8 @@ class FormatTest():
         print('INTEL FORMAT: OK')
 
     def test_b_dec(self):
+        ''' Compare identical DEC files encoded using both floating-point and integer representations.
+        '''
 
         FMT_DEC_INT = c3d.Reader(Zipload._get(self.ZIP, self.DEC_INT))
         FMT_DEC_REAL = c3d.Reader(Zipload._get(self.ZIP, self.DEC_REAL))
@@ -43,6 +53,8 @@ class FormatTest():
 
 
     def test_c_sgi(self):
+        ''' Compare identical SGI/MIPS files encoded using both floating-point and integer representations.
+        '''
 
         FMT_SGI_INT = c3d.Reader(Zipload._get(self.ZIP, self.MIPS_INT))
         FMT_SGI_REAL = c3d.Reader(Zipload._get(self.ZIP, self.MIPS_REAL))
@@ -56,6 +68,9 @@ class FormatTest():
         print('SGI FORMAT: OK')
 
     def test_d_int_formats(self):
+        ''' Compare identical files for different processor formats.
+            All files are encoded using the integer representations.
+        '''
 
         FMT_INTEL_INT = c3d.Reader(Zipload._get(self.ZIP, self.INTEL_INT))
         FMT_DEC_INT = c3d.Reader(Zipload._get(self.ZIP, self.DEC_INT))
@@ -72,6 +87,9 @@ class FormatTest():
         print('INTEL-DEC-SGI INT FORMAT COMPARISON: OK')
 
     def test_e_real_formats(self):
+        ''' Compare identical files for different processor formats.
+            All files are encoded using the floating-point representations.
+        '''
 
 
         FMT_INTEL_REAL = c3d.Reader(Zipload._get(self.ZIP, self.INTEL_REAL))

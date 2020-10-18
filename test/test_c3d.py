@@ -86,7 +86,7 @@ class ReaderTest(Base):
 class WriterTest(Base):
     def test_paramsd(self):
 
-        
+
         r = c3d.Reader(Zipload._get('sample08.zip', 'TESTDPI.c3d'))
         w = c3d.Writer(
             point_rate=r.point_rate,

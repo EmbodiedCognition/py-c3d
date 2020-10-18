@@ -10,6 +10,7 @@ class Base(unittest.TestCase):
 
 
     def _log(self, r):
+        return
         print(r.header)
         items = ((k, v) for k, v in r.groups.items() if isinstance(k, str))
         fmt = '{0.name:>14s}:{1.name:<14s} {1.desc:36s} {2}'
@@ -33,7 +34,7 @@ class Base(unittest.TestCase):
                         value = p.int8_value
                 if p.bytes_per_element == -1:
                     if len(p.dimensions) > 1:
-                        value = [s.strip() for s in p.string_array]
+                        value = [s for s in p.string_array]
                     else:
                         value = p.string_value
                 print(fmt.format(g, p, value))
@@ -147,11 +148,12 @@ class Base(unittest.TestCase):
         # Return data frames
         return point_frames, analog_frames
 
+
     def create_camera_mask(point_frames):
-        ''' Create a value mask for point data.
+        ''' Create a mask for POINT data using the 4:th column.
         '''
-        print(point_frames[:, :, 4])
         return point_frames[:, :, 4] >= 0
+
 
     def compare_data(areader, breader, alabel, blabel):
         ''' Ensure data in reader a & b are equivalent.
@@ -186,7 +188,7 @@ class Base(unittest.TestCase):
         # Compare point data (coordinates)
         c = ['X', 'Y', 'Z']
         for i in range(3):
-            axis_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, 0], bpoint[:, 0],
+            axis_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, :, i], bpoint[:, :, i],
                 atol=equal_scale_fac*abs(areader.point_scale)))
             assert axis_diff == 0, \
                 'Mismatched coordinates on {} axis for {} and {}, number of sampled diff: {} of {}'.format(
@@ -216,7 +218,7 @@ class Base(unittest.TestCase):
             'Mismatched analog samples between {} and {}, number of sampled diff: {} of {}'.format(
                 alabel, blabel, analog_diff, nsampled_analog)
 
-    def verify_array_has_values(array):
+    def array_has_values(array):
         ''' Returns true if at least one dimension in the array is 0
         '''
         return np.prod(np.shape(array)) > 0
@@ -231,23 +233,30 @@ class Base(unittest.TestCase):
             'Mismatch in number of ANALOG samples for file {}, read {} expected {}'.format(
              np.shape(analog)[1], reader.analog_used)
 
+    def count_nan(array):
+        return np.sum(np.isnan(array))
 
     def check_data_in_range(reader, label, min_range, max_range):
         point, analog = Base.load_data(reader)
+        # Probably redundant but can be useful to verify
         Base.verify_array_match_headers(point, analog, reader, label)
 
-        def check(value):
-            return np.all((min_range < point) & (point < max_range))
+        def values_in_range(array, min_range=min_range, max_range=max_range):
+            ''' Returns true if values in the array are within the (min, max) range.
+            '''
+            return np.all((min_range < array) & (array < max_range))
 
-        # Camera mask
+        # Check POINT data
         if reader.point_used > 0:
+            # Mask in relation to camera bits
             point_masked = point[Base.create_camera_mask(point)]
-            assert Base.verify_array_has_values(point_masked), 'No registered camera bits for file {}'.format(label)
+            assert Base.array_has_values(point_masked), 'No registered camera bits for file {}'.format(label)
             for i in range(5):
-                assert check(point_masked[:, i]),\
+                assert values_in_range(point_masked[:, i]),\
                         "POINT data for column {} was not in range ({}, {}) for file '{}'. Was in range ({}, {})".format(
                         i, min_range, max_range, label, np.min(point_masked), np.max(point_masked))
+        # Check ANALOG data
         if reader.analog_used > 0:
-            assert check(analog),\
+            assert values_in_range(analog),\
                     "ANALOG data was not in range ({}, {}) for file '{}'. Was in range ({}, {})".format(
                     min_range, max_range, label, np.min(analog), np.max(analog))
