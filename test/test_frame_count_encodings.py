@@ -38,10 +38,6 @@ class AnalogSampleCountEncodingTest():
 
     def test_b_read(self):
 
-        print('----------------------------')
-        print(type(self))
-        print('----------------------------')
-
         for file, sample_count in zip(self.zip_files, self.sample_count):
             reader = c3d.Reader(Zipload._get(self.ZIP, file))
             self._log(reader)
@@ -64,6 +60,11 @@ class Sample31(FrameCountEncodingTest, Base):
 
 class Sample36(FrameCountEncodingTest, Base):
     ''' Test to evaluate if files with large number of frames are read correctly.
+
+        Note*:
+        Currently test files does not conform to expectations, primarily regarding the second file as:
+        File 72610framesf.c3d only contain data for 65535 frames but specifies 72610 frames (mentioned in readme).
+        File 72610framesi.c3d both specify and contain data for 65535 not 72610 frames.
     '''
     ZIP = 'sample36.zip'
 

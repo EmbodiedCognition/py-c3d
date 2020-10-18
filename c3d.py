@@ -1299,6 +1299,7 @@ class Reader(Manager):
             analog_dtype = self.dtypes.float32
             analog_word_bytes = 4
         elif analog_unsigned:
+            # Note*: Floating point is 'always' defined for both analog and point data, according to the standard.
             analog_dtype = self.dtypes.uint16
             analog_word_bytes = 2
             # Verify BITS parameter for analog

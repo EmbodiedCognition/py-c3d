@@ -45,7 +45,7 @@ class Sample00(SoftwareExampleReadTest, Base):
              ('Motion Analysis Corporation', ['Sample_Jump2.c3d', 'Walk1.c3d']),
              ('NexGen Ergonomics', ['test1.c3d']),
              ('Vicon Motion Systems', ['TableTennis.c3d']),
-             # Vicon files are weird, uses non-standard encodings
+             # Vicon files are weird, uses non-standard encodings. Walking01.c3d contain nan values and is not tested.
              #('Vicon Motion Systems', ['pyCGM2 lower limb CGM24 Walking01.c3d', 'TableTennis.c3d']),
             ]
 
