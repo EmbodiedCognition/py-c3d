@@ -1084,16 +1084,16 @@ class Manager(object):
 
     @property
     def analog_used(self):
-        ''' Number of analog measurements, or channels, within each analog data sample.
+        ''' Number of analog measurements, or channels, for each analog data sample.
         '''
         try:
             return self.get_uint16('ANALOG:USED')
         except AttributeError:
-            return 0
+            return self.header.analog_count
 
     @property
     def analog_rate(self):
-        '''  Total number of analog data samples per 3D frame (point sample)
+        '''  Total number of analog data samples per 3D frame (point sample).
         '''
         try:
             return self.get_float('ANALOG:RATE')
@@ -1102,12 +1102,14 @@ class Manager(object):
 
     @property
     def analog_per_frame(self):
-        '''  Number of analog samples per 3D frame (point sample)
+        '''  Number of analog samples per 3D frame (point sample).
         '''
         return int(self.analog_rate / self.point_rate)
 
     @property
     def analog_sample_count(self):
+        ''' Number of analog samples per channel.
+        '''
         return int(self.frame_count * self.analog_rate)
 
     @property
@@ -1293,16 +1295,21 @@ class Reader(Manager):
         # TODO: handle ANALOG:BITS parameter here!
         p = self.get('ANALOG:FORMAT')
         analog_unsigned = p and p.string_value.strip().upper() == 'UNSIGNED'
-        analog_dtype = self.dtypes.int16
-        analog_word_bytes = 2
-        if analog_unsigned:
-            analog_dtype = self.dtypes.uint16
-            analog_word_bytes = 2
-        elif is_float:
+        if is_float:
             analog_dtype = self.dtypes.float32
             analog_word_bytes = 4
-        analog = np.array([], float)
+        elif analog_unsigned:
+            analog_dtype = self.dtypes.uint16
+            analog_word_bytes = 2
+            # Verify BITS parameter for analog
+            p = self.get('ANALOG:BITS')
+            if p and p._as_integer_value / 8 != analog_word_bytes:
+                    raise NotImplementedError('Analog data using {} bits is not supported.'.format(p._as_integer_value))
+        else:
+            analog_dtype = self.dtypes.int16
+            analog_word_bytes = 2
 
+        analog = np.array([], float)
         offsets = np.zeros((self.analog_used, 1), int)
         param = self.get('ANALOG:OFFSET')
         if param is not None:
@@ -1322,12 +1329,11 @@ class Reader(Manager):
         self._handle.seek((self.header.data_block - 1) * 512)
         # Number of values (words) read in regard to POINT/ANALOG data
         N_point = 4 * self.point_used
-        N_analog = self.header.analog_count
+        N_analog = self.analog_used * self.analog_per_frame
         # Total bytes per frame
         point_bytes = N_point * point_word_bytes
         analog_bytes = N_analog * analog_word_bytes
         tot_bytes = point_bytes + analog_bytes
-        raw_analog = []
         # Parse the data blocks
         for frame_no in range(self.first_frame, self.last_frame + 1):
             # Read the byte data (used) for the block
@@ -1409,7 +1415,7 @@ class Reader(Manager):
 
             # Output buffers
             if copy:
-                yield frame_no, points.copy(), analog.copy()
+                yield frame_no, points.copy(), analog#.copy(), analog has a new array generated per frame if not empty.
             else:
                 yield frame_no, points, analog
 
