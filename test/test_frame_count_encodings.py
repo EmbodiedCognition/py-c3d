@@ -31,11 +31,18 @@ class FrameCountEncodingTest():
             print('{} | FRAME_COUNT: OK'.format(file))
 
 
+class Sample31(FrameCountEncodingTest, Base):
+    ZIP = 'sample31.zip'
+
+    frame_count = [73285, 72610]
+    zip_files = ['large01.c3d', 'large02.c3d']
+
 
 class Sample36(FrameCountEncodingTest, Base):
     ZIP = 'sample36.zip'
 
-    # Either an issue with the implementation or the file 72610framesi.c3d headers do not define 72610 frames. 
+    # The file 72610framesi.c3d parameter headers do not define 72610 frames.
+    # Can be verified by using the MLS viewer: https://www.c3d.org/apps/MLSviewer_setup.exe
     file_id = [18124, 36220, 72610, 18124, 36220, 72610]
     frame_count = [18124, 36220, 72610, 18124, 36220, 65535]
 
@@ -44,13 +51,6 @@ class Sample36(FrameCountEncodingTest, Base):
         return ['{}framesf.c3d'.format(c) for c in self.file_id[:3]] +\
                ['{}framesi.c3d'.format(c) for c in self.file_id[3:]]
 
-
-
-class Sample31(FrameCountEncodingTest, Base):
-    ZIP = 'sample31.zip'
-
-    count = ''
-    zip_files = []
 
 if __name__ == '__main__':
     unittest.main()
