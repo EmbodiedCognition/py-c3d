@@ -19,22 +19,28 @@ parser.add_argument('input', default='-', metavar='FILE', nargs='+', help='proce
 def convert(filename, args, sep, end):
     input = sys.stdin
     output = sys.stdout
-    if filename != '-':
+    open_file_streams = filename != '-'
+    if open_file_streams:
         input = open(filename, 'rb')
         output = open(filename.replace('.c3d', '.csv'), 'w')
-    for frame_no, points, analog in c3d.Reader(input).read_frames(copy=False):
-        fields = [frame_no]
-        for x, y, z, err, cam in points:
-            fields.append(str(x))
-            fields.append(str(y))
-            fields.append(str(z))
-            if args.include_error:
-                fields.append(str(err))
-            if args.include_camera:
-                fields.append(str(cam))
-        if args.include_analog:
-            fields.extend(str(x) for x in analog.flatten())
-        print(*fields, sep=sep, end=end, file=output)
+    try:
+        for frame_no, points, analog in c3d.Reader(input).read_frames(copy=False):
+            fields = [frame_no]
+            for x, y, z, err, cam in points:
+                fields.append(str(x))
+                fields.append(str(y))
+                fields.append(str(z))
+                if args.include_error:
+                    fields.append(str(err))
+                if args.include_camera:
+                    fields.append(str(cam))
+            if args.include_analog:
+                fields.extend(str(x) for x in analog.flatten())
+            print(*fields, sep=sep, end=end, file=output)
+    finally:
+        if open_file_streams:
+            input.close()
+            output.close()
 
 def main(args):
     sep = args.sep.replace('\\t', '\t').replace('TAB', '\t')
