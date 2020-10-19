@@ -52,7 +52,7 @@ documentation`_ for more details.
 Tests
 ~~~~~
 
-To run tests available in the test folder the following command can be run from the root of the package directory::
+To run tests available in the test folder, following command can be run from the root of the package directory::
 
     python -m unittest discover .
 
