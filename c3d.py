@@ -1211,18 +1211,23 @@ class Reader(Manager):
         is_mips = self.processor == PROCESSOR_MIPS
 
         start_byte = self._handle.tell()
-        # TODO: replace endbyte = start_byte + 512 * parameter_blocks - 4
-        while self._handle.tell() < start_byte + 512 * parameter_blocks - 4:
+        endbyte = start_byte + 512 * parameter_blocks - 4
+        while self._handle.tell() < endbyte:
             chars_in_name, group_id = struct.unpack('bb', self._handle.read(2))
             if group_id == 0 or chars_in_name == 0:
                 # we've reached the end of the parameter section.
                 break
             name = self.dtypes.decode_string(self._handle.read(abs(chars_in_name))).upper()
-            offset_to_next, = struct.unpack(['<h', '>h'][is_mips], self._handle.read(2))
 
             # Read the byte segment associated with the parameter and create a
-            # separate binary stream object from the data
-            bytes = self._handle.read(offset_to_next - 2)
+            # separate binary stream object from the data.
+            offset_to_next, = struct.unpack(['<h', '>h'][is_mips], self._handle.read(2))
+            # If offset_to_next == 0, this is the last parameter so read remaining bytes in the parameter section.
+            if offset_to_next < 2:
+                assert offset_to_next != 1, "Parameter can't consist of a single byte."
+                bytes = self._handle.read(endbyte - self._handle.tell())
+            else:
+                bytes = self._handle.read(offset_to_next - 2)
             buf = io.BytesIO(bytes)
 
             if group_id > 0:

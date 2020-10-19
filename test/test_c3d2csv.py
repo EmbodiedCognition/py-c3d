@@ -24,7 +24,7 @@ class Script_c3d2csv_Test(unittest.TestCase):
 
     def setUp(self):
         Zipload.download()
-        Zipload.extract('sample01.zip')
+        Zipload.extract('sample00.zip')
 
     class Args:
         include_error = False
@@ -34,5 +34,5 @@ class Script_c3d2csv_Test(unittest.TestCase):
     def test_a_convert(self):
         for subdir, files in self.zip_files:
             for file in files:
-                file_path = os.path.join(TEMP, 'sample00.zip', subdir, file)
+                file_path = os.path.join(TEMP, 'sample00', subdir, file)
                 convert(file_path, Script_c3d2csv_Test.Args(), '\t', '\n')
