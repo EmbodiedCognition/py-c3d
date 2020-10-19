@@ -54,7 +54,8 @@ Tests
 
 To run tests available in the test folder the following command can be run from the root of the package directory:
 
-python -m unittest discover .
+    python -m unittest discover .
+
 
 Caveats
 -------
