@@ -1222,9 +1222,9 @@ class Reader(Manager):
             # Read the byte segment associated with the parameter and create a
             # separate binary stream object from the data.
             offset_to_next, = struct.unpack(['<h', '>h'][is_mips], self._handle.read(2))
-            # If offset_to_next == 0, this is the last parameter so read remaining bytes in the parameter section.
-            if offset_to_next < 2:
-                assert offset_to_next != 1, "Parameter can't consist of a single byte."
+            if offset_to_next == 0:
+                # Last parameter, as number of bytes are unknown,
+                # read the remaining bytes in the parameter section.
                 bytes = self._handle.read(endbyte - self._handle.tell())
             else:
                 bytes = self._handle.read(offset_to_next - 2)
