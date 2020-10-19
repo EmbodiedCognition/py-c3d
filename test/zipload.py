@@ -33,6 +33,9 @@ class Zipload():
                 except AttributeError: # python 3
                     urllib.request.urlretrieve(url, fn)
 
+    def extract(zf):
+        zip = zipfile.ZipFile(os.path.join(TEMP, zf))
+        zip.extractall()
 
     def _c3ds(zf):
         with zipfile.ZipFile(os.path.join(TEMP, zf)) as z:
