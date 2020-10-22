@@ -1,5 +1,7 @@
 import numpy as np
 import warnings
+import c3d
+from test.zipload import Zipload
 
 
 def count_nan(array):
@@ -21,7 +23,55 @@ def values_in_range(array, min_range, max_range):
     '''
     return np.all((min_range < array) & (array < max_range))
 
+##
+#
+#   Classes asserting properties on parameters
+#
+##
 
+class ReadTest():
+    ''' Base class testing if a set of pre-defined files can be read with plausible values.
+    '''
+
+    def test_read_data(self):
+
+        def test_load_zipfile(file_path):
+            ''' Loads file within a zipfile and execute 'c3d.read_frames()'
+            '''
+            reader = c3d.Reader(Zipload._get(self.ZIP, file_path))
+            nframe_read, nanalog_read = 0, 0
+
+            print(reader.frame_count)
+            print(reader.analog_rate)
+            print(reader.point_rate)
+            print(reader.point_rate)
+            print(reader.analog_sample_count)
+
+            # Read point frames and analog samples
+            for i, points, analog in reader.read_frames(copy=False):
+                nframe_read += 1
+                nanalog_read += len(analog)
+
+            assert nframe_read == reader.frame_count,\
+                   """Failed reading file, mismatch in number of frames, read {} expected {}""".format(
+                   nframe_read, reader.frame_count)
+            assert nanalog_read == reader.analog_sample_count,\
+              """Failed reading file, mismatch in number of analog samples, read {} expected {}""".format(
+              nanalog_read, reader.analog_sample_count)
+
+            print('{} | READ: OK'.format(file))
+
+        # Allow self.zipfiles on form:
+        # ['FILE', ..]
+        # [('FOLDER', ['FILE', ..])]
+        if len(np.shape(self.zip_files)) == 1:
+            for file in self.zip_files:
+                test_load_zipfile(file)
+        else:
+            for folder, files in self.zip_files:
+                print('{} | Validating...'.format(folder))
+                for file in files:
+                    test_load_zipfile('{}/{}'.format(folder, file))
 ##
 #
 #   Functions asserting properties on input parameters

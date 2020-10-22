@@ -80,7 +80,7 @@ class Base(unittest.TestCase):
         ''' Ensure data in reader a & b are equivalent.
         '''
         # Number of scale factors data can deviate
-        equal_scale_fac = 2.01
+        equal_scale_fac = 1.01
 
         # Check frame count
         assert areader.frame_count == breader.frame_count, 'Expected frame count to be equal was {} and {}'.format(\

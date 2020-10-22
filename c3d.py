@@ -1110,7 +1110,8 @@ class Manager(object):
     def analog_sample_count(self):
         ''' Number of analog samples per channel.
         '''
-        return int(self.frame_count * self.analog_rate)
+        has_analog = self.analog_used > 0
+        return int(self.frame_count * self.analog_per_frame) * has_analog
 
     @property
     def point_labels(self):
