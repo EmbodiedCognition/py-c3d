@@ -4,38 +4,15 @@ import io
 import os
 import unittest
 import numpy as np
+import test.verify as verify
 from test.base import Base
 from test.zipload import Zipload
 
-class SoftwareExampleReadTest():
-    ''' Base class testing if a set of pre-defined files can be read with plausible values.
-    '''
 
-    def test_a_read(self):
-
-        print('----------------------------')
-        print(type(self))
-        print('----------------------------')
-
-        for folder, files in self.zip_files:
-
-            print('{} | Validating...'.format(folder))
-
-            for file in files:
-                file_path = '{}/{}'.format(folder, file)
-                reader = c3d.Reader(Zipload._get(self.ZIP, file_path))
-                self._log(reader)
-
-                Base.check_data_in_range(reader, file_path, -1e6, 1e6)
-
-            print('{} | READ: OK'.format(folder))
-
-
-
-class Sample00(SoftwareExampleReadTest, Base):
+class Sample00(verify.WithinRangeTest, Base):
     ZIP = 'sample00.zip'
 
-
+    DATA_RANGE = (-1e6, 1e6)
     zip_files = \
             [
              ('Advanced Realtime Tracking GmbH', ['arthuman-sample.c3d', 'arthuman-sample-fingers.c3d']),

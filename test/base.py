@@ -1,7 +1,6 @@
 import unittest
 import numpy as np
 import warnings
-import test.verify as verify
 from test.zipload import Zipload
 
 
@@ -74,80 +73,3 @@ class Base(unittest.TestCase):
         ''' Create a mask for POINT data using the 4:th column.
         '''
         return point_frames[:, :, 4] >= 0
-
-
-    def data_is_equal(areader, breader, alabel, blabel):
-        ''' Ensure data in reader a & b are equivalent.
-        '''
-        # Number of scale factors data can deviate
-        equal_scale_fac = 1.01
-
-        # Check frame count
-        assert areader.frame_count == breader.frame_count, 'Expected frame count to be equal was {} and {}'.format(\
-               areader.frame_count, breader.frame_count)
-        # Check point count
-        assert areader.point_used == breader.point_used,\
-               'Expected per frame point sample count to be equal was {} and {}'.format(\
-               areader.point_used, breader.point_used)
-        # Check analog sample count
-        assert areader.analog_sample_count == breader.analog_sample_count,\
-               'Expected analog sample count to be equal was {} and {}'.format(\
-               areader.analog_sample_count, breader.analog_sample_count)
-        assert np.abs(areader.point_scale) == np.abs(breader.point_scale),\
-                'Expected coordinate scale to be equal was {} and {}'.format(\
-                np.abs(areader.point_scale), np.abs(breader.point_scale))
-
-        # Fetch file params/data
-        frame_count = areader.frame_count
-        analog_count = areader.analog_sample_count
-        apoint, aanalog = Base.load_data(areader)
-        bpoint, banalog = Base.load_data(breader)
-
-        nsampled_coordinates = areader.point_used * areader.frame_count
-        nsampled_analog = areader.analog_used * analog_count
-
-        # Compare point data (coordinates)
-        c = ['X', 'Y', 'Z']
-        for i in range(3):
-            axis_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, :, i], bpoint[:, :, i],
-                atol=equal_scale_fac*abs(areader.point_scale)))
-            assert axis_diff == 0, \
-                'Mismatched coordinates on {} axis for {} and {}, number of sampled diff: {} of {}'.format(
-                c[i], alabel, blabel, axis_diff, nsampled_coordinates)
-
-        # Word 4 (residual + camera bits)
-        residual_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, :, 3], bpoint[:, :, 3]))
-        cam_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, :, 4], bpoint[:, :, 4], atol=1.001))
-        cam_diff_non_equal = nsampled_coordinates - np.sum(np.isclose(apoint[:, :, 4], bpoint[:, :, 4]))
-
-        # Camera bit errors (warn if non identical, allow 1 cam bit diff, might be bad DEC implementation, or bad data)
-        if cam_diff_non_equal > 0:
-            assert cam_diff == 0, 'Mismatch error in camera bit flags for {} and {}, number of samples with flag diff:\
-            {} of {}'.format(alabel, blabel, cam_diff, nsampled_coordinates)
-            err_str = 'Mismatch in camera bit flags between {} and {}, number of samples with flag diff:\
-                {} of {}'.format(alabel, blabel, cam_diff_non_equal, nsampled_coordinates)
-            warnings.warn(err_str, RuntimeWarning)
-        # Residual assert
-        assert residual_diff == 0, \
-            'Error in sample residuals between {} and {}, number of residual diff: {} of {}'.format(
-                alabel, blabel, residual_diff, nsampled_coordinates)
-
-
-        # Compare analog
-        analog_diff = nsampled_analog - np.sum(np.isclose(aanalog, banalog))
-        assert analog_diff == 0, \
-            'Mismatched analog samples between {} and {}, number of sampled diff: {} of {}'.format(
-                alabel, blabel, analog_diff, nsampled_analog)
-
-
-    def check_data_in_range(reader, label, min_range, max_range):
-        point, analog = Base.load_data(reader)
-        # Probably redundant but can be useful to verify
-        verify.array_match_headers(point, analog, reader, label)
-        # Check POINT data blocks
-        if reader.point_used > 0:
-            point_masked = point[Base.create_camera_mask(point)]
-            verify.point_data_in_range(point_masked, label, min_range, max_range)
-        # Check ANALOG data blocks
-        if reader.analog_used > 0:
-            verify.analog_data_in_range(analog, label, min_range, max_range)

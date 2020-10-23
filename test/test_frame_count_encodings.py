@@ -49,6 +49,16 @@ class AnalogSampleCountEncodingTest():
             print('{} | SAMPLE_COUNT: OK'.format(file))
 
 
+class Sample19(FrameCountEncodingTest, AnalogSampleCountEncodingTest, verify.ReadTest, Base):
+    ''' Test to evaluate if files with large number of analog samples are read correctly.
+    '''
+    ZIP = 'sample19.zip'
+
+    frame_count = [34672]
+    sample_count = [624096]
+    zip_files = ['sample19/sample19.c3d']
+
+
 class Sample31(FrameCountEncodingTest, AnalogSampleCountEncodingTest, verify.ReadTest, Base):
     ''' Test to evaluate if two files with large number of frames are read correctly.
     '''
@@ -79,15 +89,6 @@ class Sample36(FrameCountEncodingTest, Base):
         return ['{}framesf.c3d'.format(c) for c in self.file_id[:3]] +\
                ['{}framesi.c3d'.format(c) for c in self.file_id[3:]]
 
-
-class Sample19(FrameCountEncodingTest, AnalogSampleCountEncodingTest, verify.ReadTest, Base):
-    ''' Test to evaluate if files with large number of analog samples are read correctly.
-    '''
-    ZIP = 'sample19.zip'
-
-    frame_count = [34672]
-    sample_count = [624096]
-    zip_files = ['sample19/sample19.c3d']
 
 
 if __name__ == '__main__':
