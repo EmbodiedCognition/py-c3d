@@ -727,28 +727,47 @@ class Param(object):
     @property
     def bytes_array(self):
         '''Get the param as an array of raw byte strings.'''
-        assert len(self.dimensions) == 2, \
-            '{}: cannot get value as bytes array!'.format(self.name)
-        l, n = self.dimensions
-        return [self.bytes[i*l:(i+1)*l] for i in range(n)]
+        def recurse_read(arr, inds, dim):
+            ''' Decode parameter bytes in fortran format and read into a C ordered array.
+            '''
+            if dim < 0:
+                # Calculate byte offset for the value, the sum of all indices times the byte step of each dimension.
+                off = np.sum(np.multiply(inds, np.cumprod(self.dimensions[:-1])))
+                # Decode the bytes, insert at the reverted fortran index
+                arr[tuple(inds[::-1])] = self.bytes[off:off+self.dimensions[0]]
+            else:
+                # Recurse until a single string can be parsed.
+                for i in range(self.dimensions[dim]):
+                    inds[dim - 1] = i
+                    recurse_read(arr, inds, dim - 1)
+        # Decode different dimensions
+        if len(self.dimensions) == 0:
+            return np.array([])
+        elif len(self.dimensions) == 1:
+            return self.bytes.copy()
+        else:
+            byte_arr = np.empty(self.dimensions[:0:-1], dtype=object)
+            byte_steps =  np.cumprod(self.dimensions[:-1])
+            for i in np.ndindex(byte_arr.shape):
+                # Calculate byte offset as sum of each array index times the byte step of each dimension.
+                # Use the reverted C index to get fortran indexing.
+                off = np.sum(np.multiply(i[::-1], byte_steps))
+                byte_arr[i] = self.bytes[off:off+self.dimensions[0]]
+            return byte_arr
 
     @property
     def string_array(self):
-        '''Get the param as a array of unicode strings.'''
-        def recurse_read(dims, off=0):
-            if len(dims) == 1:
-                return self.dtype.decode_string(self.bytes[off:off+dims[0]])
-            else:
-                # Recurse until a single array of strings can be parsed.
-                return [recurse_read(dims[:-1], off=i*np.prod(dims[:-1])) for i in range(dims[-1])]
-
+        '''Get the param as a python array of unicode strings.'''
         # Decode different dimensions
         if len(self.dimensions) == 0:
-            return []
+            return np.array([])
         elif len(self.dimensions) == 1:
-            return [self.string_value]
+            return np.array([self.string_value])
         else:
-            return recurse_read(self.dimensions)
+            byte_arr = self.bytes_array
+            for i in np.ndindex(byte_arr.shape):
+                byte_arr[i] = self.dtype.decode_string(byte_arr[i])
+            return byte_arr
 
 
 class Group(object):
@@ -1605,6 +1624,7 @@ class Writer(Manager):
 
         points, analog = self._frames[0]
         ppf = len(points)
+        labels = np.ravel(labels, order='F')
 
         # POINT group
 

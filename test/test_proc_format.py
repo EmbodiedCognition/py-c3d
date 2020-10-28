@@ -27,8 +27,6 @@ class FormatTest():
         FMT_INTEL_INT = c3d.Reader(Zipload._get(self.ZIP, self.INTEL_INT))
         FMT_INTEL_REAL = c3d.Reader(Zipload._get(self.ZIP, self.INTEL_REAL))
 
-        #self._log(FMT_INTEL_INT)
-        #self._log(FMT_INTEL_REAL)
         proc_type = 'INTEL'
         test_id = '{} format test'.format(proc_type)
 

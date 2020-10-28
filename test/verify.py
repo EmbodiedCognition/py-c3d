@@ -87,6 +87,7 @@ class WithinRangeTest():
             ''' Loads file within a zipfile and execute 'c3d.read_frames()'
             '''
             reader = c3d.Reader(Zipload._get(self.ZIP, file_path))
+            self._log(reader)
             npoint = np.zeros((reader.point_used, 5), dtype=np.int64)
             nanalog = np.zeros((reader.analog_used), dtype=np.int64)
             point_min, point_max = 1e10, 1e-10
