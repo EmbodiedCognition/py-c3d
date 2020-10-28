@@ -764,7 +764,9 @@ class Param(object):
         elif len(self.dimensions) == 1:
             return np.array([self.string_value])
         else:
+            # Parse byte sequences
             byte_arr = self.bytes_array
+            # Decode sequences
             for i in np.ndindex(byte_arr.shape):
                 byte_arr[i] = self.dtype.decode_string(byte_arr[i])
             return byte_arr
