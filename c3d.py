@@ -18,6 +18,7 @@ class DataTypes(object):
     ''' Define the data types used for reading parameter data.
     '''
     def __init__(self, proc_type):
+        self.proc_type = proc_type
         if proc_type == PROCESSOR_MIPS:
             # Big-Endian
             self.float32 = np.dtype(np.float32).newbyteorder('>')
@@ -41,6 +42,18 @@ class DataTypes(object):
             self.int16 = np.int16
             self.int32 = np.int32
             self.int64 = np.int64
+
+    @property
+    def isIEEE(self):
+        return self.proc_type == PROCESSOR_INTEL
+
+    @property
+    def isDEC(self):
+        return self.proc_type == PROCESSOR_DEC
+
+    @property
+    def isMIPS(self):
+        return self.proc_type == PROCESSOR_MIPS
 
     def decode_string(self, bytes):
         ''' Decode a byte array to a string.
@@ -477,6 +490,8 @@ class Param(object):
     ----------
     name : str
         Name of this parameter.
+    dtype: DataTypes
+        Reference to the DataTypes object associated with the file.
     desc : str
         Brief description of this parameter.
     bytes_per_element : int, optional
@@ -489,12 +504,13 @@ class Param(object):
         rows (number of strings).
     bytes : str
         Raw data for this parameter.
+    handle :
+        File handle positioned at the first byte of a .c3d parameter description.
     '''
 
     def __init__(self,
                  name,
                  dtype,
-                 proc=PROCESSOR_INTEL,
                  desc='',
                  bytes_per_element=1,
                  dimensions=None,
@@ -502,7 +518,6 @@ class Param(object):
                  handle=None):
         '''Set up a new parameter, only the name is required.'''
         self.name = name
-        self.proc = proc
         self.dtype = dtype
         self.desc = desc
         self.bytes_per_element = bytes_per_element
@@ -513,15 +528,6 @@ class Param(object):
 
     def __repr__(self):
         return '<Param: {}>'.format(self.desc)
-    @property
-    def isIEEE(self):
-        return self.proc == PROCESSOR_INTEL
-    @property
-    def isDEC(self):
-        return self.proc == PROCESSOR_DEC
-    @property
-    def isMIPS(self):
-        return self.proc == PROCESSOR_MIPS
     @property
     def num_elements(self):
         '''Return the number of elements in this parameter's array value.'''
@@ -667,7 +673,7 @@ class Param(object):
     @property
     def float_value(self):
         '''Get the param as a 32-bit float.'''
-        if self.isDEC:
+        if self.dtype.isDEC:
             return DEC_to_IEEE(self._as(np.uint32))
         else:  # isMIPS or isIEEE
             return self._as(self.dtype.float32)
@@ -716,7 +722,7 @@ class Param(object):
     def float_array(self):
         '''Get the param as an array of 32-bit floats.'''
         # Convert float data if not IEEE processor
-        if self.isDEC:
+        if self.dtype.isDEC:
             # _as_array but for DEC
             assert self.dimensions, \
                 '{}: cannot get value as {} array!'.format(self.name, dtype)
@@ -1256,7 +1262,7 @@ class Reader(Manager):
                 # we've just started reading a parameter. if its group doesn't
                 # exist, create a blank one. add the parameter to the group.
                 self.groups.setdefault(
-                    group_id, Group()).add_param(name, self.dtypes, handle=buf, proc=self.processor)
+                    group_id, Group()).add_param(name, self.dtypes, handle=buf)
             else:
                 # we've just started reading a group. if a group with the
                 # appropriate id exists already (because we've already created
