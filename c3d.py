@@ -7,7 +7,7 @@ import io
 import numpy as np
 import struct
 import warnings
-
+import codecs
 
 PROCESSOR_INTEL = 84
 PROCESSOR_DEC = 85
@@ -62,11 +62,11 @@ class DataTypes(object):
         decoders =  ['utf-8', 'latin-1']
         for dec in decoders:
             try:
-                return bytes.decode(dec)
+                return codecs.decode(bytes, dec)
             except UnicodeDecodeError:
                 continue
         # Revert to using default decoder but replace characters
-        return bytes.decode(decoders[0], 'replace')
+        return codecs.decode(bytes, decoders[0], 'replace')
 
 
 def UNPACK_FLOAT_IEEE(uint_32):
@@ -750,7 +750,7 @@ class Param(object):
         if len(self.dimensions) == 0:
             return np.array([])
         elif len(self.dimensions) == 1:
-            return self.bytes.copy()
+            return np.array(self.bytes)
         else:
             byte_arr = np.empty(self.dimensions[:0:-1], dtype=object)
             byte_steps =  np.cumprod(self.dimensions[:-1])
