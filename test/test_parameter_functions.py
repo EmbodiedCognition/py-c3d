@@ -5,7 +5,7 @@ import unittest
 import numpy as np
 
 
-def genWordMDArr(word, shape):
+def genByteWordArr(word, shape):
 	'''	Generate a multi-dimensional byte array from a specific word.
 	'''
 	arr = np.array(word)
@@ -13,7 +13,7 @@ def genWordMDArr(word, shape):
 		arr = arr[np.newaxis].repeat(d, 0)
 	return arr, [len(word)] + [d for d in shape]
 
-def genRndMDArr(wordlen, shape, pad):
+def genRndByteArr(wordlen, shape, pad):
 	'''	Generate a multi-dimensional byte array with random data.
 	'''
 	tot_len = wordlen + pad*wordlen
@@ -25,10 +25,30 @@ def genRndMDArr(wordlen, shape, pad):
 		arr[i] = bytes.tobytes()
 	return arr, [tot_len] + [d for d in shape]
 
+def genRndFloatArr(shape, rnd, range=(-1e6, 1e6)):
+	'''	Generate a multi-dimensional array of 32 bit floating point data.
+	'''
+	return rnd.uniform(range[0], range[1], shape)
+
+
+
 class ParameterTest(unittest.TestCase):
 	def setUp(self):
 		self.rnd = np.random.default_rng()
 		self.dtypes = c3d.DataTypes(c3d.PROCESSOR_INTEL)
+
+	def test_d_parse_float_array(self):
+		flt_range = (-1e6, 1e6)
+
+		shapes = [[7, 6, 5], [7, 5, 3], [7, 3], [19]]
+
+		for shape in shapes:
+			arr = self.rnd.uniform(flt_range[0], flt_range[1], size=shape).astype(np.float32)
+			P = c3d.Param('FLOAT_TEST', self.dtypes, bytes_per_element=4, dimensions=arr.shape, bytes=arr.T.tobytes())
+			arr_out = P.float_array
+			assert arr.T.shape == arr_out.shape, "Mismatch in 'float_array' converted shape"
+			assert np.all(arr.T == arr_out), 'Value mismatch when reading float array'
+
 
 	def test_a_parse_byte_array(self):
 		'''	Verify byte arrays are parsed correctly
@@ -37,14 +57,14 @@ class ParameterTest(unittest.TestCase):
 
 		# 1 dims
 		arr = np.array(word).repeat(3).repeat(3).repeat(3)
-		P = c3d.Param('TEST', self.dtypes, bytes_per_element=1, dimensions=arr.shape, bytes=arr.T.tobytes())
+		P = c3d.Param('BYTE_TEST', self.dtypes, bytes_per_element=1, dimensions=arr.shape, bytes=arr.T.tobytes())
 		arr_out = P.bytes_array
 		assert arr.shape[1:] == arr_out.shape, "Mismatch in 'bytes_array' converted shape"
 		assert np.all(arr.tobytes() == arr_out), 'Mismatch in reading single dimensional byte array'
 
 		# 4 dims
-		arr, shape = genWordMDArr(word, [5, 4, 3])
-		P = c3d.Param('TEST', self.dtypes, bytes_per_element=1, dimensions=shape, bytes=arr.T.tobytes())
+		arr, shape = genByteWordArr(word, [5, 4, 3])
+		P = c3d.Param('BYTE_TEST', self.dtypes, bytes_per_element=1, dimensions=shape, bytes=arr.T.tobytes())
 		arr_out = P.bytes_array
 
 		assert arr.T.shape == arr_out.shape, "Mismatch in 'bytes_array' converted shape. Was %s, expected %s" %\
@@ -53,8 +73,8 @@ class ParameterTest(unittest.TestCase):
 			assert np.all(arr[i[::-1]] == arr_out[i]), "Mismatch in 'bytes_array' converted value at index %s" % str(i)
 
 		# 5 dims
-		arr, shape = genWordMDArr(word, [6, 5, 4, 3])
-		P = c3d.Param('TEST', self.dtypes, bytes_per_element=1, dimensions=shape, bytes=arr.T.tobytes())
+		arr, shape = genByteWordArr(word, [6, 5, 4, 3])
+		P = c3d.Param('BYTE_TEST', self.dtypes, bytes_per_element=1, dimensions=shape, bytes=arr.T.tobytes())
 		arr_out = P.bytes_array
 
 		assert arr.T.shape == arr_out.shape, "Mismatch in 'bytes_array' converted shape. Was %s, expected %s" %\
@@ -69,8 +89,8 @@ class ParameterTest(unittest.TestCase):
 
 
 		# 3 dims
-		arr, shape = genWordMDArr(word, [7, 3])
-		P = c3d.Param('TEST', self.dtypes, bytes_per_element=1, dimensions=shape, bytes=arr.T.tobytes())
+		arr, shape = genByteWordArr(word, [7, 3])
+		P = c3d.Param('STRING_TEST', self.dtypes, bytes_per_element=-1, dimensions=shape, bytes=arr.T.tobytes())
 		arr_out = P.string_array
 
 		assert arr.T.shape == arr_out.shape, "Mismatch in 'string_array' converted shape. Was %s, expected %s" %\
@@ -80,8 +100,8 @@ class ParameterTest(unittest.TestCase):
 				"Mismatch in 'string_array' converted value at index %s" % str(i)
 
 		# 4 dims
-		arr, shape = genWordMDArr(word, [5, 4, 3])
-		P = c3d.Param('TEST', self.dtypes, bytes_per_element=1, dimensions=shape, bytes=arr.T.tobytes())
+		arr, shape = genByteWordArr(word, [5, 4, 3])
+		P = c3d.Param('STRING_TEST', self.dtypes, bytes_per_element=-1, dimensions=shape, bytes=arr.T.tobytes())
 		arr_out = P.string_array
 
 		assert arr.T.shape == arr_out.shape, "Mismatch in 'string_array' converted shape. Was %s, expected %s" %\
@@ -91,8 +111,8 @@ class ParameterTest(unittest.TestCase):
 				"Mismatch in 'string_array' converted value at index %s" % str(i)
 
 		# 5 dims
-		arr, shape = genWordMDArr(word, [6, 5, 4, 3])
-		P = c3d.Param('TEST', self.dtypes, bytes_per_element=1, dimensions=shape, bytes=arr.T.tobytes())
+		arr, shape = genByteWordArr(word, [6, 5, 4, 3])
+		P = c3d.Param('STRING_TEST', self.dtypes, bytes_per_element=-1, dimensions=shape, bytes=arr.T.tobytes())
 		arr_out = P.string_array
 
 		assert arr.T.shape == arr_out.shape, "Mismatch in 'string_array' converted shape. Was %s, expected %s" %\
@@ -109,8 +129,8 @@ class ParameterTest(unittest.TestCase):
 
 		# 3 dims
 		for wlen in range(10):
-			arr, shape = genRndMDArr(wlen, [7, 3], wlen > 5)
-			P = c3d.Param('TEST', self.dtypes, bytes_per_element=1, dimensions=shape, bytes=arr.T.tobytes())
+			arr, shape = genRndByteArr(wlen, [7, 3], wlen > 5)
+			P = c3d.Param('STRING_TEST', self.dtypes, bytes_per_element=-1, dimensions=shape, bytes=arr.T.tobytes())
 			arr_out = P.string_array
 
 			assert arr.T.shape == arr_out.shape, "Mismatch in 'string_array' converted shape. Was %s, expected %s" %\
@@ -121,8 +141,8 @@ class ParameterTest(unittest.TestCase):
 
 		# 4 dims
 		for wlen in range(10):
-			arr, shape = genRndMDArr(wlen, [7, 5, 3], wlen > 5)
-			P = c3d.Param('TEST', self.dtypes, bytes_per_element=1, dimensions=shape, bytes=arr.T.tobytes())
+			arr, shape = genRndByteArr(wlen, [7, 5, 3], wlen > 5)
+			P = c3d.Param('STRING_TEST', self.dtypes, bytes_per_element=-1, dimensions=shape, bytes=arr.T.tobytes())
 			arr_out = P.string_array
 
 			assert arr.T.shape == arr_out.shape, "Mismatch in 'string_array' converted shape. Was %s, expected %s" %\
@@ -133,8 +153,8 @@ class ParameterTest(unittest.TestCase):
 
 		# 5 dims
 		for wlen in range(10):
-			arr, shape = genRndMDArr(wlen, [7, 6, 5, 3], wlen > 5)
-			P = c3d.Param('TEST', self.dtypes, bytes_per_element=1, dimensions=shape, bytes=arr.T.tobytes())
+			arr, shape = genRndByteArr(wlen, [7, 6, 5, 3], wlen > 5)
+			P = c3d.Param('STRING_TEST', self.dtypes, bytes_per_element=-1, dimensions=shape, bytes=arr.T.tobytes())
 			arr_out = P.string_array
 
 			assert arr.T.shape == arr_out.shape, "Mismatch in 'string_array' converted shape. Was %s, expected %s" %\

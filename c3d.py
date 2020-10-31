@@ -602,7 +602,8 @@ class Param(object):
         assert self.dimensions, \
             '{}: cannot get value as {} array!'.format(self.name, dtype)
         elems = np.frombuffer(self.bytes, dtype=dtype)
-        return elems.reshape(self.dimensions[::-1]) # Reverse shape as data is stored in fortran format
+        # Reverse shape as the shape is defined in fortran format
+        return elems.reshape(self.dimensions[::-1])
 
     def _as_any(self, dtype):
         '''Unpack the raw bytes of this param as either array or single value.'''
@@ -733,32 +734,22 @@ class Param(object):
     @property
     def bytes_array(self):
         '''Get the param as an array of raw byte strings.'''
-        def recurse_read(arr, inds, dim):
-            ''' Decode parameter bytes in fortran format and read into a C ordered array.
-            '''
-            if dim < 0:
-                # Calculate byte offset for the value, the sum of all indices times the byte step of each dimension.
-                off = np.sum(np.multiply(inds, np.cumprod(self.dimensions[:-1])))
-                # Decode the bytes, insert at the reverted fortran index
-                arr[tuple(inds[::-1])] = self.bytes[off:off+self.dimensions[0]]
-            else:
-                # Recurse until a single string can be parsed.
-                for i in range(self.dimensions[dim]):
-                    inds[dim - 1] = i
-                    recurse_read(arr, inds, dim - 1)
         # Decode different dimensions
         if len(self.dimensions) == 0:
             return np.array([])
         elif len(self.dimensions) == 1:
             return np.array(self.bytes)
         else:
-            byte_arr = np.empty(self.dimensions[:0:-1], dtype=object)
-            byte_steps =  np.cumprod(self.dimensions[:-1])
-            for i in np.ndindex(byte_arr.shape):
+            # Convert Fortran shape (data in memory is identical, shape is transposed)
+            word_len = self.dimensions[0]
+            dims = self.dimensions[1:][::-1] # Identical to: [:0:-1]
+            byte_steps =  np.cumprod(self.dimensions[:-1])[::-1]
+            # Generate mult-dimensional array and parse byte words
+            byte_arr = np.empty(dims, dtype=object)
+            for i in np.ndindex(*dims):
                 # Calculate byte offset as sum of each array index times the byte step of each dimension.
-                # Use the reverted C index to get fortran indexing.
-                off = np.sum(np.multiply(i[::-1], byte_steps))
-                byte_arr[i] = self.bytes[off:off+self.dimensions[0]]
+                off = np.sum(np.multiply(i, byte_steps))
+                byte_arr[i] = self.bytes[off:off+word_len]
             return byte_arr
 
     @property
