@@ -32,7 +32,12 @@ def genRndFloatArr(shape, rnd, range=(-1e6, 1e6)):
 
 
 
-class ParameterTest(unittest.TestCase):
+class ParameterArrayTest(unittest.TestCase):
+	'''	Test read Parameter arrays
+	'''
+
+	SHAPES = [[7, 6, 5], [7, 5, 3], [7, 3], [19]]
+
 	def setUp(self):
 		self.rnd = np.random.default_rng()
 		self.dtypes = c3d.DataTypes(c3d.PROCESSOR_INTEL)
@@ -40,9 +45,7 @@ class ParameterTest(unittest.TestCase):
 	def test_a_parse_float32_array(self):
 		flt_range = (-1e6, 1e6)
 
-		shapes = [[7, 6, 5], [7, 5, 3], [7, 3], [19]]
-
-		for shape in shapes:
+		for shape in ParameterArrayTest.SHAPES:
 			arr = self.rnd.uniform(flt_range[0], flt_range[1], size=shape).astype(np.float32)
 			P = c3d.Param('FLOAT_TEST', self.dtypes, bytes_per_element=4, dimensions=arr.shape, bytes=arr.T.tobytes())
 			arr_out = P.float_array
@@ -52,9 +55,7 @@ class ParameterTest(unittest.TestCase):
 	def test_b_parse_int32_array(self):
 		flt_range = (-1e6, 1e6)
 
-		shapes = [[7, 6, 5], [7, 5, 3], [7, 3], [19]]
-
-		for shape in shapes:
+		for shape in ParameterArrayTest.SHAPES:
 			arr = self.rnd.uniform(flt_range[0], flt_range[1], size=shape).astype(np.int32)
 			P = c3d.Param('FLOAT_TEST', self.dtypes, bytes_per_element=4, dimensions=arr.shape, bytes=arr.T.tobytes())
 			arr_out = P.int32_array
@@ -64,9 +65,7 @@ class ParameterTest(unittest.TestCase):
 	def test_c_parse_uint32_array(self):
 		flt_range = (0, 1e6)
 
-		shapes = [[7, 6, 5], [7, 5, 3], [7, 3], [19]]
-
-		for shape in shapes:
+		for shape in ParameterArrayTest.SHAPES:
 			arr = self.rnd.uniform(flt_range[0], flt_range[1], size=shape).astype(np.uint32)
 			P = c3d.Param('FLOAT_TEST', self.dtypes, bytes_per_element=4, dimensions=arr.shape, bytes=arr.T.tobytes())
 			arr_out = P.uint32_array
@@ -76,9 +75,7 @@ class ParameterTest(unittest.TestCase):
 	def test_d_parse_int16_array(self):
 		flt_range = (-1e4, 1e4)
 
-		shapes = [[7, 6, 5], [7, 5, 3], [7, 3], [19]]
-
-		for shape in shapes:
+		for shape in ParameterArrayTest.SHAPES:
 			arr = self.rnd.uniform(flt_range[0], flt_range[1], size=shape).astype(np.int16)
 			P = c3d.Param('FLOAT_TEST', self.dtypes, bytes_per_element=4, dimensions=arr.shape, bytes=arr.T.tobytes())
 			arr_out = P.int16_array
@@ -88,9 +85,7 @@ class ParameterTest(unittest.TestCase):
 	def test_e_parse_uint16_array(self):
 		flt_range = (0, 1e4)
 
-		shapes = [[7, 6, 5], [7, 5, 3], [7, 3], [19]]
-
-		for shape in shapes:
+		for shape in ParameterArrayTest.SHAPES:
 			arr = self.rnd.uniform(flt_range[0], flt_range[1], size=shape).astype(np.uint16)
 			P = c3d.Param('FLOAT_TEST', self.dtypes, bytes_per_element=4, dimensions=arr.shape, bytes=arr.T.tobytes())
 			arr_out = P.uint16_array
@@ -100,9 +95,7 @@ class ParameterTest(unittest.TestCase):
 	def test_e_parse_int8_array(self):
 		flt_range = (-127, 127)
 
-		shapes = [[7, 6, 5], [7, 5, 3], [7, 3], [19]]
-
-		for shape in shapes:
+		for shape in ParameterArrayTest.SHAPES:
 			arr = self.rnd.uniform(flt_range[0], flt_range[1], size=shape).astype(np.int8)
 			P = c3d.Param('FLOAT_TEST', self.dtypes, bytes_per_element=4, dimensions=arr.shape, bytes=arr.T.tobytes())
 			arr_out = P.int8_array
@@ -112,9 +105,7 @@ class ParameterTest(unittest.TestCase):
 	def test_f_parse_uint8_array(self):
 		flt_range = (0, 255)
 
-		shapes = [[7, 6, 5], [7, 5, 3], [7, 3], [19]]
-
-		for shape in shapes:
+		for shape in ParameterArrayTest.SHAPES:
 			arr = self.rnd.uniform(flt_range[0], flt_range[1], size=shape).astype(np.uint8)
 			P = c3d.Param('FLOAT_TEST', self.dtypes, bytes_per_element=4, dimensions=arr.shape, bytes=arr.T.tobytes())
 			arr_out = P.uint8_array
