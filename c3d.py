@@ -1500,7 +1500,7 @@ class Writer(Manager):
         super(Writer, self).__init__()
         self._point_rate = point_rate
         self._analog_rate = analog_rate
-        self._analog_per_frame = int(analog_rate / point_rate)
+        self._analog_per_frame = analog_rate / point_rate
         self._point_scale = point_scale
         self._point_units = point_units
         self._gen_scale = gen_scale
@@ -1664,12 +1664,12 @@ class Writer(Manager):
         blocks = self.parameter_blocks()
         self.get('POINT:DATA_START').bytes = struct.pack('<H', 2 + blocks)
 
-        self.header.data_block = 2 + blocks
-        self.header.frame_rate = self._point_rate
-        self.header.last_frame = min(len(self._frames), 65535)
-        self.header.point_count = ppf
-        self.header.analog_count = np.prod(analog.shape)
-        self.header.analog_per_frame = self._analog_per_frame
+        self.header.data_block = np.uint16(2 + blocks)
+        self.header.frame_rate = np.uint16(self._point_rate)
+        self.header.last_frame = np.uint16(min(len(self._frames), 65535))
+        self.header.point_count = np.uint16(ppf)
+        self.header.analog_count = np.uint16(np.prod(analog.shape))
+        self.header.analog_per_frame = np.uint16(self._analog_per_frame)
         self.header.scale_factor = self._point_scale
 
         self._write_metadata(handle)
