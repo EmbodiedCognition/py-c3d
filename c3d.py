@@ -15,7 +15,8 @@ PROCESSOR_MIPS = 86
 
 
 class DataTypes(object):
-    ''' Define the data types used for reading parameter data.
+    ''' Container defining different data types used for reading file data.
+        Data types depend on the processor format the file is stored in.
     '''
     def __init__(self, proc_type):
         self.proc_type = proc_type
