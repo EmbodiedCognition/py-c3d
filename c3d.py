@@ -931,7 +931,7 @@ class Manager(object):
             ratio = self.analog_rate / self.point_rate
         else:
             ratio = 0
-        assert True or self.header.analog_per_frame == ratio, (
+        assert self.header.analog_per_frame == ratio, (
             'inconsistent analog rate! {} header != {} analog-fps / {} point-fps'.format(
                 self.header.analog_per_frame,
                 self.analog_rate,
@@ -939,7 +939,7 @@ class Manager(object):
             ))
 
         count = self.analog_used * self.header.analog_per_frame
-        assert True or self.header.analog_count == count, (
+        assert self.header.analog_count == count, (
             'inconsistent analog count! {} header != {} analog used * {} per-frame'.format(
                 self.header.analog_count,
                 self.analog_used,
@@ -1111,12 +1111,12 @@ class Manager(object):
 
     @property
     def analog_rate(self):
-        '''  Total number of analog data samples per 3D frame (point sample).
+        '''  Number of analog data samples per second.
         '''
         try:
             return self.get_float('ANALOG:RATE')
         except AttributeError:
-            return 0
+            return self.header.analog_per_frame * self.point_rate
 
     @property
     def analog_per_frame(self):
@@ -1500,6 +1500,7 @@ class Writer(Manager):
         super(Writer, self).__init__()
         self._point_rate = point_rate
         self._analog_rate = analog_rate
+        self._analog_per_frame = int(analog_rate / point_rate)
         self._point_scale = point_scale
         self._point_units = point_units
         self._gen_scale = gen_scale
@@ -1635,8 +1636,8 @@ class Writer(Manager):
         add('USED', 'Number of 3d markers', 2, '<H', ppf)
         add('FRAMES', 'frame count', 2, '<H', min(65535, len(self._frames)))
         add('DATA_START', 'data block number', 2, '<H', 0)
-        add('SCALE', '3d scale factor', 4, '<f', self._point_scale)
-        add('RATE', '3d data capture rate', 4, '<f', self._point_rate)
+        add('SCALE', '3d scale factor', 4, '<f', np.float32(self._point_scale))
+        add('RATE', '3d data capture rate', 4, '<f', np.float32(self._point_rate))
         add_str('X_SCREEN', 'X_SCREEN parameter', '+X', 2)
         add_str('Y_SCREEN', 'Y_SCREEN parameter', '+Y', 2)
         add_str('UNITS', '3d data units',
@@ -1649,8 +1650,8 @@ class Writer(Manager):
         # ANALOG group
         group = self.add_group(2, 'ANALOG', 'ANALOG group')
         add('USED', 'analog channel count', 2, '<H', analog.shape[0])
-        add('RATE', 'analog samples per 3d frame', 4, '<f', analog.shape[1])
-        add('GEN_SCALE', 'analog general scale factor', 4, '<f', self._gen_scale)
+        add('RATE', 'analog samples per second', 4, '<f', np.float32(self._analog_rate))
+        add('GEN_SCALE', 'analog general scale factor', 4, '<f', np.float32(self._gen_scale))
         add_empty_array('SCALE', 'analog channel scale factors', 4)
         add_empty_array('OFFSET', 'analog channel offsets', 2)
 
@@ -1668,7 +1669,7 @@ class Writer(Manager):
         self.header.last_frame = min(len(self._frames), 65535)
         self.header.point_count = ppf
         self.header.analog_count = np.prod(analog.shape)
-        self.header.analog_per_frame = analog.shape[0]
+        self.header.analog_per_frame = self._analog_per_frame
         self.header.scale_factor = self._point_scale
 
         self._write_metadata(handle)
