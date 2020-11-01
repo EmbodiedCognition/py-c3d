@@ -1624,7 +1624,7 @@ class Writer(Manager):
 
         points, analog = self._frames[0]
         ppf = len(points)
-        labels = np.ravel(labels, order='F')
+        labels = np.ravel(labels)
 
         # POINT group
 
