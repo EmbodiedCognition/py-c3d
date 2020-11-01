@@ -21,7 +21,7 @@ class DataTypes(object):
     def __init__(self, proc_type):
         self.proc_type = proc_type
         if proc_type == PROCESSOR_MIPS:
-            # Big-Endian
+            # Big-Endian (SGI/MIPS format)
             self.float32 = np.dtype(np.float32).newbyteorder('>')
             self.float64 = np.dtype(np.float64).newbyteorder('>')
             self.uint8 = np.uint8
@@ -33,6 +33,7 @@ class DataTypes(object):
             self.int32 = np.dtype(np.int32).newbyteorder('>')
             self.int64 = np.dtype(np.int64).newbyteorder('>')
         else:
+            # Little-Endian format (Intel or DEC format)
             self.float32 = np.float32
             self.float64 = np.float64
             self.uint8 = np.uint8
@@ -46,14 +47,20 @@ class DataTypes(object):
 
     @property
     def isIEEE(self):
+        ''' True if the associated file is in the Intel format.
+        '''
         return self.proc_type == PROCESSOR_INTEL
 
     @property
     def isDEC(self):
+        ''' True if the associated file is in the DEC format.
+        '''
         return self.proc_type == PROCESSOR_DEC
 
     @property
     def isMIPS(self):
+        ''' True if the associated file is in the SGI/MIPS format.
+        '''
         return self.proc_type == PROCESSOR_MIPS
 
     def decode_string(self, bytes):
