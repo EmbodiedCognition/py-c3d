@@ -1665,12 +1665,12 @@ class Writer(Manager):
         self.get('POINT:DATA_START').bytes = struct.pack('<H', 2 + blocks)
 
         self.header.data_block = np.uint16(2 + blocks)
-        self.header.frame_rate = np.uint16(self._point_rate)
+        self.header.frame_rate = np.float32(self._point_rate)
         self.header.last_frame = np.uint16(min(len(self._frames), 65535))
         self.header.point_count = np.uint16(ppf)
         self.header.analog_count = np.uint16(np.prod(analog.shape))
         self.header.analog_per_frame = np.uint16(self._analog_per_frame)
-        self.header.scale_factor = self._point_scale
+        self.header.scale_factor = np.float32(self._point_scale)
 
         self._write_metadata(handle)
         self._write_frames(handle)
