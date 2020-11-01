@@ -212,7 +212,7 @@ def equal_headers(test_label, areader, breader, alabel, blabel, areal, breal):
     for i in range(aheader.event_count):
         event_label = aheader.event_labels[i]
         if event_label in bheader.event_labels:
-            lindex = bheader.event_labels.index(event_label)
+            lindex = bheader.event_labels.tolist().index(event_label)
             assert aheader.event_disp_flags[i] == bheader.event_disp_flags[lindex], \
                 '{}, event_disp_flag {}: {} {}, {} {}'.format(test_label, event_label,
                 alabel, aheader.event_disp_flags[i], blabel, bheader.event_disp_flags[lindex])

@@ -441,19 +441,19 @@ long_event_labels: {0.long_event_labels}
         self.long_event_labels = self.long_event_labels == 0x3039
 
 
-    def processor_convert(self, proc, handle):
+    def processor_convert(self, dtypes, handle):
         ''' Function interpreting the header once processor type has been determined.
         '''
 
-        if proc == PROCESSOR_DEC:
+        if dtypes.isDEC:
             self.scale_factor = DEC_to_IEEE(self.scale_factor)
             self.frame_rate = DEC_to_IEEE(self.frame_rate)
             float_unpack = DEC_to_IEEE
-        elif proc == PROCESSOR_INTEL:
+        elif dtypes.isIEEE:
             self.scale_factor = UNPACK_FLOAT_IEEE(self.scale_factor)
             self.frame_rate = UNPACK_FLOAT_IEEE(self.frame_rate)
             float_unpack = UNPACK_FLOAT_IEEE
-        elif proc == PROCESSOR_MIPS:
+        elif dtypes.isMIPS:
             # Re-read header in big-endian
             self.read(handle, Header.BINARY_FORMAT_READ_BIG_ENDIAN)
             # Then unpack
@@ -461,10 +461,10 @@ long_event_labels: {0.long_event_labels}
             self.frame_rate = UNPACK_FLOAT_IEEE(self.frame_rate)
             float_unpack = UNPACK_FLOAT_IEEE
 
-        self.interpret_events(proc, float_unpack)
+        self.interpret_events(dtypes, float_unpack)
 
 
-    def interpret_events(self, proc, float_unpack):
+    def interpret_events(self, dtypes, float_unpack):
         ''' Function interpreting the event section of the header.
         '''
 
@@ -473,7 +473,7 @@ long_event_labels: {0.long_event_labels}
         disp_bytes = self.event_block[72:90]
         label_bytes = self.event_block[92:]
 
-        if proc == PROCESSOR_MIPS:
+        if dtypes.isMIPS:
             unpack_fmt = '>I'
         else:
             unpack_fmt = '<I'
@@ -481,14 +481,23 @@ long_event_labels: {0.long_event_labels}
         read_count = self.event_count
         self.event_timings = np.zeros(read_count, dtype=np.float32)
         self.event_disp_flags = np.zeros(read_count, dtype=np.bool)
-        self.event_labels = [''] * read_count
+        self.event_labels = np.empty(read_count, dtype=object)
         for i in range(read_count):
             ilong = i*4
             # Unpack
             self.event_disp_flags[i] = disp_bytes[i] > 0
             self.event_timings[i] = float_unpack(struct.unpack(unpack_fmt, time_bytes[ilong:ilong+4])[0])
-            self.event_labels[i] = str(label_bytes[ilong:ilong+4])
+            self.event_labels[i] = dtypes.decode_string(label_bytes[ilong:ilong+4])
 
+    @property
+    def events(self):
+        ''' Get an iterable over displayed events defined in the header. Iterable items are on form (timing, label).
+
+            Note*:
+            Time as defined by the 'timing' is relative to frame 1 and not the 'first_frame' parameter.
+            Frame 1 therefor has the time 0.0 in relation to the event timing.
+        '''
+        return zip(self.event_timings[self.event_disp_flags], self.event_labels[self.event_disp_flags])
 
 
 class Param(object):
@@ -1226,7 +1235,7 @@ class Reader(Manager):
         _, _, parameter_blocks, self.processor = struct.unpack('BBBB', buf)
         self.dtypes = DataTypes(self.processor)
         # Convert header parameters in accordance with the processor type (MIPS format re-reads the header)
-        self.header.processor_convert(self.processor, handle)
+        self.header.processor_convert(self.dtypes, handle)
 
         #if self.processor == PROCESSOR_MIPS:
         #    raise ValueError(
