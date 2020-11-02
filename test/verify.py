@@ -13,6 +13,8 @@ def count_nan(array):
 #   Functions evaluting logical expressions on input parameters (returns True/False)
 #
 ##
+
+
 def array_has_values(array):
     ''' Returns true if at least one dimension in the array is 0
     '''
@@ -36,6 +38,7 @@ def values_in_range(array, min_range, max_range):
 #
 ##
 
+
 class ReadTest():
     ''' Base class testing if a set of pre-defined files can be read with plausible values.
     '''
@@ -54,11 +57,11 @@ class ReadTest():
                 nanalog_read += analog.shape[1]
 
             assert nframe_read == reader.frame_count,\
-                   """Failed reading file, mismatch in number of frames, read {} expected {}""".format(
-                   nframe_read, reader.frame_count)
+                   "Failed reading file, mismatch in number of frames, read {} expected {}".format(
+                    nframe_read, reader.frame_count)
             assert nanalog_read == reader.analog_sample_count,\
-              """Failed reading file, mismatch in number of analog samples, read {} expected {}""".format(
-              nanalog_read, reader.analog_sample_count)
+                   "Failed reading file, mismatch in number of analog samples, read {} expected {}".format(
+                    nanalog_read, reader.analog_sample_count)
 
             print('{} | READ: OK'.format(file))
 
@@ -107,15 +110,15 @@ class WithinRangeTest():
                     analog_min = np.min(analog)
                     analog_max = np.max(analog)
 
-
             assert np.all(npoint == reader.frame_count),\
                    """Failed verifying POINT data in range ({}, {}), found {} number of mismatches in each axis
-                      for all samples. Range for data was ({}, {}).""".format(min_range, max_range,
-                      np.sum(np.abs(npoint - reader.frame_count), axis=0), point_min, point_max)
+                      for all samples. Range for data was ({}, {})."""\
+                      .format(min_range, max_range, np.sum(np.abs(npoint - reader.frame_count), axis=0),
+                              point_min, point_max)
             assert np.all(nanalog == reader.analog_sample_count),\
-                  """Failed verifying ANALOG data in range ({}, {}), found {} number of mismatches for each channel
-                     for all samples. Range for data was ({}, {}).""".format(min_range, max_range,
-                     np.abs(nanalog - reader.analog_sample_count), analog_min, analog_max)
+                   """Failed verifying ANALOG data in range ({}, {}), found {} number of mismatches for each channel
+                   for all samples. Range for data was ({}, {})."""\
+                   .format(min_range, max_range, np.abs(nanalog - reader.analog_sample_count), analog_min, analog_max)
 
             print('{} | READ: OK'.format(file))
 
@@ -141,11 +144,11 @@ def array_match_headers(point, analog, reader, label):
     ''' Check point and analog arrays as fetched from load_data(reader), matches the headers in the reader.
     '''
     assert reader.point_used == np.shape(point)[1],\
-        'Mismatch in number of POINT samples for file {}, read {} expected {}'.format(
-         np.shape(point)[1], reader.point_used)
+           'Mismatch in number of POINT samples for file {}, read {} expected {}'.format(
+           reader.file_path, np.shape(point)[1], reader.point_used)
     assert reader.analog_used == np.shape(analog)[1],\
         'Mismatch in number of ANALOG samples for file {}, read {} expected {}'.format(
-         np.shape(analog)[1], reader.analog_used)
+         reader.file_path, np.shape(analog)[1], reader.analog_used)
 
 
 def point_data_in_range(point, label, min_range, max_range):
@@ -164,7 +167,7 @@ def analog_data_in_range(analog, label, min_range, max_range):
     '''
     # Check ANALOG data
     assert values_in_range(analog, min_range, max_range),\
-            "ANALOG data was not in range ({}, {}) for file '{}'. Was in range ({}, {})".format(
+           "ANALOG data was not in range ({}, {}) for file '{}'. Was in range ({}, {})".format(
             min_range, max_range, label, np.min(analog), np.max(analog))
 
 
@@ -175,38 +178,38 @@ def equal_headers(test_label, areader, breader, alabel, blabel, areal, breal):
     aheader = areader.header
     bheader = breader.header
     assert aheader.parameter_block == bheader.parameter_block, \
-        '{}, parameter_block: {} {}, {} {}'.format(test_label,
-        alabel, aheader.parameter_block, blabel, bheader.parameter_block)
+           '{}, parameter_block: {} {}, {} {}'.format(
+            test_label, alabel, aheader.parameter_block, blabel, bheader.parameter_block)
     assert aheader.parameter_block == bheader.parameter_block, \
-        '{}, data_block: {} {}, {} {}'.format(test_label,
-        alabel, aheader.data_block, blabel, bheader.data_block)
+        '{}, data_block: {} {}, {} {}'.format(
+         test_label, alabel, aheader.data_block, blabel, bheader.data_block)
     assert aheader.point_count == bheader.point_count, \
-        '{}, point_count: {} {}, {} {}'.format(test_label,
-        alabel, aheader.point_count, blabel, bheader.point_count)
+        '{}, point_count: {} {}, {} {}'.format(
+         test_label, alabel, aheader.point_count, blabel, bheader.point_count)
     assert aheader.analog_count == bheader.analog_count, \
-        '{}, analog_count: {} {}, {} {}'.format(test_label,
-        alabel, aheader.point_count, blabel, bheader.point_count)
+        '{}, analog_count: {} {}, {} {}'.format(
+         test_label, alabel, aheader.point_count, blabel, bheader.point_count)
     assert aheader.first_frame == bheader.first_frame, \
-        '{}, point_count: {} {}, {} {}'.format(test_label,
-        alabel, aheader.first_frame, blabel, bheader.first_frame)
+        '{}, first_frame: {} {}, {} {}'.format(
+         test_label, alabel, aheader.first_frame, blabel, bheader.first_frame)
     assert aheader.last_frame == bheader.last_frame, \
-        '{}, last_frame: {} {}, {} {}'.format(test_label,
-        alabel, aheader.last_frame, vbheader.last_frame)
+        '{}, last_frame: {} {}, {} {}'.format(
+         test_label, alabel, aheader.last_frame, blabel, bheader.last_frame)
     assert aheader.analog_per_frame == bheader.analog_per_frame, \
-        '{}, analog_per_frame: {} {}, {} {}'.format(test_label,
-        alabel, aheader.analog_per_frame, blabel, bheader.analog_per_frame)
+        '{}, analog_per_frame: {} {}, {} {}'.format(
+         test_label, alabel, aheader.analog_per_frame, blabel, bheader.analog_per_frame)
     assert aheader.frame_rate == bheader.frame_rate, \
-        '{}, frame_rate: {} {}, {} {}'.format(test_label,
-        alabel, aheader.frame_rate, blabel, bheader.frame_rate)
+        '{}, frame_rate: {} {}, {} {}'.format(
+         test_label, alabel, aheader.frame_rate, blabel, bheader.frame_rate)
     assert aheader.max_gap == bheader.max_gap, \
-        '{}, max_gap: {} {}, {} {}'.format(test_label,
-        alabel, aheader.max_gap, blabel, bheader.max_gap)
+        '{}, max_gap: {} {}, {} {}'.format(
+         test_label, alabel, aheader.max_gap, blabel, bheader.max_gap)
     assert aheader.max_gap == bheader.max_gap, \
-        '{}, max_gap: {} {}, {} {}'.format(test_label,
-        alabel, aheader.max_gap, blabel, bheader.max_gap)
+        '{}, max_gap: {} {}, {} {}'.format(
+         test_label, alabel, aheader.max_gap, blabel, bheader.max_gap)
     assert aheader.long_event_labels == bheader.long_event_labels, \
-        '{}, long_event_labels: {} {}, {} {}'.format(test_label,
-        alabel, aheader.long_event_labels, blabel, bheader.long_event_labels)
+        '{}, long_event_labels: {} {}, {} {}'.format(
+         test_label, alabel, aheader.long_event_labels, blabel, bheader.long_event_labels)
 
     event_mismatch = max(0, bheader.event_count - aheader.event_count)
     for i in range(aheader.event_count):
@@ -214,24 +217,24 @@ def equal_headers(test_label, areader, breader, alabel, blabel, areal, breal):
         if event_label in bheader.event_labels:
             lindex = bheader.event_labels.tolist().index(event_label)
             assert aheader.event_disp_flags[i] == bheader.event_disp_flags[lindex], \
-                '{}, event_disp_flag {}: {} {}, {} {}'.format(test_label, event_label,
-                alabel, aheader.event_disp_flags[i], blabel, bheader.event_disp_flags[lindex])
+                   '{}, event_disp_flag {}: {} {}, {} {}'.format(
+                    test_label, event_label, alabel, aheader.event_disp_flags[i], blabel,
+                    bheader.event_disp_flags[lindex])
             assert np.isclose(aheader.event_timings[i], bheader.event_timings[lindex], atol=1e-7), \
-                '{}, event_timings {}: {} {}, {} {}'.format(test_label, event_label,
-                alabel, aheader.event_timings[i], blabel, bheader.event_timings[lindex])
+                   '{}, event_timings {}: {} {}, {} {}'.format(
+                    test_label, event_label, alabel, aheader.event_timings[i], blabel, bheader.event_timings[lindex])
         else:
             event_mismatch += 1
 
     # Validate event differences, up to a few labels can be mismatched
-    err_str = '''{}, label missmatch in event_block. File {} had {} and {} had {} with no match'''.format(
-        test_label, alabel, [l for l in aheader.event_labels if l not in bheader.event_labels],
-        blabel, [l for l in bheader.event_labels  if l not in aheader.event_labels])
+    err_str = '{}, label missmatch in event_block. File {} had {} and {} had {} with no match'.format(
+               test_label, alabel, [lab for lab in aheader.event_labels if lab not in bheader.event_labels],
+               blabel, [lab for lab in bheader.event_labels if lab not in aheader.event_labels])
     if event_mismatch > 0:
         if event_mismatch <= 2:
             warnings.warn(err_str, ImportWarning)
         else:
             assert False, err_str
-
 
     if areal:
         assert aheader.scale_factor < 0.0, \
@@ -254,18 +257,18 @@ def data_is_equal(areader, breader, alabel, blabel):
     equal_scale_fac = 1.01
 
     # Check frame count
-    assert areader.frame_count == breader.frame_count, 'Expected frame count to be equal was {} and {}'.format(\
+    assert areader.frame_count == breader.frame_count, 'Expected frame count to be equal was {} and {}'.format(
            areader.frame_count, breader.frame_count)
     # Check point count
     assert areader.point_used == breader.point_used,\
-           'Expected per frame point sample count to be equal was {} and {}'.format(\
-           areader.point_used, breader.point_used)
+           'Expected per frame point sample count to be equal was {} and {}'.format(
+            areader.point_used, breader.point_used)
     # Check analog sample count
     assert areader.analog_sample_count == breader.analog_sample_count,\
-           'Expected analog sample count to be equal was {} and {}'.format(\
-           areader.analog_sample_count, breader.analog_sample_count)
+           'Expected analog sample count to be equal was {} and {}'.format(
+            areader.analog_sample_count, breader.analog_sample_count)
     assert np.abs(areader.point_scale) == np.abs(breader.point_scale),\
-            'Expected coordinate scale to be equal was {} and {}'.format(\
+           'Expected coordinate scale to be equal was {} and {}'.format(
             np.abs(areader.point_scale), np.abs(breader.point_scale))
 
     # Fetch file params/data
@@ -274,17 +277,17 @@ def data_is_equal(areader, breader, alabel, blabel):
     apoint, aanalog = Base.load_data(areader)
     bpoint, banalog = Base.load_data(breader)
 
-    nsampled_coordinates = areader.point_used * areader.frame_count
+    nsampled_coordinates = areader.point_used * frame_count
     nsampled_analog = areader.analog_used * analog_count
 
     # Compare point data (coordinates)
     c = ['X', 'Y', 'Z']
     for i in range(3):
         axis_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, :, i], bpoint[:, :, i],
-            atol=equal_scale_fac*abs(areader.point_scale)))
+                                                  atol=equal_scale_fac*abs(areader.point_scale)))
         assert axis_diff == 0, \
             'Mismatched coordinates on {} axis for {} and {}, number of sampled diff: {} of {}'.format(
-            c[i], alabel, blabel, axis_diff, nsampled_coordinates)
+             c[i], alabel, blabel, axis_diff, nsampled_coordinates)
 
     # Word 4 (residual + camera bits)
     residual_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, :, 3], bpoint[:, :, 3]))
@@ -302,7 +305,6 @@ def data_is_equal(areader, breader, alabel, blabel):
     assert residual_diff == 0, \
         'Error in sample residuals between {} and {}, number of residual diff: {} of {}'.format(
             alabel, blabel, residual_diff, nsampled_coordinates)
-
 
     # Compare analog
     analog_diff = nsampled_analog - np.sum(np.isclose(aanalog, banalog))

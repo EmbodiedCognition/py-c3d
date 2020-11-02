@@ -16,6 +16,7 @@ parser.add_argument('-e', '--end', default='\\n', metavar='K', help='write K bet
 parser.add_argument('-s', '--sep', default=',', metavar='C', help='write C between fields in a record')
 parser.add_argument('input', default='-', metavar='FILE', nargs='+', help='process data from this input FILE')
 
+
 def convert(filename, args, sep, end):
     input = sys.stdin
     output = sys.stdout
@@ -42,6 +43,7 @@ def convert(filename, args, sep, end):
             input.close()
             output.close()
 
+
 def main(args):
     sep = args.sep.replace('\\t', '\t').replace('TAB', '\t')
     end = args.end.replace(
@@ -49,6 +51,7 @@ def main(args):
         '\\n', '\n').replace('NL', '\n')
     for filename in args.input:
         convert(filename, args, sep, end)
+
 
 if __name__ == '__main__':
     main(parser.parse_args())
