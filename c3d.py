@@ -46,19 +46,19 @@ class DataTypes(object):
             self.int64 = np.int64
 
     @property
-    def isIEEE(self):
+    def is_ieee(self):
         ''' True if the associated file is in the Intel format.
         '''
         return self.proc_type == PROCESSOR_INTEL
 
     @property
-    def isDEC(self):
+    def is_dec(self):
         ''' True if the associated file is in the DEC format.
         '''
         return self.proc_type == PROCESSOR_DEC
 
     @property
-    def isMIPS(self):
+    def is_mips(self):
         ''' True if the associated file is in the SGI/MIPS format.
         '''
         return self.proc_type == PROCESSOR_MIPS
@@ -445,15 +445,15 @@ long_event_labels: {0.long_event_labels}
         ''' Function interpreting the header once processor type has been determined.
         '''
 
-        if dtypes.isDEC:
+        if dtypes.is_dec:
             self.scale_factor = DEC_to_IEEE(self.scale_factor)
             self.frame_rate = DEC_to_IEEE(self.frame_rate)
             float_unpack = DEC_to_IEEE
-        elif dtypes.isIEEE:
+        elif dtypes.is_ieee:
             self.scale_factor = UNPACK_FLOAT_IEEE(self.scale_factor)
             self.frame_rate = UNPACK_FLOAT_IEEE(self.frame_rate)
             float_unpack = UNPACK_FLOAT_IEEE
-        elif dtypes.isMIPS:
+        elif dtypes.is_mips:
             # Re-read header in big-endian
             self.read(handle, Header.BINARY_FORMAT_READ_BIG_ENDIAN)
             # Then unpack
@@ -473,7 +473,7 @@ long_event_labels: {0.long_event_labels}
         disp_bytes = self.event_block[72:90]
         label_bytes = self.event_block[92:]
 
-        if dtypes.isMIPS:
+        if dtypes.is_mips:
             unpack_fmt = '>I'
         else:
             unpack_fmt = '<I'
@@ -691,9 +691,9 @@ class Param(object):
     @property
     def float_value(self):
         '''Get the param as a 32-bit float.'''
-        if self.dtype.isDEC:
+        if self.dtype.is_dec:
             return DEC_to_IEEE(self._as(np.uint32))
-        else:  # isMIPS or isIEEE
+        else:  # is_mips or is_ieee
             return self._as(self.dtype.float32)
 
     @property
@@ -740,12 +740,12 @@ class Param(object):
     def float_array(self):
         '''Get the param as an array of 32-bit floats.'''
         # Convert float data if not IEEE processor
-        if self.dtype.isDEC:
+        if self.dtype.is_dec:
             # _as_array but for DEC
             assert self.dimensions, \
                 '{}: cannot get value as {} array!'.format(self.name, dtype)
             return DEC_to_IEEE_BYTES(self.bytes).reshape(self.dimensions[::-1])  # Reverse fortran format
-        else:  # isIEEe or isMIPS
+        else:  # is_ieee or is_mips
             return self._as_array(self.dtype.float32)
 
     @property
