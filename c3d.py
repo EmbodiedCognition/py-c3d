@@ -67,7 +67,7 @@ class DataTypes(object):
         ''' Decode a byte array to a string.
         '''
         # Attempt to decode using different decoders
-        decoders =  ['utf-8', 'latin-1']
+        decoders = ['utf-8', 'latin-1']
         for dec in decoders:
             try:
                 return codecs.decode(bytes, dec)
@@ -81,6 +81,8 @@ def UNPACK_FLOAT_IEEE(uint_32):
     '''Unpacks a single 32 bit unsigned int to a IEEE float representation
     '''
     return struct.unpack('f', struct.pack("<I", uint_32))[0]
+
+
 def UNPACK_FLOAT_MIPS(uint_32):
     '''Unpacks a single 32 bit unsigned int to a IEEE float representation
     '''
@@ -95,8 +97,6 @@ def DEC_to_IEEE(uint_32):
     uint_32 : 32 bit unsigned integer containing the DEC single precision float point bits.
     Returns : IEEE formated floating point of the same shape as the input.
     '''
-
-
     # Follows the bit pattern found:
     # 	http://home.fnal.gov/~yang/Notes/ieee_vs_dec_float.txt
     # Further formating descriptions can be found:
@@ -129,6 +129,8 @@ def DEC_to_IEEE(uint_32):
     exp_bits = ((reshuffled & 0xFF000000) - 1) & 0xFF000000
     reshuffled = (reshuffled & 0x00FFFFFF) | exp_bits
     return UNPACK_FLOAT_IEEE(reshuffled)
+
+
 def DEC_to_IEEE_BYTES(bytes):
     '''Convert byte array containing 32 bit DEC floats to IEEE format.
 
@@ -178,8 +180,7 @@ def DEC_to_IEEE_BYTES(bytes):
     reshuffled[0::4] = bytes[2::4]
     reshuffled[1::4] = bytes[3::4]
     reshuffled[2::4] = bytes[0::4]
-    reshuffled[3::4] = bytes[1::4] + ((bytes[1::4] & 0x7f == 0) - 1) # Decrement exponent by 2, if exp. > 1
-
+    reshuffled[3::4] = bytes[1::4] + ((bytes[1::4] & 0x7f == 0) - 1)  # Decrement exponent by 2, if exp. > 1
 
     # There are different ways to adjust for differences in DEC/IEEE representation
     # after reshuffle. Two simple methods are:
@@ -192,8 +193,9 @@ def DEC_to_IEEE_BYTES(bytes):
     # Here method 1) is used, which mean that only small numbers will be represented incorrectly.
 
     return np.frombuffer(reshuffled.tobytes(),
-                                 dtype=np.float32,
-                                 count=int(len(bytes) / 4))
+                         dtype=np.float32,
+                         count=int(len(bytes) / 4))
+
 
 def DEC_to_IEEE_REFERENCE(bytes):
     '''Convert the 32 bit representation of a DEC float to IEEE format.
@@ -260,7 +262,6 @@ def DEC_to_IEEE_REFERENCE(bytes):
     # Since undefined values are undefined, 0 is returned, even if not NaN would be optimal.
 
     return result
-#end DEC_to_IEEE_REFERENCE()
 
 
 class Header(object):
@@ -305,8 +306,8 @@ class Header(object):
     '''
 
     # Read/Write header formats, read values as unsigned ints rather then floats.
-    BINARY_FORMAT_WRITE =           '<BBHHHHHfHHf274sHHH164s44s'
-    BINARY_FORMAT_READ =            '<BBHHHHHIHHI274sHHH164s44s'
+    BINARY_FORMAT_WRITE = '<BBHHHHHfHHf274sHHH164s44s'
+    BINARY_FORMAT_READ = '<BBHHHHHIHHI274sHHH164s44s'
     BINARY_FORMAT_READ_BIG_ENDIAN = '>BBHHHHHIHHI274sHHH164s44s'
 
     def __init__(self, handle=None):
@@ -371,7 +372,7 @@ class Header(object):
                                  self.analog_per_frame,
                                  self.frame_rate,
                                  b'',
-                                 self.long_event_labels and 0x3039 or 0x0, # If True write long_event_key else 0
+                                 self.long_event_labels and 0x3039 or 0x0,  # If True write long_event_key else 0
                                  self.event_count,
                                  0x0,
                                  self.event_block,
@@ -440,7 +441,6 @@ long_event_labels: {0.long_event_labels}
         # Check long event key
         self.long_event_labels = self.long_event_labels == 0x3039
 
-
     def processor_convert(self, dtypes, handle):
         ''' Function interpreting the header once processor type has been determined.
         '''
@@ -462,7 +462,6 @@ long_event_labels: {0.long_event_labels}
             float_unpack = UNPACK_FLOAT_IEEE
 
         self.interpret_events(dtypes, float_unpack)
-
 
     def interpret_events(self, dtypes, float_unpack):
         ''' Function interpreting the event section of the header.
@@ -545,6 +544,7 @@ class Param(object):
 
     def __repr__(self):
         return '<Param: {}>'.format(self.desc)
+
     @property
     def num_elements(self):
         '''Return the number of elements in this parameter's array value.'''
@@ -636,7 +636,7 @@ class Param(object):
                 data = self.float_array
             else:
                 data = self._as_array(dtype)
-            if len(self.dimensions) < 2:	# Check if data is contained in a single dimension
+            if len(self.dimensions) < 2:    # Check if data is contained in a single dimension
                 return data.flatten()
             return data
 
@@ -743,7 +743,7 @@ class Param(object):
         if self.dtype.is_dec:
             # _as_array but for DEC
             assert self.dimensions, \
-                '{}: cannot get value as {} array!'.format(self.name, dtype)
+                '{}: cannot get value as {} array!'.format(self.name, self.dtype.float32)
             return DEC_to_IEEE_BYTES(self.bytes).reshape(self.dimensions[::-1])  # Reverse fortran format
         else:  # is_ieee or is_mips
             return self._as_array(self.dtype.float32)
@@ -759,8 +759,8 @@ class Param(object):
         else:
             # Convert Fortran shape (data in memory is identical, shape is transposed)
             word_len = self.dimensions[0]
-            dims = self.dimensions[1:][::-1] # Identical to: [:0:-1]
-            byte_steps =  np.cumprod(self.dimensions[:-1])[::-1]
+            dims = self.dimensions[1:][::-1]  # Identical to: [:0:-1]
+            byte_steps = np.cumprod(self.dimensions[:-1])[::-1]
             # Generate mult-dimensional array and parse byte words
             byte_arr = np.empty(dims, dtype=object)
             for i in np.ndindex(*dims):
@@ -1158,7 +1158,7 @@ class Manager(object):
 
     @property
     def frame_count(self):
-        return self.last_frame - self.first_frame + 1 # Add 1 since range is inclusive [first, last]
+        return self.last_frame - self.first_frame + 1  # Add 1 since range is inclusive [first, last]
 
     @property
     def first_frame(self):
@@ -1224,6 +1224,7 @@ class Reader(Manager):
         super(Reader, self).__init__(Header(handle))
 
         self._handle = handle
+
         def seek_param_section_header():
             ''' Seek to and read the first 4 byte of the parameter header section '''
             self._handle.seek((self.header.parameter_block - 1) * 512)
@@ -1236,11 +1237,6 @@ class Reader(Manager):
         self.dtypes = DataTypes(self.processor)
         # Convert header parameters in accordance with the processor type (MIPS format re-reads the header)
         self.header.processor_convert(self.dtypes, handle)
-
-        #if self.processor == PROCESSOR_MIPS:
-        #    raise ValueError(
-        #        'Only supporting Intel and DEC C3D files (got processor {})'.
-        #        format(self.processor))
 
         # Restart reading the parameter header after parsing processor type
         buf = seek_param_section_header()
@@ -1286,7 +1282,6 @@ class Reader(Manager):
                     self.groups[name] = group
                 else:
                     self.add_group(group_id, name, desc)
-            #bytes = bytes[2 + abs(chars_in_name) + offset_to_next:]
 
         self.check_metadata()
 
@@ -1346,7 +1341,7 @@ class Reader(Manager):
             # Verify BITS parameter for analog
             p = self.get('ANALOG:BITS')
             if p and p._as_integer_value / 8 != analog_word_bytes:
-                    raise NotImplementedError('Analog data using {} bits is not supported.'.format(p._as_integer_value))
+                raise NotImplementedError('Analog data using {} bits is not supported.'.format(p._as_integer_value))
         else:
             analog_dtype = self.dtypes.int16
             analog_word_bytes = 2
@@ -1360,7 +1355,7 @@ class Reader(Manager):
         analog_scales = np.ones((self.analog_used, 1), float)
         param = self.get('ANALOG:SCALE')
         if param is not None:
-            analog_scales[:,:] = param.float_array[:self.analog_used, None]
+            analog_scales[:, :] = param.float_array[:self.analog_used, None]
 
         gen_scale = 1.
         param = self.get('ANALOG:GEN_SCALE')
@@ -1375,7 +1370,6 @@ class Reader(Manager):
         # Total bytes per frame
         point_bytes = N_point * point_word_bytes
         analog_bytes = N_analog * analog_word_bytes
-        tot_bytes = point_bytes + analog_bytes
         # Parse the data blocks
         for frame_no in range(self.first_frame, self.last_frame + 1):
             # Read the byte data (used) for the block
@@ -1383,14 +1377,12 @@ class Reader(Manager):
             raw_analog = self._handle.read(N_analog * analog_word_bytes)
             # Verify read pointers (any of the two can be assumed to be 0)
             if len(raw_bytes) < point_bytes:
-                warnings.warn(
-                    'reached end of file (EOF) while reading POINT data at frame index {} and file pointer {}!'.format(
-                    frame_no - self.first_frame, self._handle.tell()))
+                warnings.warn('''reached end of file (EOF) while reading POINT data at frame index {}
+                                 and file pointer {}!'''.format(frame_no - self.first_frame, self._handle.tell()))
                 return
             if len(raw_analog) < analog_bytes:
-                warnings.warn(
-                    'reached end of file (EOF) while reading POINT data at frame index {} and file pointer {}!'.format(
-                    frame_no - self.first_frame, self._handle.tell()))
+                warnings.warn('''reached end of file (EOF) while reading POINT data at frame index {}
+                                 and file pointer {}!'''.format(frame_no - self.first_frame, self._handle.tell()))
                 return
 
             if is_float:
@@ -1398,13 +1390,12 @@ class Reader(Manager):
                 # (the fourth column is still not a float32 representation)
                 if self.processor == PROCESSOR_DEC:
                     # Convert each of the first 6 16-bit words from DEC to IEEE float
-                    points[:,:4] = DEC_to_IEEE_BYTES(raw_bytes).reshape((self.point_used, 4))
-                    #points[:,:4] = DEC_to_IEEE_REFERENCE(raw_bytes).reshape((int(self.point_used), 4))
+                    points[:, :4] = DEC_to_IEEE_BYTES(raw_bytes).reshape((self.point_used, 4))
                 else:  # If IEEE or MIPS:
                     # Re-read the raw byte representation directly
-                    points[:,:4] = np.frombuffer(raw_bytes,
-                                                 dtype=self.dtypes.float32,
-                                                 count=N_point).reshape((int(self.point_used), 4))
+                    points[:, :4] = np.frombuffer(raw_bytes,
+                                                  dtype=self.dtypes.float32,
+                                                  count=N_point).reshape((int(self.point_used), 4))
 
                 # Parse the camera-observed bits and residuals.
                 # Notes:
@@ -1438,7 +1429,7 @@ class Reader(Manager):
 
             # fifth value is number of bits set in camera-observation byte
             points[valid, 4] = sum((c & (1 << k)) >> k for k in range(8, 15))
-            #points[valid, 4] = (c >> 8)
+            # Get value as is: points[valid, 4] = (c >> 8)
 
             # Check if analog data exist, and parse if so
             if N_analog > 0:
@@ -1457,18 +1448,17 @@ class Reader(Manager):
 
             # Output buffers
             if copy:
-                yield frame_no, points.copy(), analog#.copy(), analog has a new array generated per frame if not empty.
+                yield frame_no, points.copy(), analog  # .copy(), a new array is generated per frame for analog data.
             else:
                 yield frame_no, points, analog
 
         # Function evaluating EOF, note that data section is written in blocks of 512
         final_byte_index = self._handle.tell()
-        self._handle.seek(0, 2)#os.SEEK_END)
+        self._handle.seek(0, 2)  # os.SEEK_END)
         # Check if more then 1 block remain
         if self._handle.tell() - final_byte_index >= 512:
             warnings.warn('incomplete reading of data blocks. {} bytes remained after all datablocks were read!'.format(
                 self._handle.tell() - final_byte_index))
-
 
     @property
     def proc_type(self):
@@ -1477,6 +1467,7 @@ class Reader(Manager):
         """
         processor_type = ['PROCESSOR_INTEL', 'PROCESSOR_DEC', 'PROCESSOR_MIPS']
         return processor_type[self.processor-PROCESSOR_INTEL]
+
 
 class Writer(Manager):
     '''This class writes metadata and frames to a C3D file.
@@ -1592,7 +1583,7 @@ class Writer(Manager):
         for points, analog in self._frames:
             valid = points[:, 3] > -1
             raw[~valid, 3] = -1
-            raw[valid, :3] = points[valid, :3] / self._point_scale
+            raw[valid, :3] = points[valid, :3] / point_scale
             raw[valid, 3] = (
                 ((points[valid, 4]).astype(np.uint8) << 8) |
                 (points[valid, 3] / scale).astype(np.uint16)
