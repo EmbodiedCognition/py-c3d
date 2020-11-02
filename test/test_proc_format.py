@@ -1,12 +1,9 @@
 import c3d
-import importlib
-import io
-import os
 import unittest
-import numpy as np
 import test.verify as verify
 from test.base import Base
 from test.zipload import Zipload
+
 
 class FormatTest():
     ''' Test to evaluate INTEL, DEC and SGI/MIPS processor formats using a set of identical files.
@@ -50,7 +47,6 @@ class FormatTest():
 
         print('DEC FORMAT: OK')
 
-
     def test_c_sgi(self):
         ''' Compare identical SGI/MIPS files encoded using both floating-point and integer representations.
         '''
@@ -90,7 +86,6 @@ class FormatTest():
             All files are encoded using the floating-point representations.
         '''
 
-
         FMT_INTEL_REAL = c3d.Reader(Zipload._get(self.ZIP, self.INTEL_REAL))
         FMT_DEC_REAL = c3d.Reader(Zipload._get(self.ZIP, self.DEC_REAL))
         FMT_SGI_REAL = c3d.Reader(Zipload._get(self.ZIP, self.MIPS_REAL))
@@ -105,6 +100,7 @@ class FormatTest():
 
         print('INTEL-DEC-SGI REAL FORMAT COMPARISON: OK')
 
+
 class Sample01(FormatTest, Base):
     ZIP = 'sample01.zip'
     INTEL_INT = 'Eb015pi.c3d'
@@ -114,6 +110,7 @@ class Sample01(FormatTest, Base):
     MIPS_INT = 'Eb015si.c3d'
     MIPS_REAL = 'Eb015sr.c3d'
 
+
 class Sample02(FormatTest, Base):
     ZIP = 'sample02.zip'
     INTEL_INT = 'pc_int.c3d'
@@ -122,6 +119,7 @@ class Sample02(FormatTest, Base):
     DEC_REAL = 'Dec_real.c3d'
     MIPS_INT = 'sgi_int.c3d'
     MIPS_REAL = 'sgi_real.c3d'
+
 
 if __name__ == '__main__':
     unittest.main()

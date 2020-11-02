@@ -1,9 +1,7 @@
 import unittest
-import numpy as np
-import warnings
 import os
-from test.zipload import Zipload, TEMP
-
+from test.zipload import Zipload
+from test.zipload import TEMP
 from scripts.c3d2csv import convert
 
 

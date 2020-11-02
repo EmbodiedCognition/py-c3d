@@ -1,14 +1,12 @@
 import c3d
 import importlib
+import io
+import unittest
+from test.base import Base
+from test.zipload import Zipload
 climate_spec = importlib.util.find_spec("climate")
 if climate_spec:
     import climate
-import io
-import os
-import unittest
-import numpy as np
-from test.base import Base
-from test.zipload import Zipload
 
 # If climate exist
 if climate_spec:
@@ -85,8 +83,6 @@ class ReaderTest(Base):
 
 class WriterTest(Base):
     def test_paramsd(self):
-
-
         r = c3d.Reader(Zipload._get('sample08.zip', 'TESTDPI.c3d'))
         w = c3d.Writer(
             point_rate=r.point_rate,

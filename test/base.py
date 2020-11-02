@@ -1,13 +1,11 @@
 import unittest
 import numpy as np
-import warnings
 from test.zipload import Zipload
 
 
 class Base(unittest.TestCase):
     def setUp(self):
         Zipload.download()
-
 
     def _log(self, r):
         return
@@ -63,11 +61,8 @@ class Base(unittest.TestCase):
             point_frames[index] = points
             analog_frames[aindex:aindex+nanalog_per_frame_samples] = analog.T
 
-
-
         # Return data frames
         return point_frames, analog_frames
-
 
     def create_camera_mask(point_frames):
         ''' Create a mask for POINT data using the 4:th column.

@@ -1,12 +1,9 @@
 import c3d
-import importlib
-import io
-import os
 import unittest
-import numpy as np
 from test.base import Base
 from test.zipload import Zipload
 import test.verify as verify
+
 
 class FrameCountEncodingTest():
     ''' Base class testing if frame count can be read when encoded differently.
@@ -26,10 +23,9 @@ class FrameCountEncodingTest():
 
             assert reader.frame_count == frame_count,\
                    'Wrong frame count read from file {}/{}. Expected {} was {}'.format(
-                   self.ZIP, file, frame_count, reader.frame_count)
+                    self.ZIP, file, frame_count, reader.frame_count)
 
             print('{} | FRAME_COUNT: OK'.format(file))
-
 
 
 class AnalogSampleCountEncodingTest():
@@ -45,7 +41,7 @@ class AnalogSampleCountEncodingTest():
             # Verify file count
             assert reader.analog_sample_count == sample_count,\
                    'Wrong analog sample count read from file {}/{}. Expected {} was {}'.format(
-                   self.ZIP, file, sample_count, reader.analog_sample_count)
+                    self.ZIP, file, sample_count, reader.analog_sample_count)
             print('{} | SAMPLE_COUNT: OK'.format(file))
 
 
@@ -89,10 +85,6 @@ class Sample36(FrameCountEncodingTest, Base):
         return ['{}framesf.c3d'.format(c) for c in self.file_id[:3]] +\
                ['{}framesi.c3d'.format(c) for c in self.file_id[3:]]
 
-
-
-if __name__ == '__main__':
-    unittest.main()
 
 if __name__ == '__main__':
     unittest.main()

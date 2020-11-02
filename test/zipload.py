@@ -5,8 +5,6 @@ import urllib
 import urllib.request
 import zipfile
 
-
-
 TEMP = os.path.join(tempfile.gettempdir(), 'c3d-test')
 ZIPS = (
     ('https://www.c3d.org/data/Sample00.zip', 'sample00.zip'),
@@ -30,7 +28,7 @@ class Zipload():
             if not os.path.isfile(fn):
                 try:
                     urllib.urlretrieve(url, fn)
-                except AttributeError: # python 3
+                except AttributeError:  # python 3
                     urllib.request.urlretrieve(url, fn)
 
     def extract(zf):
@@ -43,7 +41,6 @@ class Zipload():
         with zipfile.ZipFile(os.path.join(TEMP, zf)) as z:
             return [i for i in z.filelist
                     if i.filename.lower().endswith('.c3d')]
-
 
     def _get(zf, fn):
         with zipfile.ZipFile(os.path.join(TEMP, zf)) as z:
