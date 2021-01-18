@@ -140,39 +140,7 @@ def DEC_to_IEEE_BYTES(bytes):
     Returns : IEEE formated floating point of the same shape as the input.
     '''
 
-    ##
-    # Follows the bit pattern found:
-    # 	1) http://home.fnal.gov/~yang/Notes/ieee_vs_dec_float.txt
-    # Further formating descriptions can be found:
-    # 	2) http://www.irig106.org/docs/106-07/appendixO.pdf
-    #   3) http://home.kpn.nl/jhm.bonten/computers/bitsandbytes/wordsizes/hidbit.htm
-    # The current implementation is similar to the one used for Vicon systems:
-    #   4) http://www.clinicalgaitanalysis.com/faq/c3d.html#Appendix
-    #
-    # In accodance with the first ref. first & second 16 bit words are placed
-    # in a big endian 16 bit representation, and needs to be inverted.
-    # Second reference describe the DEC->IEEE conversion,
-    # in particular the exponent needs to be subtracted by 2
-    # (equivalent to dividing by 4).
-    #
-    # Warning! DEC undefined (similar to inf/NaN but not quite) numbers are not managed appropriately (3).
-
-    ##
-    # Shuffle the first two bit words from DEC bit representation to an ordered representation.
-    # Note that the most significant fraction bits are placed in the first 7 bits.
-    #
-    # Below are the DEC layout in accordance with the references:
-    # ___________________________________________________________________________________
-    # |		Mantissa (16:0)		|	SIGN	|	Exponent (8:0)	|	Mantissa (23:17)	|
-    # ___________________________________________________________________________________
-    # |32-					  -16|	 15	   |14-				  -7|6-					  -0|
-    #
-    # Legend:
-    # _______________________________________________________
-    # | Part (left bit of segment : right bit) | Part | ..
-    # _______________________________________________________
-    # |Bit adress -     ..       - Bit adress | Bit adress - ..
-    ####
+    # See comments in DEC_to_IEEE() for DEC format definition
 
     # Reshuffle
     bytes = np.frombuffer(bytes, dtype=np.dtype('B'))
@@ -195,73 +163,6 @@ def DEC_to_IEEE_BYTES(bytes):
     return np.frombuffer(reshuffled.tobytes(),
                          dtype=np.float32,
                          count=int(len(bytes) / 4))
-
-
-def DEC_to_IEEE_REFERENCE(bytes):
-    '''Convert the 32 bit representation of a DEC float to IEEE format.
-
-    Params:
-    ----
-    bytes : Byte array where every 4 bytes represent a single precision DEC float.
-    Returns : IEEE formated floating point of the same shape as the input.
-    '''
-    ##
-    # Follows the bit pattern found:
-    # 	1) http://home.fnal.gov/~yang/Notes/ieee_vs_dec_float.txt
-    # Further formating descriptions can be found:
-    # 	2) http://www.irig106.org/docs/106-07/appendixO.pdf
-    #   3) http://home.kpn.nl/jhm.bonten/computers/bitsandbytes/wordsizes/hidbit.htm
-    # The current implementation is similar to the one used for Vicon systems:
-    #   4) http://www.clinicalgaitanalysis.com/faq/c3d.html#Appendix
-    #
-    # In accodance with the first ref. first & second 16 bit words are placed
-    # in a big endian 16 bit representation, and needs to be inverted.
-    # Second reference describe the DEC->IEEE conversion,
-    # in particular the exponent needs to be subtracted by 2
-    # (equivalent to dividing by 4).
-    #
-    # Warning! DEC undefined (similar to inf/NaN but not quite) numbers are not managed appropriately (3).
-
-    ##
-    # Shuffle the first two bit words from DEC bit representation to an ordered representation.
-    # Note that the most significant fraction bits are placed in the first 7 bits.
-    #
-    # Below are the DEC layout in accordance with the references:
-    # ___________________________________________________________________________________
-    # |		Mantissa (16:0)		|	SIGN	|	Exponent (8:0)	|	Mantissa (23:17)	|
-    # ___________________________________________________________________________________
-    # |32-					  -16|	 15	   |14-				  -7|6-					  -0|
-    #
-    # Legend:
-    # _______________________________________________________
-    # | Part (left bit of segment : right bit) | Part | ..
-    # _______________________________________________________
-    # |Bit adress -     ..       - Bit adress | Bit adress - ..
-    ####
-    # Eq. bit expressions used below:
-    # E: Exponent
-    # F: Fraction (mantissa)
-    # S: Sign
-
-    uint_32 = np.frombuffer(bytes, dtype=np.uint32, count=int(len(bytes) / 4))
-
-    # Swap the first and last 16  bits for a consistent alignment of the fraction
-    reshuffled = ((uint_32 & 0xFFFF0000) >> 16) | ((uint_32 & 0x0000FFFF) << 16)
-    # After the shuffle each part are in little-endian and ordered as: SIGN-Exponent-Fraction
-    signbit = (reshuffled & 0x80000000) >> 31
-    exp_bits = (reshuffled & 0x7F800000) >> 23
-    # Evaluate as floating point (ensures there are no undef. behaviors or nasty conversions).
-    exponent = np.float32(exp_bits) - 128                                       # E - 2^7
-    fraction = np.float32((reshuffled & 0x007FFFFF) | 0x00800000) / 0x1000000 	# 0.1F = (F | 2^23) / 2^24
-    sign = np.float32((-1.0)**signbit)                                          # -1^S
-    result = sign * fraction * 2 ** exponent         			                # -1^S * 0.1F * 2^(E-2^7)
-    # if exponent == 0 return 0.0
-    result *= exp_bits != 0
-    # if reshuffled & 0xFF800000 == 0x80000000, then the value is 'undefined' in DEC.
-    # Essentially, if E == 0 and S == 1 then the value is undefined.
-    # Since undefined values are undefined, 0 is returned, even if not NaN would be optimal.
-
-    return result
 
 
 class Header(object):
