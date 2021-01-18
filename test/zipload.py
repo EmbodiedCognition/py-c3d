@@ -26,10 +26,12 @@ class Zipload():
         for url, target in ZIPS:
             fn = os.path.join(TEMP, target)
             if not os.path.isfile(fn):
+                print('Downloading: ', url)
                 try:
                     urllib.urlretrieve(url, fn)
                 except AttributeError:  # python 3
                     urllib.request.urlretrieve(url, fn)
+                print('... Complete')
 
     def extract(zf):
         out_path = os.path.join(TEMP, os.path.basename(zf)[:-4])
