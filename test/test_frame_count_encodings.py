@@ -22,8 +22,8 @@ class FrameCountEncodingTest():
             # Verify file count
 
             assert reader.frame_count == frame_count,\
-                   'Wrong frame count read from file {}/{}. Expected {} was {}'.format(
-                    self.ZIP, file, frame_count, reader.frame_count)
+                'Wrong frame count read from file {}/{}. Expected {} was {}'.format(
+                 self.ZIP, file, frame_count, reader.frame_count)
 
             print('{} | FRAME_COUNT: OK'.format(file))
 
@@ -40,8 +40,8 @@ class AnalogSampleCountEncodingTest():
 
             # Verify file count
             assert reader.analog_sample_count == sample_count,\
-                   'Wrong analog sample count read from file {}/{}. Expected {} was {}'.format(
-                    self.ZIP, file, sample_count, reader.analog_sample_count)
+                'Wrong analog sample count read from file {}/{}. Expected {} was {}'.format(
+                 self.ZIP, file, sample_count, reader.analog_sample_count)
             print('{} | SAMPLE_COUNT: OK'.format(file))
 
 

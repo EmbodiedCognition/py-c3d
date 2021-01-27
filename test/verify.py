@@ -57,11 +57,11 @@ class ReadTest():
                 nanalog_read += analog.shape[1]
 
             assert nframe_read == reader.frame_count,\
-                   "Failed reading file, mismatch in number of frames, read {} expected {}".format(
-                    nframe_read, reader.frame_count)
+                "Failed reading file, mismatch in number of frames, read {} expected {}".format(
+                 nframe_read, reader.frame_count)
             assert nanalog_read == reader.analog_sample_count,\
-                   "Failed reading file, mismatch in number of analog samples, read {} expected {}".format(
-                    nanalog_read, reader.analog_sample_count)
+                "Failed reading file, mismatch in number of analog samples, read {} expected {}".format(
+                 nanalog_read, reader.analog_sample_count)
 
             print('{} | READ: OK'.format(file))
 
@@ -111,12 +111,12 @@ class WithinRangeTest():
                     analog_max = np.max(analog)
 
             assert np.all(npoint == reader.frame_count),\
-                   """Failed verifying POINT data in range ({}, {}), found {} number of mismatches in each axis
-                      for all samples. Range for data was ({}, {})."""\
-                      .format(min_range, max_range, np.sum(np.abs(npoint - reader.frame_count), axis=0),
-                              point_min, point_max)
+                """Failed verifying POINT data in range ({}, {}), found {} number of mismatches in each axis
+                   for all samples. Range for data was ({}, {})."""\
+                   .format(min_range, max_range, np.sum(np.abs(npoint - reader.frame_count), axis=0),
+                           point_min, point_max)
             assert np.all(nanalog == reader.analog_sample_count),\
-                   """Failed verifying ANALOG data in range ({}, {}), found {} number of mismatches for each channel
+                """Failed verifying ANALOG data in range ({}, {}), found {} number of mismatches for each channel
                    for all samples. Range for data was ({}, {})."""\
                    .format(min_range, max_range, np.abs(nanalog - reader.analog_sample_count), analog_min, analog_max)
 
@@ -144,8 +144,8 @@ def array_match_headers(point, analog, reader, label):
     ''' Check point and analog arrays as fetched from load_data(reader), matches the headers in the reader.
     '''
     assert reader.point_used == np.shape(point)[1],\
-           'Mismatch in number of POINT samples for file {}, read {} expected {}'.format(
-           reader.file_path, np.shape(point)[1], reader.point_used)
+        'Mismatch in number of POINT samples for file {}, read {} expected {}'.format(
+         reader.file_path, np.shape(point)[1], reader.point_used)
     assert reader.analog_used == np.shape(analog)[1],\
         'Mismatch in number of ANALOG samples for file {}, read {} expected {}'.format(
          reader.file_path, np.shape(analog)[1], reader.analog_used)
@@ -167,8 +167,8 @@ def analog_data_in_range(analog, label, min_range, max_range):
     '''
     # Check ANALOG data
     assert values_in_range(analog, min_range, max_range),\
-           "ANALOG data was not in range ({}, {}) for file '{}'. Was in range ({}, {})".format(
-            min_range, max_range, label, np.min(analog), np.max(analog))
+        "ANALOG data was not in range ({}, {}) for file '{}'. Was in range ({}, {})".format(
+         min_range, max_range, label, np.min(analog), np.max(analog))
 
 
 def equal_headers(test_label, areader, breader, alabel, blabel, areal, breal):
@@ -178,8 +178,8 @@ def equal_headers(test_label, areader, breader, alabel, blabel, areal, breal):
     aheader = areader.header
     bheader = breader.header
     assert aheader.parameter_block == bheader.parameter_block, \
-           '{}, parameter_block: {} {}, {} {}'.format(
-            test_label, alabel, aheader.parameter_block, blabel, bheader.parameter_block)
+        '{}, parameter_block: {} {}, {} {}'.format(
+         test_label, alabel, aheader.parameter_block, blabel, bheader.parameter_block)
     assert aheader.parameter_block == bheader.parameter_block, \
         '{}, data_block: {} {}, {} {}'.format(
          test_label, alabel, aheader.data_block, blabel, bheader.data_block)
@@ -217,12 +217,12 @@ def equal_headers(test_label, areader, breader, alabel, blabel, areal, breal):
         if event_label in bheader.event_labels:
             lindex = bheader.event_labels.tolist().index(event_label)
             assert aheader.event_disp_flags[i] == bheader.event_disp_flags[lindex], \
-                   '{}, event_disp_flag {}: {} {}, {} {}'.format(
-                    test_label, event_label, alabel, aheader.event_disp_flags[i], blabel,
-                    bheader.event_disp_flags[lindex])
+                '{}, event_disp_flag {}: {} {}, {} {}'.format(
+                 test_label, event_label, alabel, aheader.event_disp_flags[i], blabel,
+                 bheader.event_disp_flags[lindex])
             assert np.isclose(aheader.event_timings[i], bheader.event_timings[lindex], atol=1e-7), \
-                   '{}, event_timings {}: {} {}, {} {}'.format(
-                    test_label, event_label, alabel, aheader.event_timings[i], blabel, bheader.event_timings[lindex])
+                '{}, event_timings {}: {} {}, {} {}'.format(
+                 test_label, event_label, alabel, aheader.event_timings[i], blabel, bheader.event_timings[lindex])
         else:
             event_mismatch += 1
 
@@ -261,15 +261,15 @@ def data_is_equal(areader, breader, alabel, blabel):
            areader.frame_count, breader.frame_count)
     # Check point count
     assert areader.point_used == breader.point_used,\
-           'Expected per frame point sample count to be equal was {} and {}'.format(
-            areader.point_used, breader.point_used)
+        'Expected per frame point sample count to be equal was {} and {}'.format(
+         areader.point_used, breader.point_used)
     # Check analog sample count
     assert areader.analog_sample_count == breader.analog_sample_count,\
-           'Expected analog sample count to be equal was {} and {}'.format(
-            areader.analog_sample_count, breader.analog_sample_count)
+        'Expected analog sample count to be equal was {} and {}'.format(
+         areader.analog_sample_count, breader.analog_sample_count)
     assert np.abs(areader.point_scale) == np.abs(breader.point_scale),\
-           'Expected coordinate scale to be equal was {} and {}'.format(
-            np.abs(areader.point_scale), np.abs(breader.point_scale))
+        'Expected coordinate scale to be equal was {} and {}'.format(
+         np.abs(areader.point_scale), np.abs(breader.point_scale))
 
     # Fetch file params/data
     frame_count = areader.frame_count
