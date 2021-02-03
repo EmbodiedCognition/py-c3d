@@ -2,13 +2,16 @@ import unittest
 import numpy as np
 from test.zipload import Zipload
 
+VERBOSE = False
 
 class Base(unittest.TestCase):
     def setUp(self):
         Zipload.download()
 
     def _log(self, r):
-        return
+        # Reduce test verbosity:
+        if not VERBOSE:
+            return
         print(r.header)
         items = ((k, v) for k, v in r.groups.items() if isinstance(k, str))
         fmt = '{0.name:>14s}:{1.name:<14s} {1.desc:36s} {2}'

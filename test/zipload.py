@@ -35,9 +35,15 @@ class Zipload():
 
     def extract(zf):
         out_path = os.path.join(TEMP, os.path.basename(zf)[:-4])
-        if not os.path.isfile(out_path) and not os.path.isdir(out_path):
-            zip = zipfile.ZipFile(os.path.join(TEMP, zf))
-            zip.extractall(out_path)
+
+        zip = zipfile.ZipFile(os.path.join(TEMP, zf))
+        for zf in zip.namelist():
+            #zip.extractall(out_path) but avoids overwriting files
+            fpath = os.path.join(out_path, zf)
+            # If file already exist, don' extract
+            if not os.path.isfile(fpath) and not os.path.isdir(fpath):
+                print('Extracted:', fpath)
+                zip.extract(zf, path=out_path)
 
     def _c3ds(zf):
         with zipfile.ZipFile(os.path.join(TEMP, zf)) as z:
