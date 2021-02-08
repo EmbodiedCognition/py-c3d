@@ -49,6 +49,14 @@ documentation`_ for more details.
 
 .. _package documentation: http://c3d.readthedocs.org
 
+Tests
+~~~~~
+
+To run tests available in the test folder, following command can be run from the root of the package directory::
+
+    python -m unittest discover .
+
+
 Caveats
 -------
 
