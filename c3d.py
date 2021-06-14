@@ -1367,7 +1367,7 @@ class Reader(Manager):
         Get the processory type associated with the data format in the file.
         """
         processor_type = ['PROCESSOR_INTEL', 'PROCESSOR_DEC', 'PROCESSOR_MIPS']
-        return processor_type[self.processor-PROCESSOR_INTEL]
+        return processor_type[self.processor - PROCESSOR_INTEL]
 
 
 class Writer(Manager):
