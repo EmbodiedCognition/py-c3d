@@ -4,6 +4,7 @@ from test.zipload import Zipload
 
 VERBOSE = False
 
+
 class Base(unittest.TestCase):
     def setUp(self):
         Zipload.download()

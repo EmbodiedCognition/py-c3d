@@ -41,10 +41,10 @@ class Zipload:
         out_path = os.path.join(TEMP, os.path.basename(zf)[:-4])
 
         zip = zipfile.ZipFile(os.path.join(TEMP, zf))
+        # Loop equivalent to zip.extractall(out_path) but avoids overwriting files
         for zf in zip.namelist():
-            #zip.extractall(out_path) but avoids overwriting files
             fpath = os.path.join(out_path, zf)
-            # If file already exist, don' extract
+            # If file already exist, don't extract
             if not os.path.isfile(fpath) and not os.path.isdir(fpath):
                 print('Extracted:', fpath)
                 zip.extract(zf, path=out_path)
