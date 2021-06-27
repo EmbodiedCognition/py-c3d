@@ -435,7 +435,7 @@ class Param(object):
                  handle=None):
         '''Set up a new parameter, only the name is required.'''
         self.name = name
-        self.dtype = dtype
+        self._dtypes = dtype
         self.desc = desc
         self.bytes_per_element = bytes_per_element
         self.dimensions = dimensions or []
@@ -509,7 +509,7 @@ class Param(object):
         if self.total_bytes:
             self.bytes = handle.read(self.total_bytes)
         desc_size, = struct.unpack('B', handle.read(1))
-        self.desc = desc_size and self.dtype.decode_string(handle.read(desc_size)) or ''
+        self.desc = desc_size and self._dtypes.decode_string(handle.read(desc_size)) or ''
 
     def _as(self, dtype):
         '''Unpack the raw bytes of this param using the given struct format.'''
@@ -562,40 +562,40 @@ class Param(object):
     @property
     def int8_value(self):
         '''Get the param as an 8-bit signed integer.'''
-        return self._as(self.dtype.int8)
+        return self._as(self._dtypes.int8)
 
     @property
     def uint8_value(self):
         '''Get the param as an 8-bit unsigned integer.'''
-        return self._as(self.dtype.uint8)
+        return self._as(self._dtypes.uint8)
 
     @property
     def int16_value(self):
         '''Get the param as a 16-bit signed integer.'''
-        return self._as(self.dtype.int16)
+        return self._as(self._dtypes.int16)
 
     @property
     def uint16_value(self):
         '''Get the param as a 16-bit unsigned integer.'''
-        return self._as(self.dtype.uint16)
+        return self._as(self._dtypes.uint16)
 
     @property
     def int32_value(self):
         '''Get the param as a 32-bit signed integer.'''
-        return self._as(self.dtype.int32)
+        return self._as(self._dtypes.int32)
 
     @property
     def uint32_value(self):
         '''Get the param as a 32-bit unsigned integer.'''
-        return self._as(self.dtype.uint32)
+        return self._as(self._dtypes.uint32)
 
     @property
     def float_value(self):
         '''Get the param as a 32-bit float.'''
-        if self.dtype.is_dec:
+        if self._dtypes.is_dec:
             return DEC_to_IEEE(self._as(np.uint32))
         else:  # is_mips or is_ieee
-            return self._as(self.dtype.float32)
+            return self._as(self._dtypes.float32)
 
     @property
     def bytes_value(self):
@@ -605,68 +605,68 @@ class Param(object):
     @property
     def string_value(self):
         '''Get the param as a unicode string.'''
-        return self.dtype.decode_string(self.bytes)
+        return self._dtypes.decode_string(self.bytes)
 
     @property
     def int8_array(self):
         '''Get the param as an array of 8-bit signed integers.'''
-        return self._as_array(self.dtype.int8)
+        return self._as_array(self._dtypes.int8)
 
     @property
     def uint8_array(self):
         '''Get the param as an array of 8-bit unsigned integers.'''
-        return self._as_array(self.dtype.uint8)
+        return self._as_array(self._dtypes.uint8)
 
     @property
     def int16_array(self):
         '''Get the param as an array of 16-bit signed integers.'''
-        return self._as_array(self.dtype.int16)
+        return self._as_array(self._dtypes.int16)
 
     @property
     def uint16_array(self):
         '''Get the param as an array of 16-bit unsigned integers.'''
-        return self._as_array(self.dtype.uint16)
+        return self._as_array(self._dtypes.uint16)
 
     @property
     def int32_array(self):
         '''Get the param as an array of 32-bit signed integers.'''
-        return self._as_array(self.dtype.int32)
+        return self._as_array(self._dtypes.int32)
 
     @property
     def uint32_array(self):
         '''Get the param as an array of 32-bit unsigned integers.'''
-        return self._as_array(self.dtype.uint32)
+        return self._as_array(self._dtypes.uint32)
 
     @property
     def int64_array(self):
         '''Get the param as an array of 32-bit signed integers.'''
-        return self._as_array(self.dtype.int64)
+        return self._as_array(self._dtypes.int64)
 
     @property
     def uint64_array(self):
         '''Get the param as an array of 32-bit unsigned integers.'''
-        return self._as_array(self.dtype.uint64)
+        return self._as_array(self._dtypes.uint64)
 
     @property
     def float32_array(self):
         '''Get the param as an array of 32-bit floats.'''
         # Convert float data if not IEEE processor
-        if self.dtype.is_dec:
+        if self._dtypes.is_dec:
             # _as_array but for DEC
             assert self.dimensions, \
-                '{}: cannot get value as {} array!'.format(self.name, self.dtype.float32)
+                '{}: cannot get value as {} array!'.format(self.name, self._dtypes.float32)
             return DEC_to_IEEE_BYTES(self.bytes).reshape(self.dimensions[::-1])  # Reverse fortran format
         else:  # is_ieee or is_mips
-            return self._as_array(self.dtype.float32)
+            return self._as_array(self._dtypes.float32)
 
     @property
     def float64_array(self):
         '''Get the param as an array of 64-bit floats.'''
         # Convert float data if not IEEE processor
-        if self.dtype.is_dec:
+        if self._dtypes.is_dec:
             raise ValueError('Unable to convert bytes encoded in a 64 bit floating point DEC format.')
         else:  # is_ieee or is_mips
-            return self._as_array(self.dtype.float64)
+            return self._as_array(self._dtypes.float64)
 
     @property
     def float_array(self):
@@ -746,7 +746,7 @@ class Param(object):
             byte_arr = self.bytes_array
             # Decode sequences
             for i in np.ndindex(byte_arr.shape):
-                byte_arr[i] = self.dtype.decode_string(byte_arr[i])
+                byte_arr[i] = self._dtypes.decode_string(byte_arr[i])
             return byte_arr
 
 
@@ -758,19 +758,66 @@ class Group(object):
 
     Attributes
     ----------
+    dtypes : 'DataTypes'
+        Data types object used for parsing.
     name : str
         Name of this parameter group.
     desc : str
         Description for this parameter group.
     '''
 
-    def __init__(self, name=None, desc=None):
+    def __init__(self, dtypes, name=None, desc=None):
+        self._params = {}
+        self._dtypes = dtypes
         self.name = name
         self.desc = desc
-        self.params = {}
 
     def __repr__(self):
         return '<Group: {}>'.format(self.desc)
+
+    @property
+    def name(self):
+        ''' Group name. '''
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        ''' Group name string.
+
+        Parameters
+        ----------
+        value : str
+            New name for the group.
+        '''
+        if value is None or isinstance(value, str):
+            self._name = value
+        else:
+            raise TypeError('Expected group name to be string, was %s.' % type(value))
+
+    @property
+    def desc(self):
+        ''' Group descriptor. '''
+        if isinstance(self._desc, bytes):
+            self._dtypes.decode_string(self._desc)
+        return self._desc
+
+    @desc.setter
+    def desc(self, value):
+        ''' Group descriptor.
+
+        Parameters
+        ----------
+        value : str, or bytes
+            New description for this parameter group.
+        '''
+        if value is not None and not isinstance(value, (str, bytes)):
+            raise TypeError('Expected descriptor to be byte string or python string, was %s.' % type(value))
+        self._desc = value
+
+    @property
+    def param_items(self):
+        ''' Acquie group parameter iterator for key-value pairs. '''
+        return params.items()
 
     def get(self, key, default=None):
         '''Get a parameter by key.
@@ -787,7 +834,7 @@ class Group(object):
         param : :class:`Param`
             A parameter from the current group.
         '''
-        return self.params.get(key, default)
+        return self._params.get(key, default)
 
     def add_param(self, name, dtypes, **kwargs):
         '''Add a parameter to this group.
@@ -802,16 +849,46 @@ class Group(object):
 
         Additional keyword arguments will be passed to the `Param` constructor.
         '''
-        self.params[name.upper()] = Param(name.upper(), dtypes, **kwargs)
+        self._params[name.upper()] = Param(name.upper(), dtypes, **kwargs)
+
+    def remove_param(self, name):
+        '''Remove the specified parameter.
+
+        Parameters
+        ----------
+        name : str
+            Name for the parameter to remove.
+        '''
+        del self._params[group_id]
+
+    def rename_param(self, name, new_name):
+        ''' Rename a specified parameter group.
+
+        Parameters
+        ----------
+        name : str, or 'Param'
+            Parameter instance, or name.
+        new_name : str
+            New name for the parameter.
+        '''
+        if isinstance(name, Param):
+            param = name
+        else:
+            # Aquire instance using id
+            param = self._params.get(name, None)
+            if param is None:
+                raise ValueError('No parameter found matching the identifier: %s' % str(name))
+        del self._params[name]
+        self._params[new_name] = param
 
     def binary_size(self):
         '''Return the number of bytes to store this group and its parameters.'''
         return (
             1 +  # group_id
-            1 + len(self.name.encode('utf-8')) +  # size of name and name bytes
+            1 + len(self._name.encode('utf-8')) +  # size of name and name bytes
             2 +  # next offset marker
-            1 + len(self.desc.encode('utf-8')) +  # size of desc and desc bytes
-            sum(p.binary_size() for p in self.params.values()))
+            1 + len(self._desc.encode('utf-8')) +  # size of desc and desc bytes
+            sum(p.binary_size() for p in self._params.values()))
 
     def write(self, group_id, handle):
         '''Write this parameter group, with parameters, to a file handle.
@@ -823,51 +900,51 @@ class Group(object):
         handle : file handle
             An open, writable, binary file handle.
         '''
-        name = self.name.encode('utf-8')
-        desc = self.desc.encode('utf-8')
+        name = self._name.encode('utf-8')
+        desc = self._desc.encode('utf-8')
         handle.write(struct.pack('bb', len(name), -group_id))
         handle.write(name)
         handle.write(struct.pack('<h', 3 + len(desc)))
         handle.write(struct.pack('B', len(desc)))
         handle.write(desc)
-        for param in self.params.values():
+        for param in self._params.values():
             param.write(group_id, handle)
 
     def get_int8(self, key):
         '''Get the value of the given parameter as an 8-bit signed integer.'''
-        return self.params[key.upper()].int8_value
+        return self._params[key.upper()].int8_value
 
     def get_uint8(self, key):
         '''Get the value of the given parameter as an 8-bit unsigned integer.'''
-        return self.params[key.upper()].uint8_value
+        return self._params[key.upper()].uint8_value
 
     def get_int16(self, key):
         '''Get the value of the given parameter as a 16-bit signed integer.'''
-        return self.params[key.upper()].int16_value
+        return self._params[key.upper()].int16_value
 
     def get_uint16(self, key):
         '''Get the value of the given parameter as a 16-bit unsigned integer.'''
-        return self.params[key.upper()].uint16_value
+        return self._params[key.upper()].uint16_value
 
     def get_int32(self, key):
         '''Get the value of the given parameter as a 32-bit signed integer.'''
-        return self.params[key.upper()].int32_value
+        return self._params[key.upper()].int32_value
 
     def get_uint32(self, key):
         '''Get the value of the given parameter as a 32-bit unsigned integer.'''
-        return self.params[key.upper()].uint32_value
+        return self._params[key.upper()].uint32_value
 
     def get_float(self, key):
         '''Get the value of the given parameter as a 32-bit float.'''
-        return self.params[key.upper()].float_value
+        return self._params[key.upper()].float_value
 
     def get_bytes(self, key):
         '''Get the value of the given parameter as a byte array.'''
-        return self.params[key.upper()].bytes_value
+        return self._params[key.upper()].bytes_value
 
     def get_string(self, key):
         '''Get the value of the given parameter as a string.'''
-        return self.params[key.upper()].string_value
+        return self._params[key.upper()].string_value
 
 
 class Manager(object):
@@ -992,8 +1069,47 @@ class Manager(object):
         name = name.upper()
         if name in self._groups:
             raise KeyError(name)
-        group = self._groups[name] = self._groups[group_id] = Group(name, desc)
+        group = self._groups[name] = self._groups[group_id] = Group(self._dtypes, name, desc)
         return group
+
+    def remove_group(self, group_id):
+        '''Remove the parameter group.
+
+        Parameters
+        ----------
+        group_id : int, or str
+            The numeric or name ID for a group to remove.
+        '''
+        del self._groups[group_id]
+
+    def rename_group(self, group_id, new_group_id):
+        ''' Rename a specified parameter group.
+
+        Parameters
+        ----------
+        group_id : int, str, or 'Group'
+            Group instance, name, or numerical identifier for the group.
+        name : str, or int
+            If string, it is the new name for the group. If integer, it will replace its numerical group id.
+        '''
+        if isinstance(group_id, Group):
+            grp = group_id
+        else:
+            # Aquire instance using id
+            grp = self._groups.get(group_id, None)
+            if grp is None:
+                raise ValueError('No group found matching the identifier: %s' % str(group_id))
+        # Clear old id
+        if isinstance(new_group_id, str):
+            if grp.name in _groups:
+                del self._groups[grp.name]
+            grp.name = new_group_id
+        elif isinstance(new_group_id, int):
+            del self._groups[group_id]
+        else:
+            raise ValueError('Invalid group identifier of type: %s' % str(type(new_group_id)))
+        # Update
+        self._groups[new_group_id] = grp
 
     def get(self, group, default=None):
         '''Get a group or parameter.
@@ -1241,23 +1357,22 @@ class Reader(Manager):
             buf = io.BytesIO(bytes)
 
             if group_id > 0:
-                # we've just started reading a parameter. if its group doesn't
+                # We've just started reading a parameter. If its group doesn't
                 # exist, create a blank one. add the parameter to the group.
                 self._groups.setdefault(
-                    group_id, Group()).add_param(name, self._dtypes, handle=buf)
+                    group_id, Group(self._dtypes)).add_param(name, self._dtypes, handle=buf)
             else:
-                # we've just started reading a group. if a group with the
-                # appropriate id exists already (because we've already created
-                # it for a parameter), just set the name of the group.
-                # otherwise, add a new group.
+                # We've just started reading a group. If a group with the
+                # appropriate numerical id exists already (because we've
+                # already created it for a parameter), just set the name of
+                # the group. Otherwise, add a new group.
                 group_id = abs(group_id)
                 size, = struct.unpack('B', buf.read(1))
                 desc = size and buf.read(size) or ''
                 group = self.get(group_id)
                 if group is not None:
-                    group.name = name
+                    self.rename_group(group, name)
                     group.desc = desc
-                    self._groups[name] = group
                 else:
                     self.add_group(group_id, name, desc)
 
