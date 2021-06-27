@@ -893,30 +893,18 @@ class Manager(object):
         ''' Access the parsed c3d header. '''
         return self._header
 
-    def group(self, key):
-        ''' Access a paramater group from a group key.
-
-        Attributes
-        ----------
-        key : int or str
-            Index or name for the parameter group.
-        '''
-        return self._groups[key]
-
     @property
     def group_items(self):
-        ''' Acquire iterable over group parameter pairs (str key, group).
-        '''
+        ''' Acquire iterable over group parameter pairs (str key, group). '''
         return ((k, v) for k, v in self._groups if isinstance(k, str))
 
     @property
     def group_listed(self):
-        ''' Acquire iterable over sorted group parameter pairs (int key, group).
-        '''
+        ''' Acquire iterable over sorted group parameter pairs (int key, group). '''
         return sorted((i, g) for i, g in self._groups if isinstance(i, int))
 
     def _check_metadata(self):
-        '''Ensure that the metadata in our file is self-consistent.'''
+        ''' Ensure that the metadata in our file is self-consistent. '''
         assert self._header.point_count == self.point_used, (
             'inconsistent point count! {} header != {} POINT:USED'.format(
                 self._header.point_count,
