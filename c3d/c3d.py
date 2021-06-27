@@ -342,7 +342,7 @@ long_event_labels: {0.long_event_labels}
         # Check long event key
         self.long_event_labels = self.long_event_labels == 0x3039
 
-    def processor_convert(self, dtypes, handle):
+    def _processor_convert(self, dtypes, handle):
         ''' Function interpreting the header once processor type has been determined.
         '''
 
@@ -825,7 +825,7 @@ class Manager(object):
         self.header = header or Header()
         self.groups = {}
 
-    def check_metadata(self):
+    def _check_metadata(self):
         '''Ensure that the metadata in our file is self-consistent.'''
         assert self.header.point_count == self.point_used, (
             'inconsistent point count! {} header != {} POINT:USED'.format(
@@ -1137,7 +1137,7 @@ class Reader(Manager):
         _, _, parameter_blocks, self.processor = struct.unpack('BBBB', buf)
         self.dtypes = DataTypes(self.processor)
         # Convert header parameters in accordance with the processor type (MIPS format re-reads the header)
-        self.header.processor_convert(self.dtypes, handle)
+        self.header._processor_convert(self.dtypes, handle)
 
         # Restart reading the parameter header after parsing processor type
         buf = seek_param_section_header()
@@ -1184,7 +1184,7 @@ class Reader(Manager):
                 else:
                     self.add_group(group_id, name, desc)
 
-        self.check_metadata()
+        self._check_metadata()
 
     def read_frames(self, copy=True):
         '''Iterate over the data frames from our C3D file handle.
@@ -1440,7 +1440,7 @@ class Writer(Manager):
             Write metadata and C3D motion frames to the given file handle. The
             writer does not close the handle.
         '''
-        self.check_metadata()
+        self._check_metadata()
 
         # header
         self.header.write(handle)
