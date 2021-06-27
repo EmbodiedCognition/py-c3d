@@ -678,7 +678,7 @@ class Param(object):
             return self.float64_array
         else:
             raise TypeError("Parsing parameter bytes to an array with %i bit " % self.bytes_per_element +
-                            "floating-point precission is not unsupported." %)
+                            "floating-point precission is not unsupported.")
 
     @property
     def int_array(self):
