@@ -769,6 +769,7 @@ class Group(object):
     def __init__(self, dtypes, name=None, desc=None):
         self._params = {}
         self._dtypes = dtypes
+        # Assign through property setters
         self.name = name
         self.desc = desc
 
@@ -797,8 +798,6 @@ class Group(object):
     @property
     def desc(self):
         ''' Group descriptor. '''
-        if isinstance(self._desc, bytes):
-            self._dtypes.decode_string(self._desc)
         return self._desc
 
     @desc.setter
@@ -810,7 +809,9 @@ class Group(object):
         value : str, or bytes
             New description for this parameter group.
         '''
-        if value is not None and not isinstance(value, (str, bytes)):
+        if isinstance(value, bytes):
+            self._desc = self._dtypes.decode_string(value)
+        elif value is not None and not isinstance(value, str):
             raise TypeError('Expected descriptor to be byte string or python string, was %s.' % type(value))
         self._desc = value
 
