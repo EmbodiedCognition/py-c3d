@@ -823,12 +823,34 @@ class Manager(object):
     def __init__(self, header=None):
         '''Set up a new Manager with a Header.'''
         self._header = header or Header()
-        self.groups = {}
+        self._groups = {}
 
     @property
     def header(self):
         ''' Access the parsed c3d header. '''
         return self._header
+
+    def group(self, key):
+        ''' Access a paramater group from a group key.
+
+        Attributes
+        ----------
+        key : int or str
+            Index or name for the parameter group.
+        '''
+        return self._groups[key]
+
+    @property
+    def group_items(self):
+        ''' Acquire iterable over group parameter pairs (str key, group).
+        '''
+        return ((k, v) for k, v in self._groups if isinstance(k, str))
+
+    @property
+    def group_listed(self):
+        ''' Acquire iterable over sorted group parameter pairs (int key, group).
+        '''
+        return sorted((i, g) for i, g in self._groups if isinstance(i, int))
 
     def _check_metadata(self):
         '''Ensure that the metadata in our file is self-consistent.'''
@@ -914,12 +936,12 @@ class Manager(object):
         KeyError
             If a group with a duplicate ID or name already exists.
         '''
-        if group_id in self.groups:
+        if group_id in self._groups:
             raise KeyError(group_id)
         name = name.upper()
-        if name in self.groups:
+        if name in self._groups:
             raise KeyError(name)
-        group = self.groups[name] = self.groups[group_id] = Group(name, desc)
+        group = self._groups[name] = self._groups[group_id] = Group(name, desc)
         return group
 
     def get(self, group, default=None):
@@ -943,16 +965,16 @@ class Manager(object):
             is found, returns the default value.
         '''
         if isinstance(group, int):
-            return self.groups.get(group, default)
+            return self._groups.get(group, default)
         group = group.upper()
         param = None
         if '.' in group:
             group, param = group.split('.', 1)
         if ':' in group:
             group, param = group.split(':', 1)
-        if group not in self.groups:
+        if group not in self._groups:
             return default
-        group = self.groups[group]
+        group = self._groups[group]
         if param is not None:
             return group.get(param, default)
         return group
@@ -995,7 +1017,7 @@ class Manager(object):
 
     def parameter_blocks(self):
         '''Compute the size (in 512B blocks) of the parameter section.'''
-        bytes = 4. + sum(g.binary_size() for g in self.groups.values())
+        bytes = 4. + sum(g.binary_size() for g in self._groups.values())
         return int(np.ceil(bytes / 512))
 
     @property
@@ -1171,7 +1193,7 @@ class Reader(Manager):
             if group_id > 0:
                 # we've just started reading a parameter. if its group doesn't
                 # exist, create a blank one. add the parameter to the group.
-                self.groups.setdefault(
+                self._groups.setdefault(
                     group_id, Group()).add_param(name, self._dtypes, handle=buf)
             else:
                 # we've just started reading a group. if a group with the
@@ -1185,7 +1207,7 @@ class Reader(Manager):
                 if group is not None:
                     group.name = name
                     group.desc = desc
-                    self.groups[name] = group
+                    self._groups[name] = group
                 else:
                     self.add_group(group_id, name, desc)
 
@@ -1455,9 +1477,7 @@ class Writer(Manager):
         # Groups
         handle.write(struct.pack(
             'BBBB', 0, 0, self.parameter_blocks(), PROCESSOR_INTEL))
-        id_groups = sorted(
-            (i, g) for i, g in self.groups.items() if isinstance(i, int))
-        for group_id, group in id_groups:
+        for group_id, group in self.group_listed():
             group.write(group_id, handle)
 
         # Padding
