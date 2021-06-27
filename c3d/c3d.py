@@ -1161,14 +1161,13 @@ class Reader(Manager):
 
         # Begin by reading the processor type:
         buf = seek_param_section_header()
-        _, _, parameter_blocks, self.processor = struct.unpack('BBBB', buf)
-        self._dtypes = DataTypes(self.processor)
+        _, _, parameter_blocks, processor = struct.unpack('BBBB', buf)
+        self._dtypes = DataTypes(processor)
         # Convert header parameters in accordance with the processor type (MIPS format re-reads the header)
         self._header._processor_convert(self._dtypes, handle)
 
         # Restart reading the parameter header after parsing processor type
         buf = seek_param_section_header()
-        is_mips = self.processor == PROCESSOR_MIPS
 
         start_byte = self._handle.tell()
         endbyte = start_byte + 512 * parameter_blocks - 4
@@ -1181,7 +1180,7 @@ class Reader(Manager):
 
             # Read the byte segment associated with the parameter and create a
             # separate binary stream object from the data.
-            offset_to_next, = struct.unpack(['<h', '>h'][is_mips], self._handle.read(2))
+            offset_to_next, = struct.unpack(['<h', '>h'][self._dtypes.is_mips], self._handle.read(2))
             if offset_to_next == 0:
                 # Last parameter, as number of bytes are unknown,
                 # read the remaining bytes in the parameter section.
@@ -1316,7 +1315,7 @@ class Reader(Manager):
             if is_float:
                 # Convert every 4 byte words to a float-32 reprensentation
                 # (the fourth column is still not a float32 representation)
-                if self.processor == PROCESSOR_DEC:
+                if self._dtypes.is_dec:
                     # Convert each of the first 6 16-bit words from DEC to IEEE float
                     points[:, :4] = DEC_to_IEEE_BYTES(raw_bytes).reshape((self.point_used, 4))
                 else:  # If IEEE or MIPS:
@@ -1361,7 +1360,7 @@ class Reader(Manager):
 
             # Check if analog data exist, and parse if so
             if N_analog > 0:
-                if is_float and self.processor == PROCESSOR_DEC:
+                if is_float and self._dtypes.is_dec:
                     # Convert each of the 16-bit words from DEC to IEEE float
                     analog = DEC_to_IEEE_BYTES(raw_analog)
                 else:
@@ -1394,7 +1393,7 @@ class Reader(Manager):
         Get the processory type associated with the data format in the file.
         """
         processor_type = ['PROCESSOR_INTEL', 'PROCESSOR_DEC', 'PROCESSOR_MIPS']
-        return processor_type[self.processor - PROCESSOR_INTEL]
+        return processor_type[self._dtypes.proc_type - PROCESSOR_INTEL]
 
 
 class Writer(Manager):
