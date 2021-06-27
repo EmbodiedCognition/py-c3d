@@ -822,26 +822,31 @@ class Manager(object):
 
     def __init__(self, header=None):
         '''Set up a new Manager with a Header.'''
-        self.header = header or Header()
+        self._header = header or Header()
         self.groups = {}
+    
+    @property
+    def header(self):
+        return self._header
+
 
     def _check_metadata(self):
         '''Ensure that the metadata in our file is self-consistent.'''
-        assert self.header.point_count == self.point_used, (
+        assert self._header.point_count == self.point_used, (
             'inconsistent point count! {} header != {} POINT:USED'.format(
-                self.header.point_count,
+                self._header.point_count,
                 self.point_used,
             ))
 
-        assert self.header.scale_factor == self.point_scale, (
+        assert self._header.scale_factor == self.point_scale, (
             'inconsistent scale factor! {} header != {} POINT:SCALE'.format(
-                self.header.scale_factor,
+                self._header.scale_factor,
                 self.point_scale,
             ))
 
-        assert self.header.frame_rate == self.point_rate, (
+        assert self._header.frame_rate == self.point_rate, (
             'inconsistent frame rate! {} header != {} POINT:RATE'.format(
-                self.header.frame_rate,
+                self._header.frame_rate,
                 self.point_rate,
             ))
 
@@ -849,26 +854,26 @@ class Manager(object):
             ratio = self.analog_rate / self.point_rate
         else:
             ratio = 0
-        assert self.header.analog_per_frame == ratio, (
+        assert self._header.analog_per_frame == ratio, (
             'inconsistent analog rate! {} header != {} analog-fps / {} point-fps'.format(
-                self.header.analog_per_frame,
+                self._header.analog_per_frame,
                 self.analog_rate,
                 self.point_rate,
             ))
 
-        count = self.analog_used * self.header.analog_per_frame
-        assert self.header.analog_count == count, (
+        count = self.analog_used * self._header.analog_per_frame
+        assert self._header.analog_count == count, (
             'inconsistent analog count! {} header != {} analog used * {} per-frame'.format(
-                self.header.analog_count,
+                self._header.analog_count,
                 self.analog_used,
-                self.header.analog_per_frame,
+                self._header.analog_per_frame,
             ))
 
         try:
             start = self.get_uint16('POINT:DATA_START')
-            if self.header.data_block != start:
+            if self._header.data_block != start:
                 warnings.warn('inconsistent data block! {} header != {} POINT:DATA_START'.format(
-                    self.header.data_block, start))
+                    self._header.data_block, start))
         except AttributeError:
             warnings.warn('''no pointer available in POINT:DATA_START indicating the start of the data block, using
                              header pointer as fallback''')
@@ -1128,7 +1133,7 @@ class Reader(Manager):
 
         def seek_param_section_header():
             ''' Seek to and read the first 4 byte of the parameter header section '''
-            self._handle.seek((self.header.parameter_block - 1) * 512)
+            self._handle.seek((self._header.parameter_block - 1) * 512)
             # metadata header
             return self._handle.read(4)
 
@@ -1137,7 +1142,7 @@ class Reader(Manager):
         _, _, parameter_blocks, self.processor = struct.unpack('BBBB', buf)
         self._dtypes = DataTypes(self.processor)
         # Convert header parameters in accordance with the processor type (MIPS format re-reads the header)
-        self.header._processor_convert(self._dtypes, handle)
+        self._header._processor_convert(self._dtypes, handle)
 
         # Restart reading the parameter header after parsing processor type
         buf = seek_param_section_header()
@@ -1264,7 +1269,7 @@ class Reader(Manager):
             gen_scale = param.float_value
 
         # Seek to the start point of the data blocks
-        self._handle.seek((self.header.data_block - 1) * 512)
+        self._handle.seek((self._header.data_block - 1) * 512)
         # Number of values (words) read in regard to POINT/ANALOG data
         N_point = 4 * self.point_used
         N_analog = self.analog_used * self.analog_per_frame
@@ -1442,12 +1447,12 @@ class Writer(Manager):
         '''
         self._check_metadata()
 
-        # header
-        self.header.write(handle)
+        # Header
+        self._header.write(handle)
         self._pad_block(handle)
         assert handle.tell() == 512
 
-        # groups
+        # Groups
         handle.write(struct.pack(
             'BBBB', 0, 0, self.parameter_blocks(), PROCESSOR_INTEL))
         id_groups = sorted(
@@ -1455,7 +1460,7 @@ class Writer(Manager):
         for group_id, group in id_groups:
             group.write(group_id, handle)
 
-        # padding
+        # Padding
         self._pad_block(handle)
         while handle.tell() != 512 * (self.header.data_block - 1):
             handle.write(b'\x00' * 512)
@@ -1469,7 +1474,7 @@ class Writer(Manager):
             Write metadata and C3D motion frames to the given file handle. The
             writer does not close the handle.
         '''
-        assert handle.tell() == 512 * (self.header.data_block - 1)
+        assert handle.tell() == 512 * (self._header.data_block - 1)
         scale = abs(self.point_scale)
         is_float = self.point_scale < 0
         if is_float:
@@ -1573,13 +1578,13 @@ class Writer(Manager):
         blocks = self.parameter_blocks()
         self.get('POINT:DATA_START').bytes = struct.pack('<H', 2 + blocks)
 
-        self.header.data_block = np.uint16(2 + blocks)
-        self.header.frame_rate = np.float32(self._point_rate)
-        self.header.last_frame = np.uint16(min(len(self._frames), 65535))
-        self.header.point_count = np.uint16(ppf)
-        self.header.analog_count = np.uint16(np.prod(analog.shape))
-        self.header.analog_per_frame = np.uint16(self._analog_per_frame)
-        self.header.scale_factor = np.float32(self._point_scale)
+        self._header.data_block = np.uint16(2 + blocks)
+        self._header.frame_rate = np.float32(self._point_rate)
+        self._header.last_frame = np.uint16(min(len(self._frames), 65535))
+        self._header.point_count = np.uint16(ppf)
+        self._header.analog_count = np.uint16(np.prod(analog.shape))
+        self._header.analog_per_frame = np.uint16(self._analog_per_frame)
+        self._header.scale_factor = np.float32(self._point_scale)
 
         self._write_metadata(handle)
         self._write_frames(handle)
