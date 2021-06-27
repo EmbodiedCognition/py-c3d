@@ -16,12 +16,11 @@ parser.add_argument('input', default='-', metavar='FILE', nargs='+',
 
 def print_metadata(reader):
     print('Header information:\n{}'.format(reader.header))
-    groups = ((k, v) for k, v in reader.groups.items() if isinstance(k, str))
+    groups = reader.group_items()
     for key, g in sorted(groups):
-        if not isinstance(key, int):
-            print('')
-            for key, p in sorted(g.params.items()):
-                print_param(g, p)
+        print('')
+        for key, p in sorted(g.params.items()):
+            print_param(g, p)
 
 
 def print_param_value(name, value):
