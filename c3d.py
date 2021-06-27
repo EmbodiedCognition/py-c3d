@@ -1090,7 +1090,7 @@ class Manager(object):
         ----------
         group_id : int, str, or 'Group'
             Group instance, name, or numerical identifier for the group.
-        name : str, or int
+        new_group_id : str, or int
             If string, it is the new name for the group. If integer, it will replace its numerical group id.
         '''
         if isinstance(group_id, Group):
@@ -1100,6 +1100,11 @@ class Manager(object):
             grp = self._groups.get(group_id, None)
             if grp is None:
                 raise ValueError('No group found matching the identifier: %s' % str(group_id))
+        if isinstance(new_group_id, int) and new_group_id in self._groups:
+            if new_group_id == group_id:
+                return
+            raise ValueError('New numeric group identifier %i for group %s already exist.' % (new_group_id, grp.name))
+
         # Clear old id
         if isinstance(new_group_id, str):
             if grp.name in _groups:
