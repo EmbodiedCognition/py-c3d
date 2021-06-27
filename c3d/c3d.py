@@ -824,11 +824,11 @@ class Manager(object):
         '''Set up a new Manager with a Header.'''
         self._header = header or Header()
         self.groups = {}
-    
+
     @property
     def header(self):
+        ''' Access the parsed c3d header. '''
         return self._header
-
 
     def _check_metadata(self):
         '''Ensure that the metadata in our file is self-consistent.'''
