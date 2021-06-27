@@ -336,7 +336,7 @@ long_event_labels: {0.long_event_labels}
          self.event_block,
          _) = struct.unpack(fmt, raw)
 
-        # Check magic number if reading in little endian
+        # Check magic number
         assert magic == 80, 'C3D magic {} != 80 !'.format(magic)
 
         # Check long event key
@@ -638,7 +638,17 @@ class Param(object):
         return self._as_array(self.dtype.uint32)
 
     @property
-    def float_array(self):
+    def int64_array(self):
+        '''Get the param as an array of 32-bit signed integers.'''
+        return self._as_array(self.dtype.int64)
+
+    @property
+    def uint64_array(self):
+        '''Get the param as an array of 32-bit unsigned integers.'''
+        return self._as_array(self.dtype.uint64)
+
+    @property
+    def float32_array(self):
         '''Get the param as an array of 32-bit floats.'''
         # Convert float data if not IEEE processor
         if self.dtype.is_dec:
@@ -648,6 +658,59 @@ class Param(object):
             return DEC_to_IEEE_BYTES(self.bytes).reshape(self.dimensions[::-1])  # Reverse fortran format
         else:  # is_ieee or is_mips
             return self._as_array(self.dtype.float32)
+
+    @property
+    def float64_array(self):
+        '''Get the param as an array of 64-bit floats.'''
+        # Convert float data if not IEEE processor
+        if self.dtype.is_dec:
+            raise ValueError('Unable to convert bytes encoded in a 64 bit floating point DEC format.')
+        else:  # is_ieee or is_mips
+            return self._as_array(self.dtype.float64)
+
+    @property
+    def float_array(self):
+        '''Get the param as an array of 32 or 64 bit floats.'''
+        # Convert float data if not IEEE processor
+        if self.bytes_per_element == 4:
+            return self.float32_array
+        elif self.bytes_per_element == 8:
+            return self.float64_array
+        else:
+            raise TypeError("Parsing parameter bytes to an array with %i bit " % self.bytes_per_element +
+                            "floating-point precission is not unsupported." %)
+
+    @property
+    def int_array(self):
+        '''Get the param as an array of integer values.'''
+        # Convert float data if not IEEE processor
+        if self.bytes_per_element == 1:
+            return self.int8_array
+        elif self.bytes_per_element == 2:
+            return self.int16_array
+        elif self.bytes_per_element == 4:
+            return self.int32_array
+        elif self.bytes_per_element == 8:
+            return self.int64_array
+        else:
+            raise TypeError("Parsing parameter bytes to an array with %i bit integer values is not unsupported." %
+                            self.bytes_per_element)
+
+    @property
+    def uint_array(self):
+        '''Get the param as an array of integer values.'''
+        # Convert float data if not IEEE processor
+        if self.bytes_per_element == 1:
+            return self.uint8_array
+        elif self.bytes_per_element == 2:
+            return self.uint16_array
+        elif self.bytes_per_element == 4:
+            return self.uint32_array
+        elif self.bytes_per_element == 8:
+            return self.uint64_array
+        else:
+            raise TypeError("Parsing parameter bytes to an array with %i bit integer values is not unsupported." %
+                            self.bytes_per_element)
 
     @property
     def bytes_array(self):
