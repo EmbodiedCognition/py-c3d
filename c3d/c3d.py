@@ -362,10 +362,10 @@ long_event_labels: {0.long_event_labels}
             self.frame_rate = UNPACK_FLOAT_IEEE(self.frame_rate)
             float_unpack = UNPACK_FLOAT_IEEE
 
-        self.interpret_events(dtypes, float_unpack)
+        self._parse_events(dtypes, float_unpack)
 
-    def interpret_events(self, dtypes, float_unpack):
-        ''' Function interpreting the event section of the header.
+    def _parse_events(self, dtypes, float_unpack):
+        ''' Parse the event section of the header.
         '''
 
         # Event section byte blocks
