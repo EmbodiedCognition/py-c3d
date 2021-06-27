@@ -1135,9 +1135,9 @@ class Reader(Manager):
         # Begin by reading the processor type:
         buf = seek_param_section_header()
         _, _, parameter_blocks, self.processor = struct.unpack('BBBB', buf)
-        self.dtypes = DataTypes(self.processor)
+        self._dtypes = DataTypes(self.processor)
         # Convert header parameters in accordance with the processor type (MIPS format re-reads the header)
-        self.header._processor_convert(self.dtypes, handle)
+        self.header._processor_convert(self._dtypes, handle)
 
         # Restart reading the parameter header after parsing processor type
         buf = seek_param_section_header()
@@ -1150,7 +1150,7 @@ class Reader(Manager):
             if group_id == 0 or chars_in_name == 0:
                 # we've reached the end of the parameter section.
                 break
-            name = self.dtypes.decode_string(self._handle.read(abs(chars_in_name))).upper()
+            name = self._dtypes.decode_string(self._handle.read(abs(chars_in_name))).upper()
 
             # Read the byte segment associated with the parameter and create a
             # separate binary stream object from the data.
@@ -1167,7 +1167,7 @@ class Reader(Manager):
                 # we've just started reading a parameter. if its group doesn't
                 # exist, create a blank one. add the parameter to the group.
                 self.groups.setdefault(
-                    group_id, Group()).add_param(name, self.dtypes, handle=buf)
+                    group_id, Group()).add_param(name, self._dtypes, handle=buf)
             else:
                 # we've just started reading a group. if a group with the
                 # appropriate id exists already (because we've already created
@@ -1223,28 +1223,28 @@ class Reader(Manager):
 
         if is_float:
             point_word_bytes = 4
-            point_dtype = self.dtypes.uint32
+            point_dtype = self._dtypes.uint32
         else:
             point_word_bytes = 2
-            point_dtype = self.dtypes.int16
+            point_dtype = self._dtypes.int16
         points = np.zeros((self.point_used, 5), np.float32)
 
         # TODO: handle ANALOG:BITS parameter here!
         p = self.get('ANALOG:FORMAT')
         analog_unsigned = p and p.string_value.strip().upper() == 'UNSIGNED'
         if is_float:
-            analog_dtype = self.dtypes.float32
+            analog_dtype = self._dtypes.float32
             analog_word_bytes = 4
         elif analog_unsigned:
             # Note*: Floating point is 'always' defined for both analog and point data, according to the standard.
-            analog_dtype = self.dtypes.uint16
+            analog_dtype = self._dtypes.uint16
             analog_word_bytes = 2
             # Verify BITS parameter for analog
             p = self.get('ANALOG:BITS')
             if p and p._as_integer_value / 8 != analog_word_bytes:
                 raise NotImplementedError('Analog data using {} bits is not supported.'.format(p._as_integer_value))
         else:
-            analog_dtype = self.dtypes.int16
+            analog_dtype = self._dtypes.int16
             analog_word_bytes = 2
 
         analog = np.array([], float)
@@ -1295,7 +1295,7 @@ class Reader(Manager):
                 else:  # If IEEE or MIPS:
                     # Re-read the raw byte representation directly
                     points[:, :4] = np.frombuffer(raw_bytes,
-                                                  dtype=self.dtypes.float32,
+                                                  dtype=self._dtypes.float32,
                                                   count=N_point).reshape((int(self.point_used), 4))
 
                 # Parse the camera-observed bits and residuals.
@@ -1322,7 +1322,7 @@ class Reader(Manager):
                 # Parse last 16-bit word as two 8-bit words
                 valid = raw[:, 3] > -1
                 points[~valid, 3:5] = -1
-                c = raw[valid, 3].astype(self.dtypes.uint16)
+                c = raw[valid, 3].astype(self._dtypes.uint16)
 
             # Convert coordinate data
             # fourth value is floating-point (scaled) error estimate (residual)
