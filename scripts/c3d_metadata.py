@@ -16,10 +16,9 @@ parser.add_argument('input', default='-', metavar='FILE', nargs='+',
 
 def print_metadata(reader):
     print('Header information:\n{}'.format(reader.header))
-    groups = reader.group_items()
-    for key, g in sorted(groups):
+    for key, g in sorted(reader.group_items()):
         print('')
-        for key, p in sorted(g.params.items()):
+        for key, p in sorted(g.param_items()):
             print_param(g, p)
 
 
