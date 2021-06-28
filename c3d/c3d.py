@@ -1083,7 +1083,7 @@ class Manager(object):
         if not is_integer(group_id):
             raise ValueError('Expected Group numerical key to be integer, was %s.' % type(group_id))
         if not isinstance(name, str):
-            raise ValueError('Expected Group name key to be string, was %s.' % type(name)
+            raise ValueError('Expected Group name key to be string, was %s.' % type(name))
         group_id = int(group_id) # Assert python int
         if group_id in self._groups:
             raise KeyError(group_id)
