@@ -818,13 +818,17 @@ class Group(object):
             raise TypeError('Expected descriptor to be byte string or python string, was %s.' % type(value))
         self._desc = value
 
-    def items(self):
+    def param_items(self):
         ''' Acquire iterator for paramater key-entry pairs. '''
         return self._params.items()
 
-    def values(self):
+    def param_values(self):
         ''' Acquire iterator for parameter entries. '''
         return self._params.values()
+
+    def param_keys(self):
+        ''' Acquire iterator for parameter entry keys. '''
+        return self._params.keys()
 
     def get(self, key, default=None):
         '''Get a parameter by key.
@@ -864,7 +868,7 @@ class Group(object):
         name : str
             Name for the parameter to remove.
         '''
-        del self._params[group_id]
+        del self._params[name]
 
     def rename_param(self, name, new_name):
         ''' Rename a specified parameter group.
@@ -876,8 +880,11 @@ class Group(object):
         new_name : str
             New name for the parameter.
         '''
+        if new_name in self._params:
+            raise ValueError("Key %s already exist." % new_name)
         if isinstance(name, Param):
             param = name
+            name = param.name
         else:
             # Aquire instance using id
             param = self._params.get(name, None)
@@ -994,6 +1001,16 @@ class Manager(object):
             Python touple containing unique parameter group entries.
         '''
         return (v for k, v in self._groups.items() if isinstance(k, str))
+
+    def group_keys(self):
+        ''' Acquire iterable over parameter group entry string keys.
+
+        Returns
+        -------
+        keys : Touple of (str, ...)
+            Python touple containing keys for the parameter group entries.
+        '''
+        return (k for k in self._groups.keys() if isinstance(k, str))
 
     def group_listed(self):
         ''' Acquire iterable over sorted numerical parameter group pairs.
@@ -1142,7 +1159,7 @@ class Manager(object):
         if new_group_id in self._groups:
             if new_group_id == group_id:
                 return
-            raise KeyError('New group identifier %s for group %s already exist.' % (str(new_group_id), grp.name))
+            raise ValueError('Key %s for group %s already exist.' % (str(new_group_id), grp.name))
 
         # Clear old id
         if isinstance(new_group_id, (str, bytes)):
