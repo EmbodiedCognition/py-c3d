@@ -164,6 +164,9 @@ def DEC_to_IEEE_BYTES(bytes):
                          dtype=np.float32,
                          count=int(len(bytes) / 4))
 
+def is_integer(value):
+    '''Check if value input is integer.'''
+    return isinstance(value, (int, np.int32, np.int64))
 
 class Header(object):
     '''Header information from a C3D file.
@@ -973,13 +976,25 @@ class Manager(object):
 
     @property
     def group_items(self):
-        ''' Acquire iterable over group parameter pairs (str key, group). '''
-        return ((k, v) for k, v in self._groups if isinstance(k, str))
+        ''' Acquire iterable over parameter group pairs.
+
+        Returns
+        -------
+        items : Touple of ((str, :class:`Group`), ...)
+            Python touple containing pairs of name keys and parameter group entries.
+        '''
+        return ((k, v) for k, v in self._groups.items() if isinstance(k, str))
 
     @property
     def group_listed(self):
-        ''' Acquire iterable over sorted group parameter pairs (int key, group). '''
-        return sorted((i, g) for i, g in self._groups if isinstance(i, int))
+        ''' Acquire iterable over sorted numerical parameter group pairs.
+
+        Returns
+        -------
+        items : Touple of ((int, :class:`Group`), ...)
+            Sorted python touple containing pairs of numerical keys and parameter group entries.
+        '''
+        return sorted((i, g) for i, g in self._groups.items() if isinstance(i, int))
 
     def _check_metadata(self):
         ''' Ensure that the metadata in our file is self-consistent. '''
@@ -1062,9 +1077,14 @@ class Manager(object):
 
         Raises
         ------
-        KeyError
-            If a group with a duplicate ID or name already exists.
+        TypeError
+            Input arguments are of the wrong type.
         '''
+        if not is_integer(group_id):
+            raise ValueError('Expected Group numerical key to be integer, was %s.' % type(group_id))
+        if not isinstance(name, str):
+            raise ValueError('Expected Group name key to be string, was %s.' % type(name)
+        group_id = int(group_id) # Assert python int
         if group_id in self._groups:
             raise KeyError(group_id)
         name = name.upper()
@@ -1079,9 +1099,14 @@ class Manager(object):
         Parameters
         ----------
         group_id : int, or str
-            The numeric or name ID for a group to remove.
+            The numeric or name ID key for a group to remove all entries for.
         '''
-        del self._groups[group_id]
+        grp = self._groups.get(group_id, None)
+        if grp is None:
+            return
+        gkeys = [k for (k, v) in self._groups.items() if v == grp]
+        for k in gkeys:
+            del self._groups[k]
 
     def rename_group(self, group_id, new_group_id):
         ''' Rename a specified parameter group.
@@ -1092,6 +1117,11 @@ class Manager(object):
             Group instance, name, or numerical identifier for the group.
         new_group_id : str, or int
             If string, it is the new name for the group. If integer, it will replace its numerical group id.
+
+        Raises
+        ------
+        KeyError
+            If a group with a duplicate ID or name already exists.
         '''
         if isinstance(group_id, Group):
             grp = group_id
@@ -1099,21 +1129,22 @@ class Manager(object):
             # Aquire instance using id
             grp = self._groups.get(group_id, None)
             if grp is None:
-                raise ValueError('No group found matching the identifier: %s' % str(group_id))
-        if isinstance(new_group_id, int) and new_group_id in self._groups:
+                raise KeyError('No group found matching the identifier: %s' % str(group_id))
+        if new_group_id in self._groups:
             if new_group_id == group_id:
                 return
-            raise ValueError('New numeric group identifier %i for group %s already exist.' % (new_group_id, grp.name))
+            raise KeyError('New group identifier %s for group %s already exist.' % (str(new_group_id), grp.name))
 
         # Clear old id
-        if isinstance(new_group_id, str):
-            if grp.name in _groups:
+        if isinstance(new_group_id, (str, bytes)):
+            if grp.name in self._groups:
                 del self._groups[grp.name]
-            grp.name = new_group_id
-        elif isinstance(new_group_id, int):
+            grp._name = new_group_id
+        elif is_integer(new_group_id):
+            new_group_id = int(new_group_id) # Ensure python int
             del self._groups[group_id]
         else:
-            raise ValueError('Invalid group identifier of type: %s' % str(type(new_group_id)))
+            raise KeyError('Invalid group identifier of type: %s' % str(type(new_group_id)))
         # Update
         self._groups[new_group_id] = grp
 
@@ -1137,8 +1168,8 @@ class Manager(object):
             Either a group or parameter with the specified name(s). If neither
             is found, returns the default value.
         '''
-        if isinstance(group, int):
-            return self._groups.get(group, default)
+        if is_integer(group):
+            return self._groups.get(int(group), default)
         group = group.upper()
         param = None
         if '.' in group:
