@@ -17,18 +17,25 @@ class GroupSample():
         return [(k, g) for (k, g) in self.manager.group_items]
 
     @property
-    def group_list(self):
+    def group_listed(self):
         '''Helper to access group numerical key-value pairs. '''
         return [(k, g) for (k, g) in self.manager.group_listed]
 
     @property
     def fetch_groups(self):
         '''Acquire both group sets. '''
-        return self.group_items, self.group_list
+        return self.group_items, self.group_listed
+
+    @property
+    def max_key(self):
+        if len(self.group_items) > 0:
+            return np.max([k for (k, g) in self.group_listed])
+        return 0
 
     def sample(self):
         '''Call before applying changes. '''
         self.s_grp_items, self.s_grp_list = self.fetch_groups
+
 
     def assert_entry_count(self, delta=0):
         '''Assert all values in group still exist.
@@ -60,10 +67,44 @@ class GroupSample():
     def assert_group_list(self):
         '''Assert all numerical (int, Group) pairs persisted after change.'''
         enumerator = range(len(self.s_grp_list))
-        for i, (n, g), (n2, g2) in zip(enumerator, self.s_grp_list, self.group_list):
+        for i, (n, g), (n2, g2) in zip(enumerator, self.s_grp_list, self.group_listed):
             assert n == n2, 'Group string id missmatch after changes for entry %i. ' % i +\
                             'Initially %i, after change entry was %i' % (n, n2)
             assert g == g2, 'Group listed order changed for entry %i.' % i
+
+    def verify_add_groups(self, N):
+        '''Add N groups and verify count at each iteration.'''
+        self.sample()
+        max_key = self.max_key
+        for i in range(1, N):
+            test_name = 'TEST_ADD_GROUP_%i' % i
+            self.manager.add_group(max_key + i, test_name, '')
+            assert self.manager.get(test_name) is not None, 'Added group does not exist.'
+            self.assert_entry_count(delta=i)
+
+    def verify_remove_all_using_numeric(self):
+        '''Remove all groups using numeric key and verify count at each iteration.'''
+        self.sample()
+        keys = [k for (k, g) in self.group_listed]
+        for i, key in enumerate(keys):
+            grp = self.manager.get(key)
+            assert grp is not None, 'Expected group to exist.'
+            self.manager.remove_group(key)
+            assert self.manager.get(key) is None, 'Removed group persisted.'
+            assert self.manager.get(grp.name) is None, 'Removed group persisted.'
+            self.assert_entry_count(delta=-1 - i)
+
+    def verify_remove_all_using_name(self):
+        '''Remove all groups using name key and verify count at each iteration.'''
+        self.sample()
+        keys = [k for (k, g) in self.group_items]
+        for i, key in enumerate(keys):
+            grp = self.manager.get(key)
+            assert grp is not None, 'Expected group to exist.'
+            self.manager.remove_group(key)
+            assert self.manager.get(key) is None, 'Removed group persisted.'
+            assert self.manager.get(grp.name) is None, 'Removed group persisted.'
+            self.assert_entry_count(delta=-1 - i)
 
 
 class ManagerGroupTests(Base):
@@ -85,7 +126,29 @@ class ManagerGroupTests(Base):
         grp_list = [k for (k, g) in reader.group_listed]
         assert len(grp_list) > 0, 'No group items in file or Group.group_listed  failed'
 
-    def test_Group_rename_group(self):
+
+    def test_Manager_add_group(self):
+        '''Test if renaming groups acts as intended.'''
+        reader = c3d.Reader(Zipload._get(self.ZIP, self.INTEL_REAL))
+        ref = GroupSample(reader)
+        ref.verify_add_groups(100)
+        ref.verify_remove_all_using_numeric()
+
+    def test_Manager_removing_group_from_numeric(self):
+        '''Test if removing groups acts as intended.'''
+        reader = c3d.Reader(Zipload._get(self.ZIP, self.INTEL_REAL))
+        ref = GroupSample(reader)
+        ref.verify_remove_all_using_numeric()
+        ref.verify_add_groups(100)
+
+    def test_Manager_removing_group_from_name(self):
+        '''Test if removing groups acts as intended.'''
+        reader = c3d.Reader(Zipload._get(self.ZIP, self.INTEL_REAL))
+        ref = GroupSample(reader)
+        ref.verify_remove_all_using_name()
+        ref.verify_add_groups(100)
+
+    def test_Manager_rename_group(self):
         '''Test if renaming groups acts as intended.'''
         reader = c3d.Reader(Zipload._get(self.ZIP, self.INTEL_REAL))
         grp_keys = [k for (k, g) in reader.group_items]
@@ -110,13 +173,13 @@ class ManagerGroupTests(Base):
         except KeyError as e:
             pass # Correct
 
-    def test_Group_renumber_group(self):
+    def test_Manager_renumber_group(self):
         '''Test if renaming (renumbering) groups acts as intended.'''
         reader = c3d.Reader(Zipload._get(self.ZIP, self.INTEL_REAL))
         grp_ids = [k for (k, g) in reader.group_listed]
         ref = GroupSample(reader)
 
-        max_key = np.max(grp_ids)
+        max_key = ref.max_key
 
         for i, key in enumerate(grp_ids):
             test_num = max_key + i + 1
