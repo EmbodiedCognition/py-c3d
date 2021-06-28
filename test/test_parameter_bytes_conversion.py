@@ -144,11 +144,23 @@ class ParameterArrayTest(unittest.TestCase):
         for shape in ParameterArrayTest.SHAPES:
             arr = self.rnd.uniform(flt_range[0], flt_range[1], size=shape).astype(np.float32)
             P = c3d.Param('FLOAT_TEST', self.dtypes, bytes_per_element=4, dimensions=arr.shape, bytes=arr.T.tobytes())
-            arr_out = P.float_array
+            arr_out = P.float32_array
             assert arr.T.shape == arr_out.shape, "Mismatch in 'float_array' converted shape"
             assert np.all(arr.T == arr_out), 'Value mismatch when reading float array'
 
-    def test_b_parse_int32_array(self):
+    def test_b_parse_float64_array(self):
+        '''    Verify array of 64 bit floating point values are parsed correctly
+        '''
+        flt_range = (-1e6, 1e6)
+
+        for shape in ParameterArrayTest.SHAPES:
+            arr = self.rnd.uniform(flt_range[0], flt_range[1], size=shape).astype(np.float64)
+            P = c3d.Param('FLOAT_TEST', self.dtypes, bytes_per_element=4, dimensions=arr.shape, bytes=arr.T.tobytes())
+            arr_out = P.float64_array
+            assert arr.T.shape == arr_out.shape, "Mismatch in 'float_array' converted shape"
+            assert np.all(arr.T == arr_out), 'Value mismatch when reading float array'
+
+    def test_c_parse_int32_array(self):
         '''    Verify array of 32 bit integer values are parsed correctly
         '''
         flt_range = (-1e6, 1e6)
@@ -160,7 +172,7 @@ class ParameterArrayTest(unittest.TestCase):
             assert arr.T.shape == arr_out.shape, "Mismatch in 'int32_array' converted shape"
             assert np.all(arr.T == arr_out), 'Value mismatch when reading int32 array'
 
-    def test_c_parse_uint32_array(self):
+    def test_d_parse_uint32_array(self):
         '''    Verify array of 32 bit unsigned integer values are parsed correctly
         '''
         flt_range = (0, 1e6)
@@ -172,7 +184,7 @@ class ParameterArrayTest(unittest.TestCase):
             assert arr.T.shape == arr_out.shape, "Mismatch in 'uint32_array' converted shape"
             assert np.all(arr.T == arr_out), 'Value mismatch when reading uint32 array'
 
-    def test_d_parse_int16_array(self):
+    def test_e_parse_int16_array(self):
         '''    Verify array of 16 bit integer values are parsed correctly
         '''
         flt_range = (-1e4, 1e4)
@@ -184,7 +196,7 @@ class ParameterArrayTest(unittest.TestCase):
             assert arr.T.shape == arr_out.shape, "Mismatch in 'int32_array' converted shape"
             assert np.all(arr.T == arr_out), 'Value mismatch when reading int32 array'
 
-    def test_e_parse_uint16_array(self):
+    def test_f_parse_uint16_array(self):
         '''    Verify array of 16 bit unsigned integer values are parsed correctly
         '''
         flt_range = (0, 1e4)
@@ -196,7 +208,7 @@ class ParameterArrayTest(unittest.TestCase):
             assert arr.T.shape == arr_out.shape, "Mismatch in 'uint32_array' converted shape"
             assert np.all(arr.T == arr_out), 'Value mismatch when reading uint32 array'
 
-    def test_e_parse_int8_array(self):
+    def test_g_parse_int8_array(self):
         '''    Verify array of 8 bit integer values are parsed correctly
         '''
         flt_range = (-127, 127)
@@ -208,7 +220,7 @@ class ParameterArrayTest(unittest.TestCase):
             assert arr.T.shape == arr_out.shape, "Mismatch in 'int32_array' converted shape"
             assert np.all(arr.T == arr_out), 'Value mismatch when reading int32 array'
 
-    def test_f_parse_uint8_array(self):
+    def test_h_parse_uint8_array(self):
         '''    Verify array of 8 bit unsigned integer values are parsed correctly
         '''
         flt_range = (0, 255)
@@ -220,7 +232,7 @@ class ParameterArrayTest(unittest.TestCase):
             assert arr.T.shape == arr_out.shape, "Mismatch in 'uint32_array' converted shape"
             assert np.all(arr.T == arr_out), 'Value mismatch when reading uint32 array'
 
-    def test_g_parse_byte_array(self):
+    def test_i_parse_byte_array(self):
         '''    Verify byte arrays are parsed correctly
         '''
         word = b'WRIST'
@@ -252,7 +264,7 @@ class ParameterArrayTest(unittest.TestCase):
         for i in np.ndindex(arr_out.shape):
             assert np.all(arr[i[::-1]] == arr_out[i]), "Mismatch in 'bytes_array' converted value at index %s" % str(i)
 
-    def test_h_parse_string_array(self):
+    def test_j_parse_string_array(self):
         '''    Verify repeated word arrays are parsed correctly
         '''
         word = b'ANCLE'
@@ -290,7 +302,7 @@ class ParameterArrayTest(unittest.TestCase):
             assert self.dtypes.decode_string(arr[i[::-1]]) == arr_out[i],\
                 "Mismatch in 'string_array' converted value at index %s" % str(i)
 
-    def test_i_parse_random_string_array(self):
+    def test_k_parse_random_string_array(self):
         '''    Verify random word arrays are parsed correctly
         '''
         ##
