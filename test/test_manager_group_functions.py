@@ -1,3 +1,5 @@
+''' Purpose for this file is to verify functions associated with Manager._groups dictionary.
+'''
 import unittest
 import c3d
 import numpy as np
@@ -6,7 +8,7 @@ from test.zipload import Zipload
 from test.base import Base
 
 class GroupSample():
-    ''' Helper object to verify groups entries persist. '''
+    ''' Helper object to verify group entries persist or terminate properly. '''
     def __init__(self, manager):
         self.manager = manager
         self.sample()
@@ -14,12 +16,12 @@ class GroupSample():
     @property
     def group_items(self):
         '''Helper to access group items. '''
-        return [(k, g) for (k, g) in self.manager.group_items]
+        return [(k, g) for (k, g) in self.manager.group_items()]
 
     @property
     def group_listed(self):
         '''Helper to access group numerical key-value pairs. '''
-        return [(k, g) for (k, g) in self.manager.group_listed]
+        return [(k, g) for (k, g) in self.manager.group_listed()]
 
     @property
     def fetch_groups(self):
@@ -117,13 +119,13 @@ class ManagerGroupTests(Base):
     def test_Group_group_items(self):
         '''Test Manager.group_items'''
         reader = c3d.Reader(Zipload._get(self.ZIP, self.INTEL_REAL))
-        grp_keys = [k for (k, g) in reader.group_items]
+        grp_keys = [k for (k, g) in reader.group_items()]
         assert len(grp_keys) > 0, 'No group items in file or Group.group_items failed'
 
     def test_Group_group_listed(self):
         '''Test Manager.group_listed'''
         reader = c3d.Reader(Zipload._get(self.ZIP, self.INTEL_REAL))
-        grp_list = [k for (k, g) in reader.group_listed]
+        grp_list = [k for (k, g) in reader.group_listed()]
         assert len(grp_list) > 0, 'No group items in file or Group.group_listed  failed'
 
 
@@ -151,8 +153,8 @@ class ManagerGroupTests(Base):
     def test_Manager_rename_group(self):
         '''Test if renaming groups acts as intended.'''
         reader = c3d.Reader(Zipload._get(self.ZIP, self.INTEL_REAL))
-        grp_keys = [k for (k, g) in reader.group_items]
         ref = GroupSample(reader)
+        grp_keys = [k for (k, g) in ref.group_items]
 
         new_names = ['TEST_NAME' + str(i) for i in range(len(grp_keys))]
 
@@ -176,8 +178,8 @@ class ManagerGroupTests(Base):
     def test_Manager_renumber_group(self):
         '''Test if renaming (renumbering) groups acts as intended.'''
         reader = c3d.Reader(Zipload._get(self.ZIP, self.INTEL_REAL))
-        grp_ids = [k for (k, g) in reader.group_listed]
         ref = GroupSample(reader)
+        grp_ids = [k for (k, g) in ref.group_listed]
 
         max_key = ref.max_key
 

@@ -36,8 +36,8 @@ class ReaderTest(Base):
     def test_paramsb(self):
         r = c3d.Reader(Zipload._get('sample08.zip', 'TESTBPI.c3d'))
         self._log(r)
-        for g in r.groups.values():
-            for p in g.params.values():
+        for g in r.group_values():
+            for p in g.values():
                 if len(p.dimensions) == 0:
                     val = None
                     width = len(p.bytes)
