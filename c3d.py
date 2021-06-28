@@ -346,7 +346,7 @@ long_event_labels: {0.long_event_labels}
         self.long_event_labels = self.long_event_labels == 0x3039
 
     def _processor_convert(self, dtypes, handle):
-        ''' Function interpreting the header once processor type has been determined.
+        ''' Function interpreting the header once a processor type has been determined.
         '''
 
         if dtypes.is_dec:
@@ -818,10 +818,13 @@ class Group(object):
             raise TypeError('Expected descriptor to be byte string or python string, was %s.' % type(value))
         self._desc = value
 
-    @property
-    def param_items(self):
-        ''' Acquie group parameter iterator for key-value pairs. '''
-        return params.items()
+    def items(self):
+        ''' Acquire iterator for paramater key-entry pairs. '''
+        return self._params.items()
+
+    def values(self):
+        ''' Acquire iterator for parameter entries. '''
+        return self._params.values()
 
     def get(self, key, default=None):
         '''Get a parameter by key.
@@ -840,7 +843,7 @@ class Group(object):
         '''
         return self._params.get(key, default)
 
-    def add_param(self, name, dtypes, **kwargs):
+    def add_param(self, name, **kwargs):
         '''Add a parameter to this group.
 
         Parameters
@@ -848,12 +851,10 @@ class Group(object):
         name : str
             Name of the parameter to add to this group. The name will
             automatically be case-normalized.
-        dtypes : DataTypes
-            Object struct containing the data types used for reading parameter data.
 
         Additional keyword arguments will be passed to the `Param` constructor.
         '''
-        self._params[name.upper()] = Param(name.upper(), dtypes, **kwargs)
+        self._params[name.upper()] = Param(name.upper(), self._dtypes, **kwargs)
 
     def remove_param(self, name):
         '''Remove the specified parameter.
@@ -974,7 +975,6 @@ class Manager(object):
         ''' Access the parsed c3d header. '''
         return self._header
 
-    @property
     def group_items(self):
         ''' Acquire iterable over parameter group pairs.
 
@@ -985,7 +985,16 @@ class Manager(object):
         '''
         return ((k, v) for k, v in self._groups.items() if isinstance(k, str))
 
-    @property
+    def group_values(self):
+        ''' Acquire iterable over parameter group entries.
+
+        Returns
+        -------
+        values : Touple of (:class:`Group`, ...)
+            Python touple containing unique parameter group entries.
+        '''
+        return (v for k, v in self._groups.items() if isinstance(k, str))
+
     def group_listed(self):
         ''' Acquire iterable over sorted numerical parameter group pairs.
 
@@ -1397,7 +1406,7 @@ class Reader(Manager):
                 # We've just started reading a parameter. If its group doesn't
                 # exist, create a blank one. add the parameter to the group.
                 self._groups.setdefault(
-                    group_id, Group(self._dtypes)).add_param(name, self._dtypes, handle=buf)
+                    group_id, Group(self._dtypes)).add_param(name, handle=buf)
             else:
                 # We've just started reading a group. If a group with the
                 # appropriate numerical id exists already (because we've
@@ -1635,6 +1644,8 @@ class Writer(Manager):
         '''Set metadata for this writer.
 
         '''
+        # Always write INTEL format
+        self._dtypes = DataTypes(PROCESSOR_INTEL)
         super(Writer, self).__init__()
         self._point_rate = point_rate
         self._analog_rate = analog_rate
@@ -1736,11 +1747,8 @@ class Writer(Manager):
         if not self._frames:
             return
 
-        dtypes = DataTypes(PROCESSOR_INTEL)
-
         def add(name, desc, bpe, format, bytes, *dimensions):
             group.add_param(name,
-                            dtypes,
                             desc=desc,
                             bytes_per_element=bpe,
                             bytes=struct.pack(format, bytes),
@@ -1748,14 +1756,13 @@ class Writer(Manager):
 
         def add_str(name, desc, bytes, *dimensions):
             group.add_param(name,
-                            dtypes,
                             desc=desc,
                             bytes_per_element=-1,
                             bytes=bytes.encode('utf-8'),
                             dimensions=list(dimensions))
 
         def add_empty_array(name, desc, bpe):
-            group.add_param(name, dtypes, desc=desc,
+            group.add_param(name, desc=desc,
                             bytes_per_element=bpe, dimensions=[0])
 
         points, analog = self._frames[0]
