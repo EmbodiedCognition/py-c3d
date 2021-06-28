@@ -74,7 +74,7 @@ class GroupSample():
                             'Initially %i, after change entry was %i' % (n, n2)
             assert g == g2, 'Group listed order changed for entry %i.' % i
 
-    def verify_add_groups(self, N):
+    def verify_add_group(self, N):
         '''Add N groups and verify count at each iteration.'''
         self.sample()
         max_key = self.max_key
@@ -109,31 +109,31 @@ class GroupSample():
             self.assert_entry_count(delta=-1 - i)
 
 
-class ManagerGroupTests(Base):
+class TestGroupAccessors(Base):
     ''' Tests functionality associated with editing Group entries in the Manager class.
     '''
     ZIP = 'sample01.zip'
     INTEL_INT = 'Eb015pi.c3d'
     INTEL_REAL = 'Eb015pr.c3d'
 
-    def test_Group_group_items(self):
+    def test_Manager_group_items(self):
         '''Test Manager.group_items'''
         reader = c3d.Reader(Zipload._get(self.ZIP, self.INTEL_REAL))
         grp_keys = [k for (k, g) in reader.group_items()]
-        assert len(grp_keys) > 0, 'No group items in file or Group.group_items failed'
+        assert len(grp_keys) > 0, 'No group items in file or Manager.group_items failed'
 
-    def test_Group_group_listed(self):
+    def test_Manager_group_listed(self):
         '''Test Manager.group_listed'''
         reader = c3d.Reader(Zipload._get(self.ZIP, self.INTEL_REAL))
         grp_list = [k for (k, g) in reader.group_listed()]
-        assert len(grp_list) > 0, 'No group items in file or Group.group_listed  failed'
+        assert len(grp_list) > 0, 'No group items in file or Manager.group_listed  failed'
 
 
     def test_Manager_add_group(self):
         '''Test if renaming groups acts as intended.'''
         reader = c3d.Reader(Zipload._get(self.ZIP, self.INTEL_REAL))
         ref = GroupSample(reader)
-        ref.verify_add_groups(100)
+        ref.verify_add_group(100)
         ref.verify_remove_all_using_numeric()
 
     def test_Manager_removing_group_from_numeric(self):
@@ -141,14 +141,14 @@ class ManagerGroupTests(Base):
         reader = c3d.Reader(Zipload._get(self.ZIP, self.INTEL_REAL))
         ref = GroupSample(reader)
         ref.verify_remove_all_using_numeric()
-        ref.verify_add_groups(100)
+        ref.verify_add_group(100)
 
     def test_Manager_removing_group_from_name(self):
         '''Test if removing groups acts as intended.'''
         reader = c3d.Reader(Zipload._get(self.ZIP, self.INTEL_REAL))
         ref = GroupSample(reader)
         ref.verify_remove_all_using_name()
-        ref.verify_add_groups(100)
+        ref.verify_add_group(100)
 
     def test_Manager_rename_group(self):
         '''Test if renaming groups acts as intended.'''
@@ -172,7 +172,7 @@ class ManagerGroupTests(Base):
         try:
             reader.rename_group(new_names[0], new_names[1])
             raise RuntimeError('Overwriting existing numerical ID should raise a KeyError.')
-        except KeyError as e:
+        except ValueError as e:
             pass # Correct
 
     def test_Manager_renumber_group(self):
@@ -199,7 +199,7 @@ class ManagerGroupTests(Base):
         try:
             reader.rename_group(max_key + 1, max_key + 2)
             raise RuntimeError('Overwriting existing numerical ID should raise a KeyError.')
-        except KeyError as e:
+        except ValueError as e:
             pass # Correct
 
 
