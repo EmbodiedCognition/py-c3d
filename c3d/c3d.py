@@ -189,8 +189,8 @@ class Header(object):
         Index of the last frame of data.
     analog_per_frame : int
         Number of analog frames per frame of 3D point data. The analog frame
-        rate (ANALOG:RATE) apparently equals the point frame rate (POINT:RATE)
-        times this value.
+        rate (ANALOG:RATE) is equivalent to the point frame rate (POINT:RATE)
+        times the analog per frame value.
     frame_rate : float
         The frame rate of the recording, in frames per second.
     scale_factor : float
@@ -1649,7 +1649,7 @@ class Writer(Manager):
     point_units : str, optional
         The units that the point numbers represent. Defaults to ``'mm  '``.
     gen_scale : float, optional
-        General scaling factor for data. Defaults to 1.
+        General scaling factor for analog data. Defaults to 1.
     '''
 
     def __init__(self,
@@ -1661,16 +1661,24 @@ class Writer(Manager):
         '''Set metadata for this writer.
 
         '''
-        # Always write INTEL format
-        self._dtypes = DataTypes(PROCESSOR_INTEL)
+        self._dtypes = DataTypes(PROCESSOR_INTEL) # Always write INTEL format
         super(Writer, self).__init__()
-        self._point_rate = point_rate
-        self._analog_rate = analog_rate
-        self._analog_per_frame = analog_rate / point_rate
-        self._point_scale = point_scale
+
+        # Custom properties
         self._point_units = point_units
         self._gen_scale = gen_scale
+
+        # Header properties
+        self._header.frame_rate = np.float32(point_rate)
+        self._header.scale_factor = np.float32(self._point_scale)
+        self.analog_rate = analog_rate
         self._frames = []
+
+    @analog_rate.setter
+    def analog_rate(self, value):
+        per_frame_rate = value / self.frame_rate
+        assert per_frame_rate.is_integer(), "Analog rate must be a multiple of the point rate."
+        return self._header.analog_per_frame = np.uint16(per_frame_rate)
 
     def add_frames(self, frames):
         '''Add frames to this writer instance.
@@ -1796,8 +1804,8 @@ class Writer(Manager):
         add('USED', 'Number of 3d markers', 2, '<H', ppf)
         add('FRAMES', 'frame count', 2, '<H', min(65535, len(self._frames)))
         add('DATA_START', 'data block number', 2, '<H', 0)
-        add('SCALE', '3d scale factor', 4, '<f', np.float32(self._point_scale))
-        add('RATE', '3d data capture rate', 4, '<f', np.float32(self._point_rate))
+        add('SCALE', '3d scale factor', 4, '<f', np.float32(self._header.scale_factor))
+        add('RATE', '3d data capture rate', 4, '<f', np.float32(self._header.frame_rate))
         add_str('X_SCREEN', 'X_SCREEN parameter', '+X', 2)
         add_str('Y_SCREEN', 'Y_SCREEN parameter', '+Y', 2)
         add_str('UNITS', '3d data units',
@@ -1810,7 +1818,7 @@ class Writer(Manager):
         # ANALOG group
         group = self.add_group(2, 'ANALOG', 'ANALOG group')
         add('USED', 'analog channel count', 2, '<H', analog.shape[0])
-        add('RATE', 'analog samples per second', 4, '<f', np.float32(self._analog_rate))
+        add('RATE', 'analog samples per second', 4, '<f', np.float32(self.analog_rate))
         add('GEN_SCALE', 'analog general scale factor', 4, '<f', np.float32(self._gen_scale))
         add_empty_array('SCALE', 'analog channel scale factors', 4)
         add_empty_array('OFFSET', 'analog channel offsets', 2)
@@ -1825,12 +1833,9 @@ class Writer(Manager):
         self.get('POINT:DATA_START').bytes = struct.pack('<H', 2 + blocks)
 
         self._header.data_block = np.uint16(2 + blocks)
-        self._header.frame_rate = np.float32(self._point_rate)
         self._header.last_frame = np.uint16(min(len(self._frames), 65535))
         self._header.point_count = np.uint16(ppf)
         self._header.analog_count = np.uint16(np.prod(analog.shape))
-        self._header.analog_per_frame = np.uint16(self._analog_per_frame)
-        self._header.scale_factor = np.float32(self._point_scale)
 
         self._write_metadata(handle)
         self._write_frames(handle)
