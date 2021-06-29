@@ -1630,6 +1630,12 @@ class Reader(Manager):
         '''
         return self._dtypes.proc_type
 
+    def as_writer(self, conversion):
+        ''' Convert to writer using the conversion mode.
+            See Writer.from_reader() for supported converstion modes.
+        '''
+        return Writer.from_reader(self, conversion=mode)
+
 
 class Writer(Manager):
     '''This class writes metadata and frames to a C3D file.
@@ -1676,39 +1682,74 @@ class Writer(Manager):
 
         # Header properties
         self._header.frame_rate = np.float32(point_rate)
-        self._header.scale_factor = np.float32(self._point_scale)
+        self._header.scale_factor = np.float32(point_scale)
         self.analog_rate = analog_rate
         self._frames = []
 
+    @property
+    def analog_rate(self):
+        return super(Writer, self).analog_rate
+
     @analog_rate.setter
     def analog_rate(self, value):
-        per_frame_rate = value / self.frame_rate
-        assert per_frame_rate.is_integer(), "Analog rate must be a multiple of the point rate."
-        return self._header.analog_per_frame = np.uint16(per_frame_rate)
+        per_frame_rate = value / self.point_rate
+        assert float(per_frame_rate).is_integer(), "Analog rate must be a multiple of the point rate."
+        self._header.analog_per_frame = np.uint16(per_frame_rate)
 
     @staticmethod
-    def from_reader(reader, conversion='consume'):
+    def from_reader(reader, conversion=None):
         '''
         source : 'class' Manager
             Source to copy.
         conversion : str
-            Conversion mode, supported modes are:
+            Conversion mode, None is equivalent to the default mode. Supported modes are:
                 'consume'       - (Default) Reader object will be consumed and explicitly deleted.
                 'copy'          - Reader objects will be deep copied.
-                'shallow_copy'  - No group parameters are copied.
+                'shallow_copy'  - Similar to 'copy' but group parameters are not copied.
+
+        Returns
+        -------
+        param : :class:`Param`
+            A parameter from the current group.
+
+        Raises
+        ------
+        ValueError
+            If mode string is not equivalent to one of the supported modes.
+            If attempting to convert non-Intel files using mode other than 'shallow_copy'.
         '''
         writer = Writer()
-        if not reader._dtypes.is_intel:
-            warnings.warn('File was read in !'.format(
-                self._handle.tell() - final_byte_index))
-            if consume == False:
+        # Modes
+        is_consume = conversion == 'consume' or conversion is None
+        is_shallow_copy = conversion == 'shallow_copy'
+        is_deep_copy = conversion == 'copy'
+        # Verify mode
+        if not (is_consume or is_shallow_copy or is_deep_copy):
+            raise ValueError(
+                "Unknown mode argument %s. Supported modes are: 'consume', 'copy', or 'shallow_copy'".format(mode))
+        if not reader._dtypes.is_intel and not is_shallow_copy:
+            # Can't copy/consume non-Intel files due to the uncertainty of converting parameter data.
+            raise ValueError(
+                "File was read in %s format and only 'shallow_copy' mode is supported for non Intel files!".format(
+                reader.proc_format))
 
-        if consume:
-            writer._header = copy.deepcopy(reader._header)
-        else:
-            # Consume
+        if is_consume:
             writer._header = reader._header
             reader._header = None
+            writer._groups = reader._groups
+            reader._groups = None
+            del reader
+        elif is_deep_copy:
+            writer._header = copy.deepcopy(reader._header)
+            writer._groups = copy.deepcopy(reader._groups)
+        elif is_shallow_copy:
+            # Only copy header (no groups)
+            writer._header = copy.deepcopy(reader._header)
+
+        # Copy frames
+        for i, frame in enumerate(reader.read_frames(copy=True)):
+            self.add_frames(frame)
+
 
     def add_frames(self, frames):
         '''Add frames to this writer instance.
@@ -1834,8 +1875,8 @@ class Writer(Manager):
         add('USED', 'Number of 3d markers', 2, '<H', ppf)
         add('FRAMES', 'frame count', 2, '<H', min(65535, len(self._frames)))
         add('DATA_START', 'data block number', 2, '<H', 0)
-        add('SCALE', '3d scale factor', 4, '<f', np.float32(self._header.scale_factor))
-        add('RATE', '3d data capture rate', 4, '<f', np.float32(self._header.frame_rate))
+        add('SCALE', '3d scale factor', 4, '<f', np.float32(self.point_scale))
+        add('RATE', '3d data capture rate', 4, '<f', np.float32(self.point_rate))
         add_str('X_SCREEN', 'X_SCREEN parameter', '+X', 2)
         add_str('Y_SCREEN', 'Y_SCREEN parameter', '+Y', 2)
         add_str('UNITS', '3d data units',
