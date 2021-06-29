@@ -1,9 +1,14 @@
+''' Tests ability to read plausible values from software examples.
+'''
 import unittest
 import test.verify as verify
 from test.base import Base
 
 
 class Sample00(verify.WithinRangeTest, Base):
+    ''' Sample00 containing software file examples from:
+         https://www.c3d.org/sampledata.html
+    '''
     ZIP = 'sample00.zip'
 
     DATA_RANGE = (-1e6, 1e6)

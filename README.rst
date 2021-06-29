@@ -56,6 +56,9 @@ To run tests available in the test folder, following command can be run from the
 
     python -m unittest discover .
 
+Test scripts will automatically download test files from `c3d.org`_.
+
+.. _c3d.org: https://www.c3d.org/sampledata.html
 
 Caveats
 -------
