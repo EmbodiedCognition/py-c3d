@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 import array
 import io
+import copy
 import numpy as np
 import struct
 import warnings
@@ -19,8 +20,8 @@ class DataTypes(object):
         Data types depend on the processor format the file is stored in.
     '''
     def __init__(self, proc_type):
-        self.proc_type = proc_type
-        if proc_type == PROCESSOR_MIPS:
+        self._proc_type = proc_type
+        if self._proc_type == PROCESSOR_MIPS:
             # Big-Endian (SGI/MIPS format)
             self.float32 = np.dtype(np.float32).newbyteorder('>')
             self.float64 = np.dtype(np.float64).newbyteorder('>')
@@ -49,19 +50,26 @@ class DataTypes(object):
     def is_ieee(self):
         ''' True if the associated file is in the Intel format.
         '''
-        return self.proc_type == PROCESSOR_INTEL
+        return self._proc_type == PROCESSOR_INTEL
 
     @property
     def is_dec(self):
         ''' True if the associated file is in the DEC format.
         '''
-        return self.proc_type == PROCESSOR_DEC
+        return self._proc_type == PROCESSOR_DEC
 
     @property
     def is_mips(self):
         ''' True if the associated file is in the SGI/MIPS format.
         '''
-        return self.proc_type == PROCESSOR_MIPS
+        return self._proc_type == PROCESSOR_MIPS
+
+    @property
+    def proc_type(self):
+        ''' Get the processory type associated with the data format in the file.
+        '''
+        processor_type = ['INTEL', 'DEC', 'MIPS']
+        return processor_type[self._proc_type - PROCESSOR_INTEL]
 
     def decode_string(self, bytes):
         ''' Decode a byte array to a string.
@@ -1618,11 +1626,9 @@ class Reader(Manager):
 
     @property
     def proc_type(self):
-        """
-        Get the processory type associated with the data format in the file.
-        """
-        processor_type = ['PROCESSOR_INTEL', 'PROCESSOR_DEC', 'PROCESSOR_MIPS']
-        return processor_type[self._dtypes.proc_type - PROCESSOR_INTEL]
+        '''Get the processory type associated with the data format in the file.
+        '''
+        return self._dtypes.proc_type
 
 
 class Writer(Manager):
@@ -1679,6 +1685,30 @@ class Writer(Manager):
         per_frame_rate = value / self.frame_rate
         assert per_frame_rate.is_integer(), "Analog rate must be a multiple of the point rate."
         return self._header.analog_per_frame = np.uint16(per_frame_rate)
+
+    @staticmethod
+    def from_reader(reader, conversion='consume'):
+        '''
+        source : 'class' Manager
+            Source to copy.
+        conversion : str
+            Conversion mode, supported modes are:
+                'consume'       - (Default) Reader object will be consumed and explicitly deleted.
+                'copy'          - Reader objects will be deep copied.
+                'shallow_copy'  - No group parameters are copied.
+        '''
+        writer = Writer()
+        if not reader._dtypes.is_intel:
+            warnings.warn('File was read in !'.format(
+                self._handle.tell() - final_byte_index))
+            if consume == False:
+
+        if consume:
+            writer._header = copy.deepcopy(reader._header)
+        else:
+            # Consume
+            writer._header = reader._header
+            reader._header = None
 
     def add_frames(self, frames):
         '''Add frames to this writer instance.
