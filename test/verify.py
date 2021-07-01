@@ -110,15 +110,17 @@ class WithinRangeTest():
                     analog_min = np.min(analog)
                     analog_max = np.max(analog)
 
-            assert np.all(npoint == reader.frame_count),\
-                """Failed verifying POINT data in range ({}, {}), found {} number of mismatches in each axis
-                   for all samples. Range for data was ({}, {})."""\
-                   .format(min_range, max_range, np.sum(np.abs(npoint - reader.frame_count), axis=0),
-                           point_min, point_max)
-            assert np.all(nanalog == reader.analog_sample_count),\
-                """Failed verifying ANALOG data in range ({}, {}), found {} number of mismatches for each channel
-                   for all samples. Range for data was ({}, {})."""\
-                   .format(min_range, max_range, np.abs(nanalog - reader.analog_sample_count), analog_min, analog_max)
+            assert np.all(npoint == reader.frame_count), '\n' + \
+                'Failed verifying POINT data in range ({}, {}).\n'.format(min_range, max_range) +\
+                'Found a total of {} values outside plausible range.\n'.format(
+                 np.sum(np.abs(npoint - reader.frame_count), axis=0)) +\
+                'Range for data was ({}, {})'.format(point_min, point_max)
+
+            assert np.all(nanalog == reader.analog_sample_count),'\n' + \
+                'Failed verifying ANALOG data in range ({}, {}).\n'.format(min_range, max_range) +\
+                'Found a total of {} values outside plausible range.\n'.format(
+                 np.abs(nanalog - reader.analog_sample_count)) +\
+                'Range for data was ({}, {})'.format(analog_min, analog_max)
 
             print('{} | READ: OK'.format(file))
 
@@ -284,8 +286,8 @@ def data_is_equal(areader, breader, alabel, blabel):
     apoint = np.reshape(apoint, (-1, 5))
     bpoint = np.reshape(bpoint, (-1, 5))
 
-    avalid = apoint[:, 3] > -1.0
-    bvalid = bpoint[:, 3] > -1.0
+    avalid = apoint[:, 3] >= 0
+    bvalid = bpoint[:, 3] >= 0
     valid_diff = np.sum(np.logical_xor(avalid, bvalid))
     if valid_diff > 0:
         diff = np.logical_xor(avalid, bvalid)
@@ -305,6 +307,7 @@ def data_is_equal(areader, breader, alabel, blabel):
 
     # Compare point data (coordinates)
     c = ['X', 'Y', 'Z']
+    # Tolerance (allow scale x integer rounding error)
     atol = equal_scale_fac * abs(areader.point_scale)
     for i in range(3):
         was_close = np.isclose(apoint[:, i], bpoint[:, i], atol=atol)
@@ -317,20 +320,21 @@ def data_is_equal(areader, breader, alabel, blabel):
 
     # Word 4 (residual + camera bits)
     residual_diff = tot_points - np.sum(np.isclose(apoint[:, 3], bpoint[:, 3]))
-    cam_close = np.isclose(apoint[:, 4], bpoint[:, 4], atol=1.001)
-    cam_diff = tot_points - np.sum(cam_close)
-    cam_diff_non_equal = tot_points - np.sum(np.isclose(apoint[:, 4], bpoint[:, 4]))
+    cam_close = np.isclose(apoint[:, 4], bpoint[:, 4])
+    cam_diff_non_equal = tot_points - np.sum(cam_close)
 
     # Camera bit errors (warn if non identical, allow 1 cam bit diff, might be bad DEC implementation, or bad data)
     if cam_diff_non_equal > 0:
         print(apoint[~cam_close, 4])
         print(bpoint[~cam_close, 4])
-        assert cam_diff == 0, \
-            'Mismatch error in camera bit flags for {} and {}, number of samples with flag diff: {} of {}'.format(
-            alabel, blabel, cam_diff, tot_points)
-        err_str =\
-            'Mismatch in camera bit flags between {} and {}, number of samples with flag diff: {} of {}'.format(
-            alabel, blabel, cam_diff_non_equal, tot_points)
+        cam_close = np.isclose(apoint[:, 4], bpoint[:, 4], atol=1.001)
+        cam_diff = tot_points - np.sum(cam_close)
+        assert cam_diff == 0, '\n' + \
+            'Mismatch in camera bit flags between {} and {}.\n'.format(alabel, blabel) +\
+            'Number of samples with flag differences larger then 1 bit: {} of {}'.format(cam_diff, tot_points)
+        err_str = '\n' + \
+            'Mismatch in camera bit flags between {} and {}.\n'.format(alabel, blabel) +\
+            'Number of samples with flag difference of 1 bit: {} of {}'.format(cam_diff_non_equal, tot_points)
         warnings.warn(err_str, RuntimeWarning)
     # Residual assert
     assert residual_diff == 0, '\n' +\
