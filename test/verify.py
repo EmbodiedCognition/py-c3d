@@ -289,10 +289,6 @@ def data_is_equal(areader, breader, alabel, blabel):
     avalid = apoint[:, 3] >= 0
     bvalid = bpoint[:, 3] >= 0
     valid_diff = np.sum(np.logical_xor(avalid, bvalid))
-    if valid_diff > 0:
-        diff = np.logical_xor(avalid, bvalid)
-        print('A', apoint[diff, 3])
-        print('B', bpoint[diff, 3])
     assert valid_diff == 0, '\n' +\
         'Error in number of valid samples between {} and {}.\n'.format(alabel, blabel) +\
         'Total number of validation mismatches: {} of {}'.format(valid_diff, len(avalid))
@@ -325,8 +321,8 @@ def data_is_equal(areader, breader, alabel, blabel):
 
     # Camera bit errors (warn if non identical, allow 1 cam bit diff, might be bad DEC implementation, or bad data)
     if cam_diff_non_equal > 0:
-        print(apoint[~cam_close, 4])
-        print(bpoint[~cam_close, 4])
+        #print(apoint[~cam_close, 4])
+        #print(bpoint[~cam_close, 4])
         cam_close = np.isclose(apoint[:, 4], bpoint[:, 4], atol=1.001)
         cam_diff = tot_points - np.sum(cam_close)
         assert cam_diff == 0, '\n' + \
