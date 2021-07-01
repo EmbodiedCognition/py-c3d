@@ -90,10 +90,11 @@ class WriterTest(Base):
             point_scale=r.point_scale,
             gen_scale=r.get_float('ANALOG:GEN_SCALE'),
         )
-        w.add_frames((p, a) for _, p, a in r.read_frames())
+        w.add_frames([(p, a) for _, p, a in r.read_frames()])
 
         h = io.BytesIO()
-        w.write(h, r.point_labels)
+        w.set_point_labels(r.point_labels)
+        w.write(h)
 
 
 if __name__ == '__main__':
