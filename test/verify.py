@@ -125,6 +125,9 @@ class WithinRangeTest():
         # Allow self.zipfiles on form:
         # ['FILE', ..]
         # [('FOLDER', ['FILE', ..])]
+        print('----------------------------')
+        print(type(self))
+        print('----------------------------')
         if len(np.shape(self.zip_files)) == 1:
             for file in self.zip_files:
                 check_zipfile(file)
@@ -133,6 +136,7 @@ class WithinRangeTest():
                 print('{} | Validating...'.format(folder))
                 for file in files:
                     check_zipfile('{}/{}'.format(folder, file))
+        print('DONE')
 
 
 ##
@@ -277,37 +281,66 @@ def data_is_equal(areader, breader, alabel, blabel):
     apoint, aanalog = Base.load_data(areader)
     bpoint, banalog = Base.load_data(breader)
 
-    nsampled_coordinates = areader.point_used * frame_count
-    nsampled_analog = areader.analog_used * analog_count
+    apoint = np.reshape(apoint, (-1, 5))
+    bpoint = np.reshape(bpoint, (-1, 5))
+
+    avalid = apoint[:, 3] > -1.0
+    bvalid = bpoint[:, 3] > -1.0
+    valid_diff = np.sum(np.logical_xor(avalid, bvalid))
+    if valid_diff > 0:
+        diff = np.logical_xor(avalid, bvalid)
+        print('A', apoint[diff, 3])
+        print('B', bpoint[diff, 3])
+    assert valid_diff == 0, '\n' +\
+        'Error in number of valid samples between {} and {}.\n'.format(alabel, blabel) +\
+        'Total number of validation mismatches: {} of {}'.format(valid_diff, len(avalid))
+
+    # Only compare valid point data
+    valid = avalid
+    apoint = apoint[valid]
+    bpoint = bpoint[valid]
+
+    tot_points = len(apoint)
+    tot_analog = areader.analog_used * analog_count
 
     # Compare point data (coordinates)
     c = ['X', 'Y', 'Z']
+    atol = equal_scale_fac * abs(areader.point_scale)
     for i in range(3):
-        axis_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, :, i], bpoint[:, :, i],
-                                                  atol=equal_scale_fac*abs(areader.point_scale)))
-        assert axis_diff == 0, \
-            'Mismatched coordinates on {} axis for {} and {}, number of sampled diff: {} of {}'.format(
-             c[i], alabel, blabel, axis_diff, nsampled_coordinates)
+        was_close = np.isclose(apoint[:, i], bpoint[:, i], atol=atol)
+        axis_notclose = tot_points - np.sum(was_close)
+        assert axis_notclose == 0, '\n' +\
+            'Mismatched coordinates on {} axis between {} and {}.\n'.format(c[i], alabel, blabel) +\
+            'Samples with absolute difference larger then {:0.4f}: {} of {}.\n'.format(
+            atol, axis_notclose, tot_points) +\
+            'Maximum difference: {}'.format(np.max(np.abs(apoint[:, i] - bpoint[:, i])))
 
     # Word 4 (residual + camera bits)
-    residual_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, :, 3], bpoint[:, :, 3]))
-    cam_diff = nsampled_coordinates - np.sum(np.isclose(apoint[:, :, 4], bpoint[:, :, 4], atol=1.001))
-    cam_diff_non_equal = nsampled_coordinates - np.sum(np.isclose(apoint[:, :, 4], bpoint[:, :, 4]))
+    residual_diff = tot_points - np.sum(np.isclose(apoint[:, 3], bpoint[:, 3]))
+    cam_close = np.isclose(apoint[:, 4], bpoint[:, 4], atol=1.001)
+    cam_diff = tot_points - np.sum(cam_close)
+    cam_diff_non_equal = tot_points - np.sum(np.isclose(apoint[:, 4], bpoint[:, 4]))
 
     # Camera bit errors (warn if non identical, allow 1 cam bit diff, might be bad DEC implementation, or bad data)
     if cam_diff_non_equal > 0:
-        assert cam_diff == 0, 'Mismatch error in camera bit flags for {} and {}, number of samples with flag diff:\
-        {} of {}'.format(alabel, blabel, cam_diff, nsampled_coordinates)
-        err_str = 'Mismatch in camera bit flags between {} and {}, number of samples with flag diff:\
-            {} of {}'.format(alabel, blabel, cam_diff_non_equal, nsampled_coordinates)
+        print(apoint[~cam_close, 4])
+        print(bpoint[~cam_close, 4])
+        assert cam_diff == 0, \
+            'Mismatch error in camera bit flags for {} and {}, number of samples with flag diff: {} of {}'.format(
+            alabel, blabel, cam_diff, tot_points)
+        err_str =\
+            'Mismatch in camera bit flags between {} and {}, number of samples with flag diff: {} of {}'.format(
+            alabel, blabel, cam_diff_non_equal, tot_points)
         warnings.warn(err_str, RuntimeWarning)
     # Residual assert
-    assert residual_diff == 0, \
-        'Error in sample residuals between {} and {}, number of residual diff: {} of {}'.format(
-            alabel, blabel, residual_diff, nsampled_coordinates)
+    assert residual_diff == 0, '\n' +\
+        'Error in sample residuals between {} and {}.\n'.format(alabel, blabel) +\
+        'Total number of failed samples: {} of {}'.format(residual_diff, tot_points)
 
     # Compare analog
-    analog_diff = nsampled_analog - np.sum(np.isclose(aanalog, banalog))
-    assert analog_diff == 0, \
-        'Mismatched analog samples between {} and {}, number of sampled diff: {} of {}'.format(
-            alabel, blabel, analog_diff, nsampled_analog)
+    was_close = np.isclose(aanalog, banalog)
+    analog_notclose = tot_analog - np.sum(was_close)
+    assert analog_notclose == 0, '\n' + \
+        'Mismatched analog samples between {} and {}.\n'.format(alabel, blabel) +\
+        'Total number of failed samples: {} of {}.\n'.format(analog_notclose, tot_analog) +\
+        'Largest absolute difference: {}.'.format(np.max(np.abs(aanalog - banalog)))

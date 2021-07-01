@@ -2,7 +2,6 @@
 
 from __future__ import unicode_literals
 
-import array
 import io
 import copy
 import numpy as np
@@ -14,6 +13,7 @@ PROCESSOR_INTEL = 84
 PROCESSOR_DEC = 85
 PROCESSOR_MIPS = 86
 
+INVALID_FLAG = -100000
 
 class DataTypes(object):
     ''' Container defining different data types used for reading file data.
@@ -84,6 +84,13 @@ class DataTypes(object):
         # Revert to using default decoder but replace characters
         return codecs.decode(bytes, decoders[0], 'replace')
 
+class Decorator(object):
+    '''Base class for extending (decotrating) a python object.
+    '''
+    def __init__(self, decoratee):
+        self._decoratee = decoratee
+    def __getattr__(self, name):
+        return getattr(self._decoratee, name)
 
 def UNPACK_FLOAT_IEEE(uint_32):
     '''Unpacks a single 32 bit unsigned int to a IEEE float representation
@@ -175,6 +182,10 @@ def DEC_to_IEEE_BYTES(bytes):
 def is_integer(value):
     '''Check if value input is integer.'''
     return isinstance(value, (int, np.int32, np.int64))
+
+def is_iterable(value):
+    '''Check if value is iterable.'''
+    return hasattr(value, '__iter__')
 
 class Header(object):
     '''Header information from a C3D file.
@@ -787,6 +798,9 @@ class Group(object):
     def __repr__(self):
         return '<Group: {}>'.format(self.desc)
 
+    def __contains__(self, key):
+        return key in self._params
+
     @property
     def name(self):
         ''' Group name. '''
@@ -822,9 +836,10 @@ class Group(object):
         '''
         if isinstance(value, bytes):
             self._desc = self._dtypes.decode_string(value)
-        elif value is not None and not isinstance(value, str):
-            raise TypeError('Expected descriptor to be byte string or python string, was %s.' % type(value))
-        self._desc = value
+        elif isinstance(value, str) or value is None:
+            self._desc = value
+        else:
+            raise TypeError('Expected descriptor to be python string, bytes or None, was %s.' % type(value))
 
     def param_items(self):
         ''' Acquire iterator for paramater key-entry pairs. '''
@@ -865,8 +880,20 @@ class Group(object):
             automatically be case-normalized.
 
         Additional keyword arguments will be passed to the `Param` constructor.
+
+        Raises
+        ------
+        TypeError
+            Input arguments are of the wrong type.
+        KeyError
+            Name or numerical key already exist (attempt to overwrite existing data).
         '''
-        self._params[name.upper()] = Param(name.upper(), self._dtypes, **kwargs)
+        if not isinstance(name, str):
+            raise TypeError("Expected 'name' argument to be a string, was of type {}".format(type(name)))
+        name = name.upper()
+        if name in self._params:
+            raise KeyError('Parameter already exists with key {}'.format(name))
+        self._params[name] = Param(name, self._dtypes, **kwargs)
 
     def remove_param(self, name):
         '''Remove the specified parameter.
@@ -887,9 +914,16 @@ class Group(object):
             Parameter instance, or name.
         new_name : str
             New name for the parameter.
+
+        Raises
+        ------
+        KeyError
+            If no parameter with the original name exists.
+        ValueError
+            If the new name already exist (attempt to overwrite existing data).
         '''
         if new_name in self._params:
-            raise ValueError("Key %s already exist." % new_name)
+            raise ValueError("Key {} already exist.".format(new_name))
         if isinstance(name, Param):
             param = name
             name = param.name
@@ -897,7 +931,7 @@ class Group(object):
             # Aquire instance using id
             param = self._params.get(name, None)
             if param is None:
-                raise ValueError('No parameter found matching the identifier: %s' % str(name))
+                raise KeyError('No parameter found matching the identifier: {}'.format(str(name)))
         del self._params[name]
         self._params[new_name] = param
 
@@ -984,6 +1018,9 @@ class Manager(object):
         '''Set up a new Manager with a Header.'''
         self._header = header or Header()
         self._groups = {}
+
+    def __contains__(self, key):
+        return key in self._groups
 
     @property
     def header(self):
@@ -1113,17 +1150,19 @@ class Manager(object):
         ------
         TypeError
             Input arguments are of the wrong type.
+        KeyError
+            Name or numerical key already exist (attempt to overwrite existing data).
         '''
         if not is_integer(group_id):
-            raise ValueError('Expected Group numerical key to be integer, was %s.' % type(group_id))
+            raise TypeError('Expected Group numerical key to be integer, was %s.' % type(group_id))
         if not (isinstance(name, str) or name is None):
-            raise ValueError('Expected Group name key to be string, was %s.' % type(name))
-        group_id = int(group_id) # Assert python int
+            raise TypeError('Expected Group name key to be string, was %s.' % type(name))
+        group_id = int(group_id) # Asserts python int
         if group_id in self._groups:
-            raise KeyError(group_id)
+            raise KeyError('Group with numerical key {} already exists'.format(group_id))
         name = name.upper()
         if name in self._groups:
-            raise KeyError(name)
+            raise KeyError('No group matched name key {}'.format(name))
         group = self._groups[name] = self._groups[group_id] = Group(self._dtypes, name, desc)
         return group
 
@@ -1356,6 +1395,29 @@ class Manager(object):
         # Return the largest of the all (queue bad reading...)
         return int(np.max(end_frame))
 
+    def _get_analog_transform(self):
+        ''' Parse analog data transform parameters.
+        '''
+        # Offsets
+        analog_offsets = np.zeros((self.analog_used, 1), int)
+        param = self.get('ANALOG:OFFSET')
+        if param is not None and param.num_elements > 0:
+            analog_offsets[:, 0] = param.int16_array[:self.analog_used]
+
+        # Scale factors
+        analog_scales = np.ones((self.analog_used, 1), float)
+        gen_scale = 1.
+        param = self.get('ANALOG:GEN_SCALE')
+        if param is not None:
+            gen_scale = param.float_value
+        param = self.get('ANALOG:SCALE')
+        if param is not None and param.num_elements > 0:
+            analog_scales[:, 0] = param.float_array[:self.analog_used]
+        analog_scales *= gen_scale
+
+        analog_scales = np.broadcast_to(analog_scales, (self.analog_used, self.analog_per_frame))
+        analog_offsets = np.broadcast_to(analog_offsets, (self.analog_used, self.analog_per_frame))
+        return analog_scales, analog_offsets
 
 class Reader(Manager):
     '''This class provides methods for reading the data in a C3D file.
@@ -1430,8 +1492,8 @@ class Reader(Manager):
             if group_id > 0:
                 # We've just started reading a parameter. If its group doesn't
                 # exist, create a blank one. add the parameter to the group.
-                self._groups.setdefault(
-                    group_id, Group(self._dtypes)).add_param(name, handle=buf)
+                group = self._groups.setdefault(group_id, Group(self._dtypes))
+                group.add_param(name, handle=buf)
             else:
                 # We've just started reading a group. If a group with the
                 # appropriate numerical id exists already (because we've
@@ -1442,14 +1504,14 @@ class Reader(Manager):
                 desc = size and buf.read(size) or ''
                 group = self.get(group_id)
                 if group is not None:
-                    self.rename_group(group, name)
+                    self.rename_group(group, name)  # Inserts name key
                     group.desc = desc
                 else:
                     self.add_group(group_id, name, desc)
 
         self._check_metadata()
 
-    def read_frames(self, copy=True):
+    def read_frames(self, copy=True, analog_transform=True, camera_sum=False):
         '''Iterate over the data frames from our C3D file handle.
 
         Parameters
@@ -1511,26 +1573,14 @@ class Reader(Manager):
             analog_word_bytes = 2
 
         analog = np.array([], float)
-        offsets = np.zeros((self.analog_used, 1), int)
-        param = self.get('ANALOG:OFFSET')
-        if param is not None:
-            offsets = param.int16_array[:self.analog_used, None]
-
-        analog_scales = np.ones((self.analog_used, 1), float)
-        param = self.get('ANALOG:SCALE')
-        if param is not None:
-            analog_scales[:, :] = param.float_array[:self.analog_used, None]
-
-        gen_scale = 1.
-        param = self.get('ANALOG:GEN_SCALE')
-        if param is not None:
-            gen_scale = param.float_value
+        analog_scales, analog_offsets = self._get_analog_transform()
 
         # Seek to the start point of the data blocks
         self._handle.seek((self._header.data_block - 1) * 512)
         # Number of values (words) read in regard to POINT/ANALOG data
         N_point = 4 * self.point_used
         N_analog = self.analog_used * self.analog_per_frame
+
         # Total bytes per frame
         point_bytes = N_point * point_word_bytes
         analog_bytes = N_analog * analog_word_bytes
@@ -1559,7 +1609,7 @@ class Reader(Manager):
                     # Re-read the raw byte representation directly
                     points[:, :4] = np.frombuffer(raw_bytes,
                                                   dtype=self._dtypes.float32,
-                                                  count=N_point).reshape((int(self.point_used), 4))
+                                                  count=N_point).reshape((self.point_used, 4))
 
                 # Parse the camera-observed bits and residuals.
                 # Notes:
@@ -1570,8 +1620,13 @@ class Reader(Manager):
                 # - While words are 16 bit, residual and camera mask is always interpreted as 8 packed in a single word!
                 # - 16 or 32 bit may represent a sign (indication that certain files write a -1 floating point only)
                 last_word = points[:, 3].astype(np.int32)
-                valid = (last_word & 0x80008000) == 0
-                points[~valid, 3:5] = -1.0
+                valid = last_word > -1 # (last_word & 0x80008000) == 0
+                # Lookup other
+                #if np.sum(~valid) > 0:
+                    #print(np.sum(~valid))
+                    #print(points[~valid, :3])
+                    #print(last_word[~valid])
+                points[~valid, 3:5] = INVALID_FLAG
                 c = last_word[valid]
 
             else:
@@ -1584,16 +1639,18 @@ class Reader(Manager):
 
                 # Parse last 16-bit word as two 8-bit words
                 valid = raw[:, 3] > -1
-                points[~valid, 3:5] = -1
+                points[~valid, 3:5] = INVALID_FLAG
                 c = raw[valid, 3].astype(self._dtypes.uint16)
 
             # Convert coordinate data
             # fourth value is floating-point (scaled) error estimate (residual)
-            points[valid, 3] = (c & 0xff).astype(np.float32) * scale_mag
+            points[valid, 3] = (c & 0x00ff).astype(np.float32) * scale_mag
 
             # fifth value is number of bits set in camera-observation byte
-            points[valid, 4] = sum((c & (1 << k)) >> k for k in range(8, 15))
-            # Get value as is: points[valid, 4] = (c >> 8)
+            if camera_sum:
+                points[valid, 4] = sum((c & (1 << k)) >> k for k in range(8, 15))
+            else:
+                points[valid, 4] = (c & 0xff00 >> 8)
 
             # Check if analog data exist, and parse if so
             if N_analog > 0:
@@ -1608,7 +1665,7 @@ class Reader(Manager):
                 analog = analog.reshape((-1, self.analog_used)).T
                 analog = analog.astype(float)
                 # Convert analog
-                analog = (analog - offsets) * analog_scales * gen_scale
+                analog = (analog - analog_offsets) * analog_scales
 
             # Output buffers
             if copy:
@@ -1630,11 +1687,131 @@ class Reader(Manager):
         '''
         return self._dtypes.proc_type
 
-    def as_writer(self, conversion):
-        ''' Convert to writer using the conversion mode.
-            See Writer.from_reader() for supported converstion modes.
+    def to_writer(self, conversion):
+        ''' Convert to 'Writer' using the conversion mode.
+            See Writer.from_reader() for supported conversion modes and possible exceptions.
         '''
-        return Writer.from_reader(self, conversion=mode)
+        return Writer.from_reader(self, conversion=conversion)
+
+
+class GroupEditable(Decorator):
+    ''' Group instance decorator providing convenience functions for Writer editing.
+    '''
+    def __init__(self, group):
+        super(GroupEditable, self).__init__(group)
+
+    def __contains__(self, key):
+        return key in self._decoratee
+    #
+    #   Add decorator functions (throws on overwrite)
+    #
+    def add(self, name, desc, bpe, format, data, *dimensions):
+        ''' Add a parameter with 'data' package formated in accordance with 'format'.
+        '''
+        if isinstance(data, bytes):
+            pass
+        else:
+            data = struct.pack(format, data)
+
+        self.add_param(name,
+                       desc=desc,
+                       bytes_per_element=bpe,
+                       bytes=data,
+                       dimensions=list(dimensions))
+
+    def add_array(self, name, desc, data, dtype=None):
+        '''Add a parameter with the 'data' package.
+
+        Arguments
+        ---------
+        data : Numpy array, or python iterable.
+        dtype : Numpy dtype to encode the array (Optional if data is numpy type).
+        '''
+        if not isinstance(data, np.ndarray):
+            if dtype is not None:
+                raise ValueError('Must specify dtype when passning non-numpy array type.')
+            data = np.array(data, dtype=dtype)
+        elif dtype is None:
+            dtype = data.dtype
+
+        self.add_param(name,
+                       desc=desc,
+                       bytes_per_element=dtype.itemsize,
+                       bytes=data,
+                       dimensions=data.shape)
+
+    def add_str(self, name, desc, data, *dimensions):
+        ''' Add a string parameter.
+        '''
+        self.add_param(name,
+                       desc=desc,
+                       bytes_per_element=-1,
+                       bytes=data.encode('utf-8'),
+                       dimensions=list(dimensions))
+
+    def add_empty_array(self, name, desc, bpe):
+        ''' Add an empty parameter block.
+        '''
+        self.add_param(name, desc=desc,
+                       bytes_per_element=bpe, dimensions=[0])
+
+    #
+    #   Set decorator functions (overwrites)
+    #
+    def set(self, name, *args, **kwargs):
+        ''' Add or overwrite a parameter with 'bytes' package formated in accordance with 'format'.
+        '''
+        try:
+            self.remove_param(name)
+        except KeyError as e:
+            pass
+        self.add(name, *args, **kwargs)
+
+    def set_str(self, name, *args, **kwargs):
+        ''' Add a string parameter.
+        '''
+        try:
+            self.remove_param(name)
+        except KeyError as e:
+            pass
+        self.add_str(name, *args, **kwargs)
+
+    def set_array(self, name, *args, **kwargs):
+        ''' Add a string parameter.
+        '''
+        try:
+            self.remove_param(name)
+        except KeyError as e:
+            pass
+        self.add_array(name, *args, **kwargs)
+
+    def set_empty_array(self, name, *args, **kwargs):
+        ''' Add an empty parameter block.
+        '''
+        try:
+            self.remove_param(name)
+        except KeyError as e:
+            pass
+        self.add_empty_array(name, *args, **kwargs)
+
+    #
+    #   Try add decorator functions (catches KeyError)
+    #
+    def try_add(self, name, *args, **kwargs):
+        ''' Add or overwrite a parameter with 'bytes' package formated in accordance with 'format'.
+        '''
+        try:
+            self.add(name, *args, **kwargs)
+        except KeyError as e:
+            pass
+
+    def try_add_str(self, name, *args, **kwargs):
+        ''' Add a string parameter.
+        '''
+        try:
+            self.add_str(name, *args, **kwargs)
+        except KeyError as e:
+            pass
 
 
 class Writer(Manager):
@@ -1678,23 +1855,12 @@ class Writer(Manager):
 
         # Custom properties
         self._point_units = point_units
-        self._gen_scale = gen_scale
 
         # Header properties
         self._header.frame_rate = np.float32(point_rate)
         self._header.scale_factor = np.float32(point_scale)
         self.analog_rate = analog_rate
         self._frames = []
-
-    @property
-    def analog_rate(self):
-        return super(Writer, self).analog_rate
-
-    @analog_rate.setter
-    def analog_rate(self, value):
-        per_frame_rate = value / self.point_rate
-        assert float(per_frame_rate).is_integer(), "Analog rate must be a multiple of the point rate."
-        self._header.analog_per_frame = np.uint16(per_frame_rate)
 
     @staticmethod
     def from_reader(reader, conversion=None):
@@ -1705,12 +1871,14 @@ class Writer(Manager):
             Conversion mode, None is equivalent to the default mode. Supported modes are:
                 'consume'       - (Default) Reader object will be consumed and explicitly deleted.
                 'copy'          - Reader objects will be deep copied.
-                'shallow_copy'  - Similar to 'copy' but group parameters are not copied.
+                'copy_metadata' - Similar to 'copy' but only copies metadata and not point and analog frame data.
+                'copy_shallow'  - Similar to 'copy' but group parameters are not copied.
+                'copy_header'   - Similar to 'copy_shallow' but only the header is copied (frame data is not copied).
 
         Returns
         -------
-        param : :class:`Param`
-            A parameter from the current group.
+        param : :class:`Writer`
+            A writeable and persistent representation of the 'Reader' object.
 
         Raises
         ------
@@ -1720,14 +1888,18 @@ class Writer(Manager):
         '''
         writer = Writer()
         # Modes
+        is_header_only = conversion == 'copy_header'
+        is_meta_copy = conversion == 'copy_metadata'
+        is_meta_only = is_header_only or is_meta_copy
         is_consume = conversion == 'consume' or conversion is None
-        is_shallow_copy = conversion == 'shallow_copy'
-        is_deep_copy = conversion == 'copy'
+        is_shallow_copy = conversion == 'shallow_copy' or is_header_only
+        is_deep_copy = conversion == 'copy' or is_meta_copy
         # Verify mode
         if not (is_consume or is_shallow_copy or is_deep_copy):
             raise ValueError(
-                "Unknown mode argument %s. Supported modes are: 'consume', 'copy', or 'shallow_copy'".format(mode))
-        if not reader._dtypes.is_intel and not is_shallow_copy:
+                "Unknown mode argument %s. Supported modes are: 'consume', 'copy', or 'shallow_copy'".format(
+                conversion))
+        if not reader._dtypes.is_ieee and not is_shallow_copy:
             # Can't copy/consume non-Intel files due to the uncertainty of converting parameter data.
             raise ValueError(
                 "File was read in %s format and only 'shallow_copy' mode is supported for non Intel files!".format(
@@ -1746,20 +1918,230 @@ class Writer(Manager):
             # Only copy header (no groups)
             writer._header = copy.deepcopy(reader._header)
 
-        # Copy frames
-        for i, frame in enumerate(reader.read_frames(copy=True)):
-            self.add_frames(frame)
+        if not is_meta_only:
+            # Copy frames
+            for (i, point, analog) in reader.read_frames(copy=True, camera_sum=False):
+                writer.add_frames((point, analog))
+        return writer
 
+    @property
+    def analog_rate(self):
+        return super(Writer, self).analog_rate
+
+    @analog_rate.setter
+    def analog_rate(self, value):
+        per_frame_rate = value / self.point_rate
+        assert float(per_frame_rate).is_integer(), "Analog rate must be a multiple of the point rate."
+        self._header.analog_per_frame = np.uint16(per_frame_rate)
+
+    @property
+    def numeric_key_max(self):
+        ''' Get the largest numeric key.
+        '''
+        num = 0
+        if len(self._groups) > 0:
+            for i in self._groups.keys():
+                if isinstance(i, int):
+                    num = max(i, num)
+        return num
+
+    @property
+    def numeric_key_next(self):
+        ''' Get a new unique numeric group key.
+        '''
+        return self.numeric_key_max + 1
+
+    def get_create(self, label):
+        ''' Get or create the specified parameter group.'''
+        label = label.upper()
+        group = self.get(label)
+        if group is None:
+            group = self.add_group(self.numeric_key_next, label, label + ' group')
+        return group
+
+    @property
+    def point_group(self):
+        ''' Get or create the POINT parameter group.'''
+        return self.get_create('POINT')
+
+    @property
+    def analog_group(self):
+        ''' Get or create the ANALOG parameter group.'''
+        return self.get_create('ANALOG')
+
+    @property
+    def trial_group(self):
+        ''' Get or create the TRIAL parameter group.'''
+        return self.get_create('TRIAL')
+
+    def get(self, group, default=None):
+        '''Get a GroupEditable decorator for keyed group instance, or a parameter instance.
+
+        Parameters
+        ----------
+        group : str
+            Key, see Manager.get() for valid key formats.
+        default : any
+            Return this value if the named group and parameter are not found.
+
+        Returns
+        -------
+        value : :class:`GroupEditable` or :class:`Param`
+            Either a decorated group instance or parameter with the specified name(s). If neither
+            is found, the default value is returned.
+        '''
+        val = super(Writer, self).get(group, default)
+        if isinstance(val, Group):
+            return GroupEditable(val)
+        return val # Parameter
+
+    def add_group(self, *args, **kwargs):
+        '''Add a new parameter group. See Manager.add_group() for more information.
+
+        Returns
+        -------
+        group : :class:`Group`
+            An editable group instance.
+        '''
+        return GroupEditable(super(Writer, self).add_group(*args, **kwargs))
 
     def add_frames(self, frames):
         '''Add frames to this writer instance.
 
         Parameters
         ----------
-        frames : sequence of (point, analog) tuples
-            A sequence of frame data to add to the writer.
+        frames : single or sequence of (point, analog) pairs
+            A sequence or frame of frame data to add to the writer.
         '''
+        sh = np.shape(frames)
+        # Single frame
+        if len(sh) != 2:
+            frames = [frames]
+            sh = np.shape(frames)
+        # Sequence of invalid shape
+        if sh[1] != 2:
+            raise ValueError(
+                'Expected frame input to be sequence of point and analog pairs on form (-1, 2). ' +
+                '\Input was of shape {}.'.format(str(sh)))
         self._frames.extend(frames)
+
+    def set_point_labels(self, labels):
+        group = self.point_group
+        labels = np.ravel(labels)
+        # Get longest label name
+        label_max_size = 0
+        label_max_size = max(label_max_size, np.max([len(label) for label in labels]))
+
+        label_str = ''.join(label.ljust(label_max_size) for label in labels)
+        group.add_str('LABELS', 'labels', label_str, label_max_size, len(labels))
+
+    def set_analog_general_scale(self, value):
+        ''' Set ANALOG:GEN_SCALE factor (uniform analog scale factor).
+        '''
+        self.analog_group.set('GEN_SCALE', 'Analog general scale factor', 4, '<f', np.float32(1.0))
+
+    def set_analog_scales(self, values):
+        ''' Set ANALOG:SCALE factors (per channel scale factor).
+
+        Parameters
+        ----------
+        values : iterable or None
+            Iterable containing individual scale factors for encoding analog channel data.
+        '''
+        if is_iterable(values):
+            data = np.array([v for v in values], dtype=np.float32)
+            self.analog_group.set_array('SCALE', 'Analog channel scale factors', data)
+        elif values is None:
+            self.analog_group.set_empty_array('SCALE', 'Analog channel scale factors', 4)
+        else:
+            raise ValueError('Expected iterable containing analog scale factors.')
+
+    def set_analog_offsets(self, values):
+        ''' Set ANALOG:OFFSET offsets (per channel offset).
+
+        Parameters
+        ----------
+        values : iterable or None
+            Iterable containing individual offsets for encoding analog channel data.
+        '''
+        if is_iterable(values):
+            data = np.array([v for v in values], dtype=np.float32)
+            self.analog_group.set_array('OFFSET', 'Analog channel offsets', data)
+        elif values is None:
+            self.analog_group.set_empty_array('OFFSET', 'Analog channel offsets', 4)
+        else:
+            raise ValueError('Expected iterable containing analog data offsets.')
+
+    def write(self, handle):
+        '''Write metadata and point + analog frames to a file handle.
+
+        Parameters
+        ----------
+        handle : file
+            Write metadata and C3D motion frames to the given file handle. The
+            writer does not close the handle.
+        '''
+        if not self._frames:
+            raise RuntimeError('Attempted to write empty file.')
+
+        points, analog = self._frames[0]
+        ppf = len(points)
+        apf = len(analog)
+        nframes = len(self._frames)
+
+        UINT16_MAX = 65535
+
+        # POINT group
+        group = self.point_group
+        group.set('USED', 'Number of point samples', 2, '<H', ppf)
+        group.set('FRAMES', 'Total frame count', 2, '<H', min(UINT16_MAX, nframes))
+        if nframes >= UINT16_MAX:
+            # Should be floating point
+            group.set('LONG_FRAMES', 'Total frame count', 4, '<f', np.float32(nframes))
+        elif 'LONG_FRAMES' in group:
+            # Docs states it should not exist if frame_count < 65535
+            group.remove_param('LONG_FRAMES')
+        group.set('DATA_START', 'First data block containing frame samples.', 2, '<H', 0)
+        group.set('SCALE', 'Point data scaling factor', 4, '<f', np.float32(self.point_scale))
+        group.set('RATE', 'Point data sample rate', 4, '<f', np.float32(self.point_rate))
+        # Optional
+        group.try_add_str('X_SCREEN', 'X_SCREEN parameter', '+X', 2)
+        group.try_add_str('Y_SCREEN', 'Y_SCREEN parameter', '+Y', 2)
+        if 'UNITS' not in group:
+            group.add_str('UNITS', 'Units used for point data measurements.',
+                          self._point_units, len(self._point_units))
+
+        if 'DESCRIPTIONS' not in group:
+            group.add_str('DESCRIPTIONS', 'descriptions', ' ' * 16 * ppf, 16, ppf)
+
+        # ANALOG group
+        group = self.analog_group
+        group.set('USED', 'analog channel count', 2, '<H', analog.shape[0])
+        group.set('RATE', 'analog samples per second', 4, '<f', np.float32(self.analog_rate))
+        if 'GEN_SCALE' in group:
+            self.set_analog_general_scale(1.0)
+        # Optional
+        if 'SCALE' not in group:
+            self.set_analog_scales(None)
+        if 'OFFSET' not in group:
+            self.set_analog_offsets(None)
+
+        # TRIAL group
+        group = self.trial_group
+        group.set('ACTUAL_START_FIELD', 'actual start frame', 2, '<I', 1, 2)
+        group.set('ACTUAL_END_FIELD', 'actual end frame', 2, '<I', nframes, 2)
+
+        # sync parameter information to header.
+        blocks = self.parameter_blocks()
+        self.get('POINT:DATA_START').bytes = struct.pack('<H', 2 + blocks)
+
+        self._header.data_block = np.uint16(2 + blocks)
+        self._header.last_frame = np.uint16(min(len(self._frames), 65535))
+        self._header.point_count = np.uint16(ppf)
+        self._header.analog_count = np.uint16(np.prod(analog.shape))
+
+        self._write_metadata(handle)
+        self._write_frames(handle)
 
     def _pad_block(self, handle):
         '''Pad the file with 0s to the end of the next block boundary.'''
@@ -1804,109 +2186,34 @@ class Writer(Manager):
             writer does not close the handle.
         '''
         assert handle.tell() == 512 * (self._header.data_block - 1)
-        scale = abs(self.point_scale)
+        scale_mag = abs(self.point_scale)
         is_float = self.point_scale < 0
         if is_float:
-            point_dtype = np.float32
-            point_format = 'f'
+            point_dtype = self._dtypes.float32
             point_scale = 1.0
         else:
-            point_dtype = np.int16
-            point_format = 'i'
-            point_scale = scale
-        raw = np.empty((self.point_used, 4), point_dtype)
+            point_dtype = self._dtypes.int16
+            point_scale = scale_mag
+        raw = np.zeros((self.point_used, 4), point_dtype)
+
+        analog_scales, analog_offsets = self._get_analog_transform()
+        analog_scales_inv = 1.0 / analog_scales
+
         for points, analog in self._frames:
+            # Transform point data
             valid = points[:, 3] > -1
-            raw[~valid, 3] = -1
+            raw[~valid, 3] = INVALID_FLAG
             raw[valid, :3] = points[valid, :3] / point_scale
-            raw[valid, 3] = (
-                ((points[valid, 4]).astype(np.uint8) << 8) |
-                (points[valid, 3] / scale).astype(np.uint16)
-            )
-            point = array.array(point_format)
-            point.extend(raw.flatten())
-            point.tofile(handle)
-            analog = array.array(point_format)
-            analog.extend(analog)
-            analog.tofile(handle)
+            raw[valid, 3] = np.bitwise_or(np.rint(points[valid, 3] / scale_mag).astype(np.uint8),
+                                          (points[valid, 4].astype(np.uint16) << 8),
+                                          dtype=np.uint16)
+
+            # Transform analog data
+            analog = analog * analog_scales_inv + analog_offsets
+            analog = analog.T
+
+            # Write
+            analog = analog.astype(point_dtype)
+            handle.write(raw.tobytes())
+            handle.write(analog.tobytes())
         self._pad_block(handle)
-
-    def write(self, handle, labels):
-        '''Write metadata and point + analog frames to a file handle.
-
-        Parameters
-        ----------
-        handle : file
-            Write metadata and C3D motion frames to the given file handle. The
-            writer does not close the handle.
-        '''
-        if not self._frames:
-            return
-
-        def add(name, desc, bpe, format, bytes, *dimensions):
-            group.add_param(name,
-                            desc=desc,
-                            bytes_per_element=bpe,
-                            bytes=struct.pack(format, bytes),
-                            dimensions=list(dimensions))
-
-        def add_str(name, desc, bytes, *dimensions):
-            group.add_param(name,
-                            desc=desc,
-                            bytes_per_element=-1,
-                            bytes=bytes.encode('utf-8'),
-                            dimensions=list(dimensions))
-
-        def add_empty_array(name, desc, bpe):
-            group.add_param(name, desc=desc,
-                            bytes_per_element=bpe, dimensions=[0])
-
-        points, analog = self._frames[0]
-        ppf = len(points)
-        labels = np.ravel(labels)
-
-        # POINT group
-
-        # Get longest label name
-        label_max_size = 0
-        label_max_size = max(label_max_size, np.max([len(label) for label in labels]))
-
-        group = self.add_group(1, 'POINT', 'POINT group')
-        add('USED', 'Number of 3d markers', 2, '<H', ppf)
-        add('FRAMES', 'frame count', 2, '<H', min(65535, len(self._frames)))
-        add('DATA_START', 'data block number', 2, '<H', 0)
-        add('SCALE', '3d scale factor', 4, '<f', np.float32(self.point_scale))
-        add('RATE', '3d data capture rate', 4, '<f', np.float32(self.point_rate))
-        add_str('X_SCREEN', 'X_SCREEN parameter', '+X', 2)
-        add_str('Y_SCREEN', 'Y_SCREEN parameter', '+Y', 2)
-        add_str('UNITS', '3d data units',
-                self._point_units, len(self._point_units))
-
-        add_str('LABELS', 'labels', ''.join(labels[i].ljust(label_max_size)
-                for i in range(ppf)), label_max_size, ppf)
-        add_str('DESCRIPTIONS', 'descriptions', ' ' * 16 * ppf, 16, ppf)
-
-        # ANALOG group
-        group = self.add_group(2, 'ANALOG', 'ANALOG group')
-        add('USED', 'analog channel count', 2, '<H', analog.shape[0])
-        add('RATE', 'analog samples per second', 4, '<f', np.float32(self.analog_rate))
-        add('GEN_SCALE', 'analog general scale factor', 4, '<f', np.float32(self._gen_scale))
-        add_empty_array('SCALE', 'analog channel scale factors', 4)
-        add_empty_array('OFFSET', 'analog channel offsets', 2)
-
-        # TRIAL group
-        group = self.add_group(3, 'TRIAL', 'TRIAL group')
-        add('ACTUAL_START_FIELD', 'actual start frame', 2, '<I', 1, 2)
-        add('ACTUAL_END_FIELD', 'actual end frame', 2, '<I', len(self._frames), 2)
-
-        # sync parameter information to header.
-        blocks = self.parameter_blocks()
-        self.get('POINT:DATA_START').bytes = struct.pack('<H', 2 + blocks)
-
-        self._header.data_block = np.uint16(2 + blocks)
-        self._header.last_frame = np.uint16(min(len(self._frames), 65535))
-        self._header.point_count = np.uint16(ppf)
-        self._header.analog_count = np.uint16(np.prod(analog.shape))
-
-        self._write_metadata(handle)
-        self._write_frames(handle)
