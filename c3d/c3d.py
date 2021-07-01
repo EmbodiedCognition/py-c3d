@@ -2,6 +2,7 @@
 
 from __future__ import unicode_literals
 
+import sys
 import io
 import copy
 import numpy as np
@@ -21,6 +22,12 @@ class DataTypes(object):
     '''
     def __init__(self, proc_type):
         self._proc_type = proc_type
+        self._little_endian_sys = sys.byteorder == 'little'
+        self._native = ((self.is_ieee or self.is_dec) and self.little_endian_sys) or \
+                       (self.is_mips and self.big_endian_sys)
+        if self.big_endian_sys:
+            warnings.warn('Systems with native byte order of big-endian are not supported.')
+
         if self._proc_type == PROCESSOR_MIPS:
             # Big-Endian (SGI/MIPS format)
             self.float32 = np.dtype(np.float32).newbyteorder('>')
@@ -45,6 +52,24 @@ class DataTypes(object):
             self.int16 = np.int16
             self.int32 = np.int32
             self.int64 = np.int64
+
+    @property
+    def native(self):
+        ''' True if the native (system) byte order matches the file byte order.
+        '''
+        return self._native
+
+    @property
+    def little_endian_sys(self):
+        ''' True if native byte order is little-endian.
+        '''
+        return self._little_endian_sys
+
+    @property
+    def big_endian_sys(self):
+        ''' True if native byte order is big-endian.
+        '''
+        return not self._little_endian_sys
 
     @property
     def is_ieee(self):
@@ -158,12 +183,13 @@ def DEC_to_IEEE_BYTES(bytes):
     # See comments in DEC_to_IEEE() for DEC format definition
 
     # Reshuffle
-    bytes = np.frombuffer(bytes, dtype=np.dtype('B'))
+    bytes = memoryview(bytes)
     reshuffled = np.empty(len(bytes), dtype=np.dtype('B'))
-    reshuffled[0::4] = bytes[2::4]
+    reshuffled[::4] = bytes[2::4]
     reshuffled[1::4] = bytes[3::4]
-    reshuffled[2::4] = bytes[0::4]
-    reshuffled[3::4] = bytes[1::4] + ((bytes[1::4] & 0x7f == 0) - 1)  # Decrement exponent by 2, if exp. > 1
+    reshuffled[2::4] = bytes[::4]
+    # Decrement exponent by 2, if exp. > 1
+    reshuffled[3::4] = bytes[1::4] + (np.bitwise_and(bytes[1::4], 0x7f) == 0) - 1
 
     # There are different ways to adjust for differences in DEC/IEEE representation
     # after reshuffle. Two simple methods are:
@@ -186,6 +212,11 @@ def is_integer(value):
 def is_iterable(value):
     '''Check if value is iterable.'''
     return hasattr(value, '__iter__')
+
+def type_npy2struct(dtype):
+    ''' Convert numpy dtype format to a struct package format string.
+    '''
+    return dtype.byteorder + dtype.char
 
 class Header(object):
     '''Header information from a C3D file.
@@ -1511,7 +1542,7 @@ class Reader(Manager):
 
         self._check_metadata()
 
-    def read_frames(self, copy=True, analog_transform=True, camera_sum=False):
+    def read_frames(self, copy=True, analog_transform=True, camera_sum=False, check_nan=True):
         '''Iterate over the data frames from our C3D file handle.
 
         Parameters
@@ -1548,10 +1579,8 @@ class Reader(Manager):
 
         if is_float:
             point_word_bytes = 4
-            point_dtype = self._dtypes.uint32
         else:
             point_word_bytes = 2
-            point_dtype = self._dtypes.int16
         points = np.zeros((self.point_used, 5), np.float32)
 
         # TODO: handle ANALOG:BITS parameter here!
@@ -1606,51 +1635,55 @@ class Reader(Manager):
                     # Convert each of the first 6 16-bit words from DEC to IEEE float
                     points[:, :4] = DEC_to_IEEE_BYTES(raw_bytes).reshape((self.point_used, 4))
                 else:  # If IEEE or MIPS:
-                    # Re-read the raw byte representation directly
+                    # Convert each of the first 6 16-bit words to native float
                     points[:, :4] = np.frombuffer(raw_bytes,
                                                   dtype=self._dtypes.float32,
                                                   count=N_point).reshape((self.point_used, 4))
 
-                # Parse the camera-observed bits and residuals.
-                # Notes:
-                # - Invalid sample if residual is equal to -1.
-                # - A residual of 0.0 represent modeled data (filtered or interpolated).
-                # - The same format should be used internally when a float or integer representation is used,
-                #   with the difference that the words are 16 and 8 bit respectively (see the MLS guide).
-                # - While words are 16 bit, residual and camera mask is always interpreted as 8 packed in a single word!
-                # - 16 or 32 bit may represent a sign (indication that certain files write a -1 floating point only)
+                # Cast last word to signed integer in system endian format
                 last_word = points[:, 3].astype(np.int32)
-                valid = last_word > -1 # (last_word & 0x80008000) == 0
-                # Lookup other
-                #if np.sum(~valid) > 0:
-                    #print(np.sum(~valid))
-                    #print(points[~valid, :3])
-                    #print(last_word[~valid])
-                points[~valid, 3:5] = INVALID_FLAG
-                c = last_word[valid]
 
             else:
-                # Convert the bytes to a unsigned 32 bit or signed 16 bit representation
+                # View the bytes as signed 16-bit integers
                 raw = np.frombuffer(raw_bytes,
-                                    dtype=point_dtype,
+                                    dtype=self._dtypes.int16,
                                     count=N_point).reshape((self.point_used, 4))
-                # Read point 2 byte words in int-16 format
+                # Read the first six 16-bit words as x, y, z coordinates
                 points[:, :3] = raw[:, :3] * scale_mag
+                # Cast last word to signed integer in system endian format
+                last_word = raw[:, 3].astype(np.int16)
 
-                # Parse last 16-bit word as two 8-bit words
-                valid = raw[:, 3] > -1
-                points[~valid, 3:5] = INVALID_FLAG
-                c = raw[valid, 3].astype(self._dtypes.uint16)
+            # Parse camera-observed bits and residuals.
+            # Notes:
+            # - Invalid sample if residual is equal to -1 (check if word < 0).
+            # - A residual of 0.0 represent modeled data (filtered or interpolated).
+            # - Camera and residual words are always 8-bit (1 byte), never 16-bit.
+            # - If floating point, the byte words are encoded in an integer cast to a float,
+            #    and are written directly in byte form (see the MLS guide).
+            ##
+            # Read the residual and camera byte words (Note* if 32 bit word negative sign is discarded).
+            residual_byte, camera_byte = (last_word & 0x00ff), (last_word & 0x7f00) >> 8
+            #if self._dtypes.big_endian_sys -> swap words?
 
-            # Convert coordinate data
-            # fourth value is floating-point (scaled) error estimate (residual)
-            points[valid, 3] = (c & 0x00ff).astype(np.float32) * scale_mag
+            # Fourth value is floating-point (scaled) error estimate (residual)
+            points[:, 3] = residual_byte * scale_mag
 
-            # fifth value is number of bits set in camera-observation byte
+            # Determine invalid samples
+            invalid = last_word < 0
+            if check_nan:
+                is_nan = ~np.all(np.isfinite(points[:, :4]), axis=1)
+                points[is_nan, :3] = 0.0
+                invalid &= is_nan
+            # Update discarded - sign
+            points[invalid, 3] = -1
+
+
+            # Fifth value is the camera-observation byte
             if camera_sum:
-                points[valid, 4] = sum((c & (1 << k)) >> k for k in range(8, 15))
+                # Convert to observation sum
+                points[:, 4] = sum((camera_byte & (1 << k)) >> k for k in range(8))
             else:
-                points[valid, 4] = (c & 0xff00 >> 8)
+                points[:, 4] = camera_byte #.astype(np.float32)
 
             # Check if analog data exist, and parse if so
             if N_analog > 0:
@@ -2087,7 +2120,13 @@ class Writer(Manager):
         points, analog = self._frames[0]
         ppf = len(points)
         apf = len(analog)
+
+
+        first_frame = self.first_frame
+        if first_frame <= 0: # Bad value
+            first_frame = 1
         nframes = len(self._frames)
+        last_frame = first_frame + nframes - 1
 
         UINT16_MAX = 65535
 
@@ -2128,15 +2167,18 @@ class Writer(Manager):
 
         # TRIAL group
         group = self.trial_group
-        group.set('ACTUAL_START_FIELD', 'actual start frame', 2, '<I', 1, 2)
-        group.set('ACTUAL_END_FIELD', 'actual end frame', 2, '<I', nframes, 2)
+        group.set('ACTUAL_START_FIELD', 'Actual start frame', 2, '<I', first_frame, 2)
+        group.set('ACTUAL_END_FIELD', 'Actual end frame', 2, '<I', last_frame, 2)
 
         # sync parameter information to header.
         blocks = self.parameter_blocks()
         self.get('POINT:DATA_START').bytes = struct.pack('<H', 2 + blocks)
 
         self._header.data_block = np.uint16(2 + blocks)
-        self._header.last_frame = np.uint16(min(len(self._frames), 65535))
+        if first_frame >= 65535:
+            first_frame = 1
+        self._header.first_frame = np.uint16(first_frame)
+        self._header.last_frame = np.uint16(min(last_frame, 65535))
         self._header.point_count = np.uint16(ppf)
         self._header.analog_count = np.uint16(np.prod(analog.shape))
 
@@ -2201,8 +2243,8 @@ class Writer(Manager):
 
         for points, analog in self._frames:
             # Transform point data
-            valid = points[:, 3] > -1
-            raw[~valid, 3] = INVALID_FLAG
+            valid = points[:, 3] >= 0.0
+            raw[~valid, 3] = -1
             raw[valid, :3] = points[valid, :3] / point_scale
             raw[valid, 3] = np.bitwise_or(np.rint(points[valid, 3] / scale_mag).astype(np.uint8),
                                           (points[valid, 4].astype(np.uint16) << 8),
