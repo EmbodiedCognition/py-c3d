@@ -49,7 +49,6 @@ class Sample00(Base):
         ]
 
     def test_read_write_examples(self):
-        return
         ''' Compare write ouput to original read
         '''
 
