@@ -1,4 +1,7 @@
-import c3d
+''' Basic Reader and Writer tests.
+'''
+
+'import c3d
 import importlib
 import io
 import unittest
@@ -15,6 +18,8 @@ if climate_spec:
 
 
 class ReaderTest(Base):
+    ''' Test basic Reader functionality
+    '''
     def test_format_pi(self):
         r = c3d.Reader(Zipload._get('sample01.zip', 'Eb015pi.c3d'))
         self._log(r)
@@ -82,6 +87,8 @@ class ReaderTest(Base):
 
 
 class WriterTest(Base):
+    ''' Test basic writer functionality
+    '''
     def test_add_frames(self):
         r = c3d.Reader(Zipload._get('sample08.zip', 'TESTDPI.c3d'))
         w = c3d.Writer(
