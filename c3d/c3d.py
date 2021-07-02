@@ -54,24 +54,6 @@ class DataTypes(object):
             self.int64 = np.int64
 
     @property
-    def native(self):
-        ''' True if the native (system) byte order matches the file byte order.
-        '''
-        return self._native
-
-    @property
-    def little_endian_sys(self):
-        ''' True if native byte order is little-endian.
-        '''
-        return self._little_endian_sys
-
-    @property
-    def big_endian_sys(self):
-        ''' True if native byte order is big-endian.
-        '''
-        return not self._little_endian_sys
-
-    @property
     def is_ieee(self):
         ''' True if the associated file is in the Intel format.
         '''
@@ -95,6 +77,24 @@ class DataTypes(object):
         '''
         processor_type = ['INTEL', 'DEC', 'MIPS']
         return processor_type[self._proc_type - PROCESSOR_INTEL]
+
+    @property
+    def native(self):
+        ''' True if the native (system) byte order matches the file byte order.
+        '''
+        return self._native
+
+    @property
+    def little_endian_sys(self):
+        ''' True if native byte order is little-endian.
+        '''
+        return self._little_endian_sys
+
+    @property
+    def big_endian_sys(self):
+        ''' True if native byte order is big-endian.
+        '''
+        return not self._little_endian_sys
 
     def decode_string(self, bytes):
         ''' Decode a byte array to a string.
@@ -335,18 +335,18 @@ class Header(object):
     def __str__(self):
         '''Return a string representation of this Header's attributes.'''
         return '''\
-  parameter_block: {0.parameter_block}
-      point_count: {0.point_count}
-     analog_count: {0.analog_count}
-      first_frame: {0.first_frame}
-       last_frame: {0.last_frame}
-          max_gap: {0.max_gap}
-     scale_factor: {0.scale_factor}
-       data_block: {0.data_block}
- analog_per_frame: {0.analog_per_frame}
-       frame_rate: {0.frame_rate}
-long_event_labels: {0.long_event_labels}
-      event_block: {0.event_block}'''.format(self)
+                  parameter_block: {0.parameter_block}
+                      point_count: {0.point_count}
+                     analog_count: {0.analog_count}
+                      first_frame: {0.first_frame}
+                       last_frame: {0.last_frame}
+                          max_gap: {0.max_gap}
+                     scale_factor: {0.scale_factor}
+                       data_block: {0.data_block}
+                 analog_per_frame: {0.analog_per_frame}
+                       frame_rate: {0.frame_rate}
+                long_event_labels: {0.long_event_labels}
+                      event_block: {0.event_block}'''.format(self)
 
     def read(self, handle, fmt=BINARY_FORMAT_READ):
         '''Read and parse binary header data from a file handle.
@@ -436,11 +436,11 @@ long_event_labels: {0.long_event_labels}
         self.event_disp_flags = np.zeros(read_count, dtype=np.bool)
         self.event_labels = np.empty(read_count, dtype=object)
         for i in range(read_count):
-            ilong = i*4
+            ilong = i * 4
             # Unpack
             self.event_disp_flags[i] = disp_bytes[i] > 0
-            self.event_timings[i] = float_unpack(struct.unpack(unpack_fmt, time_bytes[ilong:ilong+4])[0])
-            self.event_labels[i] = dtypes.decode_string(label_bytes[ilong:ilong+4])
+            self.event_timings[i] = float_unpack(struct.unpack(unpack_fmt, time_bytes[ilong:ilong + 4])[0])
+            self.event_labels[i] = dtypes.decode_string(label_bytes[ilong:ilong + 4])
 
     @property
     def events(self):
@@ -451,6 +451,59 @@ long_event_labels: {0.long_event_labels}
             Frame 1 therefor has the time 0.0 in relation to the event timing.
         '''
         return zip(self.event_timings[self.event_disp_flags], self.event_labels[self.event_disp_flags])
+
+    def encode_events(self, events):
+        ''' Encode event data in the event block.
+
+        Parameters
+        ----------
+        events : [(float, str), ...]
+            Event data, iterable of touples containing the event timing and a 4 character label string.
+             Event timings should be calculated relative to sample 1 with the timing 0.0s, and should
+             not be relative to the first_frame header parameter.
+        '''
+        endian = '<'
+        if sys.byteorder == 'big':
+            endian = '>'
+
+        # Event block format
+        fmt = '{}{}{}{}{}'.format(endian,
+                                  str(18 * 4) + 's',  # Timings
+                                  str(18) + 's',      # Flags
+                                  'H',                # __
+                                  str(18 * 4) + 's'   # Labels
+                                 )
+        # Pack bytes
+        event_timings = np.zeros(18, dtype=np.float32)
+        event_disp_flags = np.zeros(18, dtype=np.uint8)
+        event_labels = np.empty(18, dtype=object)
+        label_bytes = bytearray(18 * 4)
+        for i, (time, label) in enumerate(events):
+            if i > 17:
+                # Don't raise Error, header events are rarely used.
+                warnings.warn('Maximum of 18 events can be encoded in the header, skipping remaining events.')
+                break
+
+            event_timings[i] = time
+            event_labels[i] = label
+            label_bytes[i * 4:(i + 1) * 4] = label.encode('utf-8')
+
+        write_count = min(i + 1, 18)
+        event_disp_flags[:write_count] = 1
+
+        # Update event headers in self
+        self.long_event_labels = 0x3039 # Magic number
+        self.event_count = write_count
+        # Update event block
+        self.event_timings = event_timings[:write_count]
+        self.event_disp_flags = np.ones(write_count, dtype=np.bool)
+        self.event_labels = event_labels[:write_count]
+        self.event_block = struct.pack(fmt,
+                                       event_timings.tobytes(),
+                                       event_disp_flags.tobytes(),
+                                       0,
+                                       label_bytes
+                                      )
 
 
 class Param(object):
@@ -542,7 +595,7 @@ class Param(object):
         handle.write(struct.pack('b', self.bytes_per_element))
         handle.write(struct.pack('B', len(self.dimensions)))
         handle.write(struct.pack('B' * len(self.dimensions), *self.dimensions))
-        if self.bytes:
+        if self.bytes is not None and len(self.bytes) > 0:
             handle.write(self.bytes)
         desc = self.desc.encode('utf-8')
         handle.write(struct.pack('B', len(desc)))
@@ -568,13 +621,16 @@ class Param(object):
         '''Unpack the raw bytes of this param using the given struct format.'''
         return np.frombuffer(self.bytes, count=1, dtype=dtype)[0]
 
-    def _as_array(self, dtype):
+    def _as_array(self, dtype, copy=True):
         '''Unpack the raw bytes of this param using the given data format.'''
         assert self.dimensions, \
             '{}: cannot get value as {} array!'.format(self.name, dtype)
         elems = np.frombuffer(self.bytes, dtype=dtype)
         # Reverse shape as the shape is defined in fortran format
-        return elems.reshape(self.dimensions[::-1])
+        view = elems.reshape(self.dimensions[::-1])
+        if copy:
+            return view.copy()
+        return view
 
     def _as_any(self, dtype):
         '''Unpack the raw bytes of this param as either array or single value.'''
@@ -1402,7 +1458,9 @@ class Manager(object):
         # this is a hack for phasespace files ... should put it in a subclass.
         param = self.get('TRIAL:ACTUAL_START_FIELD')
         if param is not None:
-            return param.uint32_value
+            # ACTUAL_START_FIELD is encoded in two 16 byte words...
+            words = param.uint16_array
+            return words[0] + words[1] * 65535
         return self.header.first_frame
 
     @property
@@ -1415,10 +1473,14 @@ class Manager(object):
         end_frame = [self.header.last_frame, 0.0, 0.0, 0.0]
         param = self.get('TRIAL:ACTUAL_END_FIELD')
         if param is not None:
-            end_frame[1] = param._as_integer_value
+            # Encoded as 2 16 bit words (rather then 1 32 bit word)
+            words = param.uint16_array
+            end_frame[1] = words[0] + words[1] * 65536
+            #end_frame[1] = param.uint32_value
         param = self.get('POINT:LONG_FRAMES')
         if param is not None:
-            end_frame[2] = param._as_integer_value
+            # Encoded as float
+            end_frame[2] = int(param.float_value)
         param = self.get('POINT:FRAMES')
         if param is not None:
             # Can be encoded either as 32 bit float or 16 bit uint
@@ -1426,28 +1488,34 @@ class Manager(object):
         # Return the largest of the all (queue bad reading...)
         return int(np.max(end_frame))
 
-    def _get_analog_transform(self):
+    def get_analog_transform_parameters(self):
         ''' Parse analog data transform parameters.
         '''
         # Offsets
-        analog_offsets = np.zeros((self.analog_used, 1), int)
+        analog_offsets = np.zeros((self.analog_used), int)
         param = self.get('ANALOG:OFFSET')
         if param is not None and param.num_elements > 0:
-            analog_offsets[:, 0] = param.int16_array[:self.analog_used]
+            analog_offsets[:] = param.int16_array[:self.analog_used]
 
         # Scale factors
-        analog_scales = np.ones((self.analog_used, 1), float)
+        analog_scales = np.ones((self.analog_used), float)
         gen_scale = 1.
         param = self.get('ANALOG:GEN_SCALE')
         if param is not None:
             gen_scale = param.float_value
         param = self.get('ANALOG:SCALE')
         if param is not None and param.num_elements > 0:
-            analog_scales[:, 0] = param.float_array[:self.analog_used]
-        analog_scales *= gen_scale
+            analog_scales[:] = param.float_array[:self.analog_used]
 
-        analog_scales = np.broadcast_to(analog_scales, (self.analog_used, self.analog_per_frame))
-        analog_offsets = np.broadcast_to(analog_offsets, (self.analog_used, self.analog_per_frame))
+        return gen_scale, analog_scales, analog_offsets
+
+    def get_analog_transform(self):
+        ''' Get broadcastable analog transformation parameters.
+        '''
+        gen_scale, analog_scales, analog_offsets = self.get_analog_transform_parameters()
+        analog_scales *= gen_scale
+        analog_scales = np.broadcast_to(analog_scales[:, np.newaxis], (self.analog_used, self.analog_per_frame))
+        analog_offsets = np.broadcast_to(analog_offsets[:, np.newaxis], (self.analog_used, self.analog_per_frame))
         return analog_scales, analog_offsets
 
 class Reader(Manager):
@@ -1602,7 +1670,7 @@ class Reader(Manager):
             analog_word_bytes = 2
 
         analog = np.array([], float)
-        analog_scales, analog_offsets = self._get_analog_transform()
+        analog_scales, analog_offsets = self.get_analog_transform()
 
         # Seek to the start point of the data blocks
         self._handle.seek((self._header.data_block - 1) * 512)
@@ -1936,7 +2004,7 @@ class Writer(Manager):
             # Can't copy/consume non-Intel files due to the uncertainty of converting parameter data.
             raise ValueError(
                 "File was read in %s format and only 'shallow_copy' mode is supported for non Intel files!".format(
-                reader.proc_format))
+                reader._dtypes.proc_type))
 
         if is_consume:
             writer._header = reader._header
@@ -1950,6 +2018,18 @@ class Writer(Manager):
         elif is_shallow_copy:
             # Only copy header (no groups)
             writer._header = copy.deepcopy(reader._header)
+            # Reformat header events
+            writer._header.encode_events(writer._header.events)
+
+            # Transfer a minimal set parameters
+            writer.set_start_frame(reader.first_frame)
+            writer.set_point_labels(reader.point_labels)
+            writer.set_analog_labels(reader.analog_labels)
+
+            gen_scale, analog_scales, analog_offsets = reader.get_analog_transform_parameters()
+            writer.set_analog_general_scale(gen_scale)
+            writer.set_analog_scales(analog_scales)
+            writer.set_analog_offsets(analog_offsets)
 
         if not is_meta_only:
             # Copy frames
@@ -2058,20 +2138,31 @@ class Writer(Manager):
                 '\Input was of shape {}.'.format(str(sh)))
         self._frames.extend(frames)
 
-    def set_point_labels(self, labels):
-        group = self.point_group
+    @staticmethod
+    def pack_labels(labels):
         labels = np.ravel(labels)
         # Get longest label name
         label_max_size = 0
         label_max_size = max(label_max_size, np.max([len(label) for label in labels]))
-
         label_str = ''.join(label.ljust(label_max_size) for label in labels)
-        group.add_str('LABELS', 'labels', label_str, label_max_size, len(labels))
+        return label_str, label_max_size
+
+    def set_point_labels(self, labels):
+        ''' Set point data labels.
+        '''
+        label_str, label_max_size = Writer.pack_labels(labels)
+        self.point_group.add_str('LABELS', 'Point labels.', label_str, label_max_size, len(labels))
+
+    def set_analog_labels(self, labels):
+        ''' Set analog data labels.
+        '''
+        label_str, label_max_size = Writer.pack_labels(labels)
+        self.analog_group.add_str('LABELS', 'Analog labels.', label_str, label_max_size, len(labels))
 
     def set_analog_general_scale(self, value):
         ''' Set ANALOG:GEN_SCALE factor (uniform analog scale factor).
         '''
-        self.analog_group.set('GEN_SCALE', 'Analog general scale factor', 4, '<f', np.float32(1.0))
+        self.analog_group.set('GEN_SCALE', 'Analog general scale factor', 4, '<f', value)
 
     def set_analog_scales(self, values):
         ''' Set ANALOG:SCALE factors (per channel scale factor).
@@ -2098,12 +2189,33 @@ class Writer(Manager):
             Iterable containing individual offsets for encoding analog channel data.
         '''
         if is_iterable(values):
-            data = np.array([v for v in values], dtype=np.float32)
+            data = np.array([v for v in values], dtype=np.int16)
             self.analog_group.set_array('OFFSET', 'Analog channel offsets', data)
         elif values is None:
-            self.analog_group.set_empty_array('OFFSET', 'Analog channel offsets', 4)
+            self.analog_group.set_empty_array('OFFSET', 'Analog channel offsets', 2)
         else:
             raise ValueError('Expected iterable containing analog data offsets.')
+
+    def set_start_frame(self, frame=1):
+        ''' Set the 'TRIAL:ACTUAL_START_FIELD' parameter and header.first_frame entry.
+
+        Parameter
+        ---------
+        frame : int
+            Number for the first frame recorded in the file.
+            Frame counter for a trial recording always start at 1 for the first frame.
+        '''
+        self.trial_group.set('ACTUAL_START_FIELD', 'Actual start frame', 2, '<I', frame, 2)
+        if frame < 65535:
+            self._header.first_frame = np.uint16(frame)
+        else:
+            self._header.first_frame = np.uint16(65535)
+
+    def _set_last_frame(self, frame):
+        ''' Sets the 'TRIAL:ACTUAL_END_FIELD' parameter and header.last_frame entry.
+        '''
+        self.trial_group.set('ACTUAL_END_FIELD', 'Actual end frame', 2, '<I', frame, 2)
+        self._header.last_frame = np.uint16(min(frame, 65535))
 
     def write(self, handle):
         '''Write metadata and point + analog frames to a file handle.
@@ -2149,36 +2261,31 @@ class Writer(Manager):
         if 'UNITS' not in group:
             group.add_str('UNITS', 'Units used for point data measurements.',
                           self._point_units, len(self._point_units))
-
         if 'DESCRIPTIONS' not in group:
-            group.add_str('DESCRIPTIONS', 'descriptions', ' ' * 16 * ppf, 16, ppf)
+            group.add_str('DESCRIPTIONS', 'Channel descriptions.', ' ' * ppf, 1, ppf)
 
         # ANALOG group
         group = self.analog_group
-        group.set('USED', 'analog channel count', 2, '<H', analog.shape[0])
-        group.set('RATE', 'analog samples per second', 4, '<f', np.float32(self.analog_rate))
-        if 'GEN_SCALE' in group:
+        group.set('USED', 'Analog channel count', 2, '<H', apf)
+        group.set('RATE', 'Analog samples per second', 4, '<f', np.float32(self.analog_rate))
+        if 'GEN_SCALE' not in group:
             self.set_analog_general_scale(1.0)
         # Optional
         if 'SCALE' not in group:
             self.set_analog_scales(None)
         if 'OFFSET' not in group:
             self.set_analog_offsets(None)
+        if 'DESCRIPTIONS' not in group:
+            group.add_str('DESCRIPTIONS', 'Channel descriptions.', ' ' * apf, 1, apf)
 
         # TRIAL group
-        group = self.trial_group
-        group.set('ACTUAL_START_FIELD', 'Actual start frame', 2, '<I', first_frame, 2)
-        group.set('ACTUAL_END_FIELD', 'Actual end frame', 2, '<I', last_frame, 2)
+        self.set_start_frame(first_frame)
+        self._set_last_frame(last_frame)
 
         # sync parameter information to header.
         blocks = self.parameter_blocks()
         self.get('POINT:DATA_START').bytes = struct.pack('<H', 2 + blocks)
-
         self._header.data_block = np.uint16(2 + blocks)
-        if first_frame >= 65535:
-            first_frame = 1
-        self._header.first_frame = np.uint16(first_frame)
-        self._header.last_frame = np.uint16(min(last_frame, 65535))
         self._header.point_count = np.uint16(ppf)
         self._header.analog_count = np.uint16(np.prod(analog.shape))
 
@@ -2238,7 +2345,7 @@ class Writer(Manager):
             point_scale = scale_mag
         raw = np.zeros((self.point_used, 4), point_dtype)
 
-        analog_scales, analog_offsets = self._get_analog_transform()
+        analog_scales, analog_offsets = self.get_analog_transform()
         analog_scales_inv = 1.0 / analog_scales
 
         for points, analog in self._frames:
