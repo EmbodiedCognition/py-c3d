@@ -9,9 +9,9 @@ import struct
 import warnings
 from src.manager import Manager
 from src.header import Header
-from src.group import Group
+from src.group import GroupData, GroupWritable, GroupReadonly
 from src.dtypes import DataTypes
-from src.utils import is_integer, is_iterable, DEC_to_IEEE_BYTES, Decorator
+from src.utils import is_integer, is_iterable, DEC_to_IEEE_BYTES
 
 
 class Reader(Manager):
@@ -87,7 +87,7 @@ class Reader(Manager):
             if group_id > 0:
                 # We've just started reading a parameter. If its group doesn't
                 # exist, create a blank one. add the parameter to the group.
-                group = self._groups.setdefault(group_id, Group(self._dtypes))
+                group = self._groups.setdefault(group_id, GroupData(self._dtypes))
                 group.add_param(name, handle=buf)
             else:
                 # We've just started reading a group. If a group with the
@@ -97,16 +97,16 @@ class Reader(Manager):
                 group_id = abs(group_id)
                 size, = struct.unpack('B', buf.read(1))
                 desc = size and buf.read(size) or ''
-                group = self.get(group_id)
+                group = self._get(group_id)
                 if group is not None:
-                    self.rename_group(group, name)  # Inserts name key
+                    self._rename_group(group, name)  # Inserts name key
                     group.desc = desc
                 else:
-                    self.add_group(group_id, name, desc)
+                    self._add_group(group_id, name, desc)
 
         self._check_metadata()
 
-    def read_frames(self, copy=True, analog_transform=True, camera_sum=False, check_nan=True):
+    def read_frames(self, copy=True, analog_transform=True, check_nan=True, camera_sum=False):
         '''Iterate over the data frames from our C3D file handle.
 
         Parameters
@@ -283,113 +283,56 @@ class Reader(Manager):
         '''
         return self._dtypes.proc_type
 
-    def to_writer(self, conversion):
+    def to_writer(self, conversion=None):
         ''' Convert to 'Writer' using the conversion mode.
             See Writer.from_reader() for supported conversion modes and possible exceptions.
         '''
         return Writer.from_reader(self, conversion=conversion)
 
+    def get(self, key, default=None):
+        '''Get a readonly group or parameter.
 
-class GroupEditable(Decorator):
-    ''' Group instance decorator providing convenience functions for Writer editing.
-    '''
-    def __init__(self, group):
-        super(GroupEditable, self).__init__(group)
+        Parameters
+        ----------
+        key : str
+            If this string contains a period (.), then the part before the
+            period will be used to retrieve a group, and the part after the
+            period will be used to retrieve a parameter from that group. If this
+            string does not contain a period, then just a group will be
+            returned.
+        default : any
+            Return this value if the named group and parameter are not found.
 
-    def __contains__(self, key):
-        return key in self._decoratee
-    #
-    #   Add decorator functions (throws on overwrite)
-    #
-    def add(self, name, desc, bpe, format, data, *dimensions):
-        ''' Add a parameter with 'data' package formated in accordance with 'format'.
+        Returns
+        -------
+        value : :class:`GroupReadonly` or :class:`Param`
+            Either a group or parameter with the specified name(s). If neither
+            is found, returns the default value.
         '''
-        if isinstance(data, bytes):
-            pass
-        else:
-            data = struct.pack(format, data)
+        val = self._get(key)
+        if val is None:
+            return default
+        return val.readonly()
 
-        self.add_param(name,
-                       desc=desc,
-                       bytes_per_element=bpe,
-                       bytes=data,
-                       dimensions=list(dimensions))
+    def items(self):
+        ''' Acquire iterable over parameter group pairs.
 
-    def add_array(self, name, desc, data, dtype=None):
-        '''Add a parameter with the 'data' package.
-
-        Arguments
-        ---------
-        data : Numpy array, or python iterable.
-        dtype : Numpy dtype to encode the array (Optional if data is numpy type).
+        Returns
+        -------
+        items : Touple of ((str, :class:`Group`), ...)
+            Python touple containing pairs of name keys and parameter group entries.
         '''
-        if not isinstance(data, np.ndarray):
-            if dtype is not None:
-                raise ValueError('Must specify dtype when passning non-numpy array type.')
-            data = np.array(data, dtype=dtype)
-        elif dtype is None:
-            dtype = data.dtype
+        return ((k, GroupReadonly(v)) for k, v in self._groups.items() if isinstance(k, str))
 
-        self.add_param(name,
-                       desc=desc,
-                       bytes_per_element=dtype.itemsize,
-                       bytes=data,
-                       dimensions=data.shape)
+    def values(self):
+        ''' Acquire iterable over parameter group entries.
 
-    def add_str(self, name, desc, data, *dimensions):
-        ''' Add a string parameter.
+        Returns
+        -------
+        values : Touple of (:class:`Group`, ...)
+            Python touple containing unique parameter group entries.
         '''
-        self.add_param(name,
-                       desc=desc,
-                       bytes_per_element=-1,
-                       bytes=data.encode('utf-8'),
-                       dimensions=list(dimensions))
-
-    def add_empty_array(self, name, desc, bpe):
-        ''' Add an empty parameter block.
-        '''
-        self.add_param(name, desc=desc,
-                       bytes_per_element=bpe, dimensions=[0])
-
-    #
-    #   Set decorator functions (overwrites)
-    #
-    def set(self, name, *args, **kwargs):
-        ''' Add or overwrite a parameter with 'bytes' package formated in accordance with 'format'.
-        '''
-        try:
-            self.remove_param(name)
-        except KeyError as e:
-            pass
-        self.add(name, *args, **kwargs)
-
-    def set_str(self, name, *args, **kwargs):
-        ''' Add a string parameter.
-        '''
-        try:
-            self.remove_param(name)
-        except KeyError as e:
-            pass
-        self.add_str(name, *args, **kwargs)
-
-    def set_array(self, name, *args, **kwargs):
-        ''' Add a string parameter.
-        '''
-        try:
-            self.remove_param(name)
-        except KeyError as e:
-            pass
-        self.add_array(name, *args, **kwargs)
-
-    def set_empty_array(self, name, *args, **kwargs):
-        ''' Add an empty parameter block.
-        '''
-        try:
-            self.remove_param(name)
-        except KeyError as e:
-            pass
-        self.add_empty_array(name, *args, **kwargs)
-
+        return (GroupReadonly(v) for k, v in self._groups.items() if isinstance(k, str))
 
 class Writer(Manager):
     '''This class writes metadata and frames to a C3D file.
@@ -421,17 +364,12 @@ class Writer(Manager):
     def __init__(self,
                  point_rate=480.,
                  analog_rate=0.,
-                 point_scale=-1.,
-                 point_units='mm  ',
-                 gen_scale=1.):
+                 point_scale=-1.):
         '''Set metadata for this writer.
 
         '''
         self._dtypes = DataTypes() # Only support INTEL format from writing
         super(Writer, self).__init__()
-
-        # Custom properties
-        self._point_units = point_units
 
         # Header properties
         self._header.frame_rate = np.float32(point_rate)
@@ -484,10 +422,7 @@ class Writer(Manager):
 
         if is_consume:
             writer._header = reader._header
-            reader._header = None
             writer._groups = reader._groups
-            reader._groups = None
-            del reader
         elif is_deep_copy:
             writer._header = copy.deepcopy(reader._header)
             writer._groups = copy.deepcopy(reader._groups)
@@ -511,6 +446,11 @@ class Writer(Manager):
             # Copy frames
             for (i, point, analog) in reader.read_frames(copy=True, camera_sum=False):
                 writer.add_frames((point, analog))
+        if is_consume:
+            # Cleanup
+            reader._header = None
+            reader._groups = None
+            del reader
         return writer
 
     @property
@@ -564,35 +504,32 @@ class Writer(Manager):
         return self.get_create('TRIAL')
 
     def get(self, group, default=None):
-        '''Get a GroupEditable decorator for keyed group instance, or a parameter instance.
+        '''Get a writable group or a parameter instance.
 
         Parameters
         ----------
-        group : str
+        key : str
             Key, see Manager.get() for valid key formats.
         default : any
             Return this value if the named group and parameter are not found.
 
         Returns
         -------
-        value : :class:`GroupEditable` or :class:`Param`
+        value : :class:`GroupWritable` or :class:`ParamWritable`
             Either a decorated group instance or parameter with the specified name(s). If neither
             is found, the default value is returned.
         '''
-        val = super(Writer, self).get(group, default)
-        if isinstance(val, Group):
-            return GroupEditable(val)
-        return val # Parameter
+        return super(Writer, self)._get(group, default)
 
     def add_group(self, *args, **kwargs):
         '''Add a new parameter group. See Manager.add_group() for more information.
 
         Returns
         -------
-        group : :class:`Group`
+        group : :class:`GroupWritable`
             An editable group instance.
         '''
-        return GroupEditable(super(Writer, self).add_group(*args, **kwargs))
+        return GroupWritable(super(Writer, self)._add_group(*args, **kwargs))
 
     def add_frames(self, frames, index=None):
         '''Add frames to this writer instance.
@@ -629,6 +566,18 @@ class Writer(Manager):
         label_max_size = max(label_max_size, np.max([len(label) for label in labels]))
         label_str = ''.join(label.ljust(label_max_size) for label in labels)
         return label_str, label_max_size
+
+    def add_group(self, *args):
+        ''' Add a new parameter group (see Manager._rename_group for args). '''
+        return self._add_group(*args)
+
+    def rename_group(self, *args):
+        ''' Rename a specified parameter group (see Manager._rename_group for args). '''
+        self._rename_group(*args)
+
+    def remove_group(self, *args):
+        '''Remove the parameter group. (see Manager._rename_group for args). '''
+        self._remove_group(*args)
 
     def set_point_labels(self, labels):
         ''' Set point data labels.
@@ -760,8 +709,7 @@ class Writer(Manager):
         group.set('RATE', 'Point data sample rate', 4, '<f', np.float32(self.point_rate))
         # Optional
         if 'UNITS' not in group:
-            group.add_str('UNITS', 'Units used for point data measurements.',
-                          self._point_units, len(self._point_units))
+            group.add_str('UNITS', 'Units used for point data measurements.', 'mm', 2)
         if 'DESCRIPTIONS' not in group:
             group.add_str('DESCRIPTIONS', 'Channel descriptions.', ' ' * ppf, 1, ppf)
 
@@ -784,9 +732,9 @@ class Writer(Manager):
         self._set_last_frame(last_frame)
 
         # sync parameter information to header.
-        blocks = self.parameter_blocks()
-        self.get('POINT:DATA_START').bytes = struct.pack('<H', 2 + blocks)
-        self._header.data_block = np.uint16(2 + blocks)
+        start_block = self.parameter_blocks() + 2
+        self.get('POINT:DATA_START').bytes = struct.pack('<H', start_block)
+        self._header.data_block = np.uint16(start_block)
         self._header.point_count = np.uint16(ppf)
         self._header.analog_count = np.uint16(np.prod(analog.shape))
 
@@ -818,8 +766,8 @@ class Writer(Manager):
         # Groups
         handle.write(struct.pack(
             'BBBB', 0, 0, self.parameter_blocks(), self._dtypes.processor))
-        for group_id, group in self.group_listed():
-            group.write(group_id, handle)
+        for group_id, group in self._listed():
+            group._data.write(group_id, handle)
 
         # Padding
         self._pad_block(handle)

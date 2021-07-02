@@ -2,7 +2,7 @@ import struct
 import numpy as np
 from .utils import DEC_to_IEEE, DEC_to_IEEE_BYTES
 
-class Param(object):
+class ParamData(object):
     '''A class representing a single named parameter from a C3D file.
 
     Attributes
@@ -23,8 +23,6 @@ class Param(object):
         rows (number of strings).
     bytes : str
         Raw data for this parameter.
-    handle :
-        File handle positioned at the first byte of a .c3d parameter description.
     '''
 
     def __init__(self,
@@ -37,7 +35,7 @@ class Param(object):
                  handle=None):
         '''Set up a new parameter, only the name is required.'''
         self.name = name
-        self._dtypes = dtype
+        self.dtypes = dtype
         self.desc = desc
         self.bytes_per_element = bytes_per_element
         self.dimensions = dimensions or []
@@ -61,6 +59,7 @@ class Param(object):
         '''Return the number of bytes used for storing this parameter's data.'''
         return self.num_elements * abs(self.bytes_per_element)
 
+    @property
     def binary_size(self):
         '''Return the number of bytes needed to store this parameter.'''
         return (
@@ -87,7 +86,7 @@ class Param(object):
         name = self.name.encode('utf-8')
         handle.write(struct.pack('bb', len(name), group_id))
         handle.write(name)
-        handle.write(struct.pack('<h', self.binary_size() - 2 - len(name)))
+        handle.write(struct.pack('<h', self.binary_size - 2 - len(name)))
         handle.write(struct.pack('b', self.bytes_per_element))
         handle.write(struct.pack('B', len(self.dimensions)))
         handle.write(struct.pack('B' * len(self.dimensions), *self.dimensions))
@@ -111,7 +110,7 @@ class Param(object):
         if self.total_bytes:
             self.bytes = handle.read(self.total_bytes)
         desc_size, = struct.unpack('B', handle.read(1))
-        self.desc = desc_size and self._dtypes.decode_string(handle.read(desc_size)) or ''
+        self.desc = desc_size and self.dtypes.decode_string(handle.read(desc_size)) or ''
 
     def _as(self, dtype):
         '''Unpack the raw bytes of this param using the given struct format.'''
@@ -136,12 +135,12 @@ class Param(object):
         if len(self.dimensions) == 0:		# Parse data as a single value
             if dtype == np.float32:			# Floats need to be parsed separately!
                 return self.float_value
-            return self._as(dtype)
+            return self._data._as(dtype)
         else:								# Parse data as array
             if dtype == np.float32:
                 data = self.float_array
             else:
-                data = self._as_array(dtype)
+                data = self._data._as_array(dtype)
             if len(self.dimensions) < 2:    # Check if data is contained in a single dimension
                 return data.flatten()
             return data
@@ -164,114 +163,157 @@ class Param(object):
         else:
             return self.uint8_value
 
+class ParamReadonly(object):
+
+    def __init__(self, data):
+        self._data = data
+
+    @property
+    def name(self):
+        ''' Name string. '''
+        return self._data.name
+
+    @property
+    def desc(self):
+        ''' Descriptor string. '''
+        return self._data.desc
+
+    @property
+    def dtypes(self):
+        return self._data.dtypes
+
+    @property
+    def dimensions(self):
+        return self._data.dimensions
+
+    @property
+    def num_elements(self):
+        '''Return the number of elements in this parameter's array value.'''
+        return self._data.num_elements
+
+    @property
+    def bytes_per_element(self):
+        '''Return the number of bytes used to store each data element.'''
+        return self._data.bytes_per_element
+
+    @property
+    def total_bytes(self):
+        '''Return the number of bytes used for storing this parameter's data.'''
+        return self._data.total_bytes
+
+    @property
+    def binary_size(self):
+        '''Return the number of bytes needed to store this parameter.'''
+        return self._data.binary_size
+
     @property
     def int8_value(self):
         '''Get the param as an 8-bit signed integer.'''
-        return self._as(self._dtypes.int8)
+        return self._data._as(self.dtypes.int8)
 
     @property
     def uint8_value(self):
         '''Get the param as an 8-bit unsigned integer.'''
-        return self._as(self._dtypes.uint8)
+        return self._data._as(self.dtypes.uint8)
 
     @property
     def int16_value(self):
         '''Get the param as a 16-bit signed integer.'''
-        return self._as(self._dtypes.int16)
+        return self._data._as(self.dtypes.int16)
 
     @property
     def uint16_value(self):
         '''Get the param as a 16-bit unsigned integer.'''
-        return self._as(self._dtypes.uint16)
+        return self._data._as(self.dtypes.uint16)
 
     @property
     def int32_value(self):
         '''Get the param as a 32-bit signed integer.'''
-        return self._as(self._dtypes.int32)
+        return self._data._as(self.dtypes.int32)
 
     @property
     def uint32_value(self):
         '''Get the param as a 32-bit unsigned integer.'''
-        return self._as(self._dtypes.uint32)
+        return self._data._as(self.dtypes.uint32)
 
     @property
     def float_value(self):
         '''Get the param as a 32-bit float.'''
-        if self._dtypes.is_dec:
-            return DEC_to_IEEE(self._as(np.uint32))
+        if self.dtypes.is_dec:
+            return DEC_to_IEEE(self._data._as(np.uint32))
         else:  # is_mips or is_ieee
-            return self._as(self._dtypes.float32)
+            return self._data._as(self.dtypes.float32)
 
     @property
     def bytes_value(self):
         '''Get the param as a raw byte string.'''
-        return self.bytes
+        return self._data.bytes.copy()
 
     @property
     def string_value(self):
         '''Get the param as a unicode string.'''
-        return self._dtypes.decode_string(self.bytes)
+        return self.dtypes.decode_string(self._data.bytes)
 
     @property
     def int8_array(self):
         '''Get the param as an array of 8-bit signed integers.'''
-        return self._as_array(self._dtypes.int8)
+        return self._data._as_array(self.dtypes.int8)
 
     @property
     def uint8_array(self):
         '''Get the param as an array of 8-bit unsigned integers.'''
-        return self._as_array(self._dtypes.uint8)
+        return self._data._as_array(self.dtypes.uint8)
 
     @property
     def int16_array(self):
         '''Get the param as an array of 16-bit signed integers.'''
-        return self._as_array(self._dtypes.int16)
+        return self._data._as_array(self.dtypes.int16)
 
     @property
     def uint16_array(self):
         '''Get the param as an array of 16-bit unsigned integers.'''
-        return self._as_array(self._dtypes.uint16)
+        return self._data._as_array(self.dtypes.uint16)
 
     @property
     def int32_array(self):
         '''Get the param as an array of 32-bit signed integers.'''
-        return self._as_array(self._dtypes.int32)
+        return self._data._as_array(self.dtypes.int32)
 
     @property
     def uint32_array(self):
         '''Get the param as an array of 32-bit unsigned integers.'''
-        return self._as_array(self._dtypes.uint32)
+        return self._data._as_array(self.dtypes.uint32)
 
     @property
     def int64_array(self):
         '''Get the param as an array of 32-bit signed integers.'''
-        return self._as_array(self._dtypes.int64)
+        return self._data._as_array(self.dtypes.int64)
 
     @property
     def uint64_array(self):
         '''Get the param as an array of 32-bit unsigned integers.'''
-        return self._as_array(self._dtypes.uint64)
+        return self._data._as_array(self.dtypes.uint64)
 
     @property
     def float32_array(self):
         '''Get the param as an array of 32-bit floats.'''
         # Convert float data if not IEEE processor
-        if self._dtypes.is_dec:
+        if self.dtypes.is_dec:
             # _as_array but for DEC
             assert self.dimensions, \
-                '{}: cannot get value as {} array!'.format(self.name, self._dtypes.float32)
-            return DEC_to_IEEE_BYTES(self.bytes).reshape(self.dimensions[::-1])  # Reverse fortran format
+                '{}: cannot get value as {} array!'.format(self.name, self.dtypes.float32)
+            return DEC_to_IEEE_BYTES(self._data.bytes).reshape(self.dimensions[::-1])  # Reverse fortran format
         else:  # is_ieee or is_mips
-            return self._as_array(self._dtypes.float32)
+            return self._data._as_array(self.dtypes.float32)
 
     @property
     def float64_array(self):
         '''Get the param as an array of 64-bit floats.'''
         # Convert float data if not IEEE processor
-        if self._dtypes.is_dec:
+        if self.dtypes.is_dec:
             raise ValueError('Unable to convert bytes encoded in a 64 bit floating point DEC format.')
         else:  # is_ieee or is_mips
-            return self._as_array(self._dtypes.float64)
+            return self._data._as_array(self.dtypes.float64)
 
     @property
     def float_array(self):
@@ -324,7 +366,7 @@ class Param(object):
         if len(self.dimensions) == 0:
             return np.array([])
         elif len(self.dimensions) == 1:
-            return np.array(self.bytes)
+            return np.array(self._data.bytes)
         else:
             # Convert Fortran shape (data in memory is identical, shape is transposed)
             word_len = self.dimensions[0]
@@ -335,7 +377,7 @@ class Param(object):
             for i in np.ndindex(*dims):
                 # Calculate byte offset as sum of each array index times the byte step of each dimension.
                 off = np.sum(np.multiply(i, byte_steps))
-                byte_arr[i] = self.bytes[off:off+word_len]
+                byte_arr[i] = self._data.bytes[off:off+word_len]
             return byte_arr
 
     @property
@@ -351,5 +393,23 @@ class Param(object):
             byte_arr = self.bytes_array
             # Decode sequences
             for i in np.ndindex(byte_arr.shape):
-                byte_arr[i] = self._dtypes.decode_string(byte_arr[i])
+                byte_arr[i] = self.dtypes.decode_string(byte_arr[i])
             return byte_arr
+
+class ParamWritable(ParamReadonly):
+    def __init__(self, data):
+        super(ParamWritable, self).__init__(data)
+
+    def readonly(self):
+        ''' Readonly '''
+        return ParamReadonly(self._data)
+
+    @property
+    def bytes(self):
+        ''' Raw access to parameter bytes. '''
+        return self._data.bytes
+
+    @bytes.setter
+    def bytes(self, value):
+        ''' Set parameter bytes. '''
+        self._data.bytes = value

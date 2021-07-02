@@ -1,9 +1,8 @@
-import c3d
 import struct
 import unittest
 import numpy as np
 from src.dtypes import DataTypes, PROCESSOR_INTEL
-from src.parameter import Param
+from src.parameter import ParamData, ParamReadonly
 
 
 def genByteWordArr(word, shape):
@@ -33,6 +32,9 @@ def genRndFloatArr(shape, rnd, range=(-1e6, 1e6)):
     '''
     return rnd.uniform(range[0], range[1], shape)
 
+def make_param(*args, **kwargs):
+    return ParamReadonly(ParamData(*args, **kwargs))
+
 
 class ParameterValueTest(unittest.TestCase):
     '''    Test read Parameter arrays
@@ -56,7 +58,7 @@ class ParameterValueTest(unittest.TestCase):
         for i in range(ParameterValueTest.TEST_ITERATIONS):
             value = np.float32(self.rnd.uniform(*ParameterValueTest.RANGE_32_BIT))
             bytes = struct.pack('<f', value)
-            P = Param('FLOAT_TEST', self.dtypes, bytes_per_element=4, dimensions=[1], bytes=bytes)
+            P = make_param('FLOAT_TEST', self.dtypes, bytes_per_element=4, dimensions=[1], bytes=bytes)
             value_out = P.float_value
             assert value == value_out, 'Parameter float was not read correctly. Was %f, expected %f' %\
                 (value_out, value)
@@ -67,7 +69,7 @@ class ParameterValueTest(unittest.TestCase):
         for i in range(ParameterValueTest.TEST_ITERATIONS):
             value = np.int32(self.rnd.uniform(*ParameterValueTest.RANGE_32_BIT))
             bytes = struct.pack('<i', value)
-            P = Param('INT32_TEST', self.dtypes, bytes_per_element=4, dimensions=[1], bytes=bytes)
+            P = make_param('INT32_TEST', self.dtypes, bytes_per_element=4, dimensions=[1], bytes=bytes)
             value_out = P.int32_value
             assert value == value_out, 'Parameter int32 was not read correctly. Was %f, expected %f' %\
                 (value_out, value)
@@ -78,7 +80,7 @@ class ParameterValueTest(unittest.TestCase):
         for i in range(ParameterValueTest.TEST_ITERATIONS):
             value = np.uint32(self.rnd.uniform(*ParameterValueTest.RANGE_32_UNSIGNED_BIT))
             bytes = struct.pack('<I', value)
-            P = Param('UINT32_TEST', self.dtypes, bytes_per_element=4, dimensions=[1], bytes=bytes)
+            P = make_param('UINT32_TEST', self.dtypes, bytes_per_element=4, dimensions=[1], bytes=bytes)
             value_out = P.int32_value
             assert value == value_out, 'Parameter uint32 was not read correctly. Was %f, expected %f' %\
                 (value_out, value)
@@ -89,7 +91,7 @@ class ParameterValueTest(unittest.TestCase):
         for i in range(ParameterValueTest.TEST_ITERATIONS):
             value = np.int16(self.rnd.uniform(*ParameterValueTest.RANGE_16_BIT))
             bytes = struct.pack('<h', value)
-            P = Param('INT16_TEST', self.dtypes, bytes_per_element=2, dimensions=[1], bytes=bytes)
+            P = make_param('INT16_TEST', self.dtypes, bytes_per_element=2, dimensions=[1], bytes=bytes)
             value_out = P.int16_value
             assert value == value_out, 'Parameter int16 was not read correctly. Was %f, expected %f' %\
                 (value_out, value)
@@ -100,7 +102,7 @@ class ParameterValueTest(unittest.TestCase):
         for i in range(ParameterValueTest.TEST_ITERATIONS):
             value = np.uint16(self.rnd.uniform(*ParameterValueTest.RANGE_16_UNSIGNED_BIT))
             bytes = struct.pack('<H', value)
-            P = Param('UINT16_TEST', self.dtypes, bytes_per_element=2, dimensions=[1], bytes=bytes)
+            P = make_param('UINT16_TEST', self.dtypes, bytes_per_element=2, dimensions=[1], bytes=bytes)
             value_out = P.uint16_value
             assert value == value_out, 'Parameter uint16 was not read correctly. Was %f, expected %f' %\
                 (value_out, value)
@@ -111,7 +113,7 @@ class ParameterValueTest(unittest.TestCase):
         for i in range(ParameterValueTest.TEST_ITERATIONS):
             value = np.int8(self.rnd.uniform(*ParameterValueTest.RANGE_8_BIT))
             bytes = struct.pack('<b', value)
-            P = Param('INT8_TEST', self.dtypes, bytes_per_element=1, dimensions=[1], bytes=bytes)
+            P = make_param('INT8_TEST', self.dtypes, bytes_per_element=1, dimensions=[1], bytes=bytes)
             value_out = P.int8_value
             assert value == value_out, 'Parameter int8 was not read correctly. Was %f, expected %f' %\
                 (value_out, value)
@@ -122,7 +124,7 @@ class ParameterValueTest(unittest.TestCase):
         for i in range(ParameterValueTest.TEST_ITERATIONS):
             value = np.uint8(self.rnd.uniform(*ParameterValueTest.RANGE_8_UNSIGNED_BIT))
             bytes = struct.pack('<B', value)
-            P = Param('UINT8_TEST', self.dtypes, bytes_per_element=1, dimensions=[1], bytes=bytes)
+            P = make_param('UINT8_TEST', self.dtypes, bytes_per_element=1, dimensions=[1], bytes=bytes)
             value_out = P.uint8_value
             assert value == value_out, 'Parameter uint8 was not read correctly. Was %f, expected %f' %\
                 (value_out, value)
@@ -145,7 +147,7 @@ class ParameterArrayTest(unittest.TestCase):
 
         for shape in ParameterArrayTest.SHAPES:
             arr = self.rnd.uniform(flt_range[0], flt_range[1], size=shape).astype(np.float32)
-            P = Param('FLOAT_TEST', self.dtypes, bytes_per_element=4, dimensions=arr.shape, bytes=arr.T.tobytes())
+            P = make_param('FLOAT_TEST', self.dtypes, bytes_per_element=4, dimensions=arr.shape, bytes=arr.T.tobytes())
             arr_out = P.float32_array
             assert arr.T.shape == arr_out.shape, "Mismatch in 'float_array' converted shape"
             assert np.all(arr.T == arr_out), 'Value mismatch when reading float array'
@@ -157,7 +159,7 @@ class ParameterArrayTest(unittest.TestCase):
 
         for shape in ParameterArrayTest.SHAPES:
             arr = self.rnd.uniform(flt_range[0], flt_range[1], size=shape).astype(np.float64)
-            P = Param('FLOAT_TEST', self.dtypes, bytes_per_element=4, dimensions=arr.shape, bytes=arr.T.tobytes())
+            P = make_param('FLOAT_TEST', self.dtypes, bytes_per_element=4, dimensions=arr.shape, bytes=arr.T.tobytes())
             arr_out = P.float64_array
             assert arr.T.shape == arr_out.shape, "Mismatch in 'float_array' converted shape"
             assert np.all(arr.T == arr_out), 'Value mismatch when reading float array'
@@ -169,7 +171,7 @@ class ParameterArrayTest(unittest.TestCase):
 
         for shape in ParameterArrayTest.SHAPES:
             arr = self.rnd.uniform(flt_range[0], flt_range[1], size=shape).astype(np.int32)
-            P = Param('INT32_TEST', self.dtypes, bytes_per_element=4, dimensions=arr.shape, bytes=arr.T.tobytes())
+            P = make_param('INT32_TEST', self.dtypes, bytes_per_element=4, dimensions=arr.shape, bytes=arr.T.tobytes())
             arr_out = P.int32_array
             assert arr.T.shape == arr_out.shape, "Mismatch in 'int32_array' converted shape"
             assert np.all(arr.T == arr_out), 'Value mismatch when reading int32 array'
@@ -181,7 +183,7 @@ class ParameterArrayTest(unittest.TestCase):
 
         for shape in ParameterArrayTest.SHAPES:
             arr = self.rnd.uniform(flt_range[0], flt_range[1], size=shape).astype(np.uint32)
-            P = Param('UINT32_TEST', self.dtypes, bytes_per_element=4, dimensions=arr.shape, bytes=arr.T.tobytes())
+            P = make_param('UINT32_TEST', self.dtypes, bytes_per_element=4, dimensions=arr.shape, bytes=arr.T.tobytes())
             arr_out = P.uint32_array
             assert arr.T.shape == arr_out.shape, "Mismatch in 'uint32_array' converted shape"
             assert np.all(arr.T == arr_out), 'Value mismatch when reading uint32 array'
@@ -193,7 +195,7 @@ class ParameterArrayTest(unittest.TestCase):
 
         for shape in ParameterArrayTest.SHAPES:
             arr = self.rnd.uniform(flt_range[0], flt_range[1], size=shape).astype(np.int16)
-            P = Param('INT16_TEST', self.dtypes, bytes_per_element=2, dimensions=arr.shape, bytes=arr.T.tobytes())
+            P = make_param('INT16_TEST', self.dtypes, bytes_per_element=2, dimensions=arr.shape, bytes=arr.T.tobytes())
             arr_out = P.int16_array
             assert arr.T.shape == arr_out.shape, "Mismatch in 'int32_array' converted shape"
             assert np.all(arr.T == arr_out), 'Value mismatch when reading int32 array'
@@ -205,7 +207,7 @@ class ParameterArrayTest(unittest.TestCase):
 
         for shape in ParameterArrayTest.SHAPES:
             arr = self.rnd.uniform(flt_range[0], flt_range[1], size=shape).astype(np.uint16)
-            P = Param('UINT16_TEST', self.dtypes, bytes_per_element=2, dimensions=arr.shape, bytes=arr.T.tobytes())
+            P = make_param('UINT16_TEST', self.dtypes, bytes_per_element=2, dimensions=arr.shape, bytes=arr.T.tobytes())
             arr_out = P.uint16_array
             assert arr.T.shape == arr_out.shape, "Mismatch in 'uint32_array' converted shape"
             assert np.all(arr.T == arr_out), 'Value mismatch when reading uint32 array'
@@ -217,7 +219,7 @@ class ParameterArrayTest(unittest.TestCase):
 
         for shape in ParameterArrayTest.SHAPES:
             arr = self.rnd.uniform(flt_range[0], flt_range[1], size=shape).astype(np.int8)
-            P = Param('INT8_TEST', self.dtypes, bytes_per_element=1, dimensions=arr.shape, bytes=arr.T.tobytes())
+            P = make_param('INT8_TEST', self.dtypes, bytes_per_element=1, dimensions=arr.shape, bytes=arr.T.tobytes())
             arr_out = P.int8_array
             assert arr.T.shape == arr_out.shape, "Mismatch in 'int32_array' converted shape"
             assert np.all(arr.T == arr_out), 'Value mismatch when reading int32 array'
@@ -229,7 +231,7 @@ class ParameterArrayTest(unittest.TestCase):
 
         for shape in ParameterArrayTest.SHAPES:
             arr = self.rnd.uniform(flt_range[0], flt_range[1], size=shape).astype(np.uint8)
-            P = Param('UINT8_TEST', self.dtypes, bytes_per_element=1, dimensions=arr.shape, bytes=arr.T.tobytes())
+            P = make_param('UINT8_TEST', self.dtypes, bytes_per_element=1, dimensions=arr.shape, bytes=arr.T.tobytes())
             arr_out = P.uint8_array
             assert arr.T.shape == arr_out.shape, "Mismatch in 'uint32_array' converted shape"
             assert np.all(arr.T == arr_out), 'Value mismatch when reading uint32 array'
@@ -241,14 +243,14 @@ class ParameterArrayTest(unittest.TestCase):
 
         # 1 dims
         arr = np.array(word).repeat(3).repeat(3).repeat(3)
-        P = Param('BYTE_TEST', self.dtypes, bytes_per_element=1, dimensions=arr.shape, bytes=arr.T.tobytes())
+        P = make_param('BYTE_TEST', self.dtypes, bytes_per_element=1, dimensions=arr.shape, bytes=arr.T.tobytes())
         arr_out = P.bytes_array
         assert arr.shape[1:] == arr_out.shape, "Mismatch in 'bytes_array' converted shape"
         assert np.all(arr.tobytes() == arr_out), 'Mismatch in reading single dimensional byte array'
 
         # 4 dims
         arr, shape = genByteWordArr(word, [5, 4, 3])
-        P = Param('BYTE_TEST', self.dtypes, bytes_per_element=1, dimensions=shape, bytes=arr.T.tobytes())
+        P = make_param('BYTE_TEST', self.dtypes, bytes_per_element=1, dimensions=shape, bytes=arr.T.tobytes())
         arr_out = P.bytes_array
 
         assert arr.T.shape == arr_out.shape, "Mismatch in 'bytes_array' converted shape. Was %s, expected %s" %\
@@ -258,7 +260,7 @@ class ParameterArrayTest(unittest.TestCase):
 
         # 5 dims
         arr, shape = genByteWordArr(word, [6, 5, 4, 3])
-        P = Param('BYTE_TEST', self.dtypes, bytes_per_element=1, dimensions=shape, bytes=arr.T.tobytes())
+        P = make_param('BYTE_TEST', self.dtypes, bytes_per_element=1, dimensions=shape, bytes=arr.T.tobytes())
         arr_out = P.bytes_array
 
         assert arr.T.shape == arr_out.shape, "Mismatch in 'bytes_array' converted shape. Was %s, expected %s" %\
@@ -273,7 +275,7 @@ class ParameterArrayTest(unittest.TestCase):
 
         # 3 dims
         arr, shape = genByteWordArr(word, [7, 3])
-        P = Param('STRING_TEST', self.dtypes, bytes_per_element=-1, dimensions=shape, bytes=arr.T.tobytes())
+        P = make_param('STRING_TEST', self.dtypes, bytes_per_element=-1, dimensions=shape, bytes=arr.T.tobytes())
         arr_out = P.string_array
 
         assert arr.T.shape == arr_out.shape, "Mismatch in 'string_array' converted shape. Was %s, expected %s" %\
@@ -284,7 +286,7 @@ class ParameterArrayTest(unittest.TestCase):
 
         # 4 dims
         arr, shape = genByteWordArr(word, [5, 4, 3])
-        P = Param('STRING_TEST', self.dtypes, bytes_per_element=-1, dimensions=shape, bytes=arr.T.tobytes())
+        P = make_param('STRING_TEST', self.dtypes, bytes_per_element=-1, dimensions=shape, bytes=arr.T.tobytes())
         arr_out = P.string_array
 
         assert arr.T.shape == arr_out.shape, "Mismatch in 'string_array' converted shape. Was %s, expected %s" %\
@@ -295,7 +297,7 @@ class ParameterArrayTest(unittest.TestCase):
 
         # 5 dims
         arr, shape = genByteWordArr(word, [6, 5, 4, 3])
-        P = Param('STRING_TEST', self.dtypes, bytes_per_element=-1, dimensions=shape, bytes=arr.T.tobytes())
+        P = make_param('STRING_TEST', self.dtypes, bytes_per_element=-1, dimensions=shape, bytes=arr.T.tobytes())
         arr_out = P.string_array
 
         assert arr.T.shape == arr_out.shape, "Mismatch in 'string_array' converted shape. Was %s, expected %s" %\
@@ -313,7 +315,7 @@ class ParameterArrayTest(unittest.TestCase):
         # 3 dims
         for wlen in range(10):
             arr, shape = genRndByteArr(wlen, [7, 3], wlen > 5)
-            P = Param('STRING_TEST', self.dtypes, bytes_per_element=-1, dimensions=shape, bytes=arr.T.tobytes())
+            P = make_param('STRING_TEST', self.dtypes, bytes_per_element=-1, dimensions=shape, bytes=arr.T.tobytes())
             arr_out = P.string_array
 
             assert arr.T.shape == arr_out.shape, "Mismatch in 'string_array' converted shape. Was %s, expected %s" %\
@@ -325,7 +327,7 @@ class ParameterArrayTest(unittest.TestCase):
         # 4 dims
         for wlen in range(10):
             arr, shape = genRndByteArr(wlen, [7, 5, 3], wlen > 5)
-            P = Param('STRING_TEST', self.dtypes, bytes_per_element=-1, dimensions=shape, bytes=arr.T.tobytes())
+            P = make_param('STRING_TEST', self.dtypes, bytes_per_element=-1, dimensions=shape, bytes=arr.T.tobytes())
             arr_out = P.string_array
 
             assert arr.T.shape == arr_out.shape, "Mismatch in 'string_array' converted shape. Was %s, expected %s" %\
@@ -337,7 +339,7 @@ class ParameterArrayTest(unittest.TestCase):
         # 5 dims
         for wlen in range(10):
             arr, shape = genRndByteArr(wlen, [7, 6, 5, 3], wlen > 5)
-            P = Param('STRING_TEST', self.dtypes, bytes_per_element=-1, dimensions=shape, bytes=arr.T.tobytes())
+            P = make_param('STRING_TEST', self.dtypes, bytes_per_element=-1, dimensions=shape, bytes=arr.T.tobytes())
             arr_out = P.string_array
 
             assert arr.T.shape == arr_out.shape, "Mismatch in 'string_array' converted shape. Was %s, expected %s" %\

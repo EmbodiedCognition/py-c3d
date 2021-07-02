@@ -1,7 +1,7 @@
 import numpy as np
 import warnings
 from src.header import Header
-from src.group import Group
+from src.group import GroupData, GroupReadonly, GroupWritable
 from src.utils import is_integer, is_iterable
 
 
@@ -26,12 +26,7 @@ class Manager(object):
     def __contains__(self, key):
         return key in self._groups
 
-    @property
-    def header(self):
-        ''' Access to .c3d header data. '''
-        return self._header
-
-    def group_items(self):
+    def items(self):
         ''' Acquire iterable over parameter group pairs.
 
         Returns
@@ -39,9 +34,9 @@ class Manager(object):
         items : Touple of ((str, :class:`Group`), ...)
             Python touple containing pairs of name keys and parameter group entries.
         '''
-        return ((k, v) for k, v in self._groups.items() if isinstance(k, str))
+        return ((k, GroupWritable(v)) for k, v in self._groups.items() if isinstance(k, str))
 
-    def group_values(self):
+    def values(self):
         ''' Acquire iterable over parameter group entries.
 
         Returns
@@ -49,9 +44,9 @@ class Manager(object):
         values : Touple of (:class:`Group`, ...)
             Python touple containing unique parameter group entries.
         '''
-        return (v for k, v in self._groups.items() if isinstance(k, str))
+        return (GroupWritable(v) for k, v in self._groups.items() if isinstance(k, str))
 
-    def group_keys(self):
+    def keys(self):
         ''' Acquire iterable over parameter group entry string keys.
 
         Returns
@@ -61,7 +56,7 @@ class Manager(object):
         '''
         return (k for k in self._groups.keys() if isinstance(k, str))
 
-    def group_listed(self):
+    def listed(self):
         ''' Acquire iterable over sorted numerical parameter group pairs.
 
         Returns
@@ -69,7 +64,7 @@ class Manager(object):
         items : Touple of ((int, :class:`Group`), ...)
             Sorted python touple containing pairs of numerical keys and parameter group entries.
         '''
-        return sorted((i, g) for i, g in self._groups.items() if isinstance(i, int))
+        return sorted((i, GroupWritable(g)) for i, g in self._groups.items() if isinstance(i, int))
 
     def _check_metadata(self):
         ''' Ensure that the metadata in our file is self-consistent. '''
@@ -115,13 +110,14 @@ class Manager(object):
             if self._header.data_block != start:
                 warnings.warn('inconsistent data block! {} header != {} POINT:DATA_START'.format(
                     self._header.data_block, start))
+                raise RuntimeError()
         except AttributeError:
             warnings.warn('''no pointer available in POINT:DATA_START indicating the start of the data block, using
                              header pointer as fallback''')
 
         def check_parameters(params):
             for name in params:
-                if self.get(name) is None:
+                if self._get(name) is None:
                     warnings.warn('missing parameter {}'.format(name))
 
         if self.point_used > 0:
@@ -133,7 +129,7 @@ class Manager(object):
         else:
             warnings.warn('No analog data found in file.')
 
-    def add_group(self, group_id, name, desc):
+    def _add_group(self, group_id, name, desc):
         '''Add a new parameter group.
 
         Parameters
@@ -167,10 +163,10 @@ class Manager(object):
         name = name.upper()
         if name in self._groups:
             raise KeyError('No group matched name key {}'.format(name))
-        group = self._groups[name] = self._groups[group_id] = Group(self._dtypes, name, desc)
+        group = self._groups[name] = self._groups[group_id] = GroupData(self._dtypes, name, desc)
         return group
 
-    def remove_group(self, group_id):
+    def _remove_group(self, group_id):
         '''Remove the parameter group.
 
         Parameters
@@ -185,7 +181,7 @@ class Manager(object):
         for k in gkeys:
             del self._groups[k]
 
-    def rename_group(self, group_id, new_group_id):
+    def _rename_group(self, group_id, new_group_id):
         ''' Rename a specified parameter group.
 
         Parameters
@@ -200,8 +196,8 @@ class Manager(object):
         KeyError
             If a group with a duplicate ID or name already exists.
         '''
-        if isinstance(group_id, Group):
-            grp = group_id
+        if isinstance(group_id, GroupReadonly):
+            grp = group_id._data
         else:
             # Aquire instance using id
             grp = self._groups.get(group_id, None)
@@ -216,7 +212,7 @@ class Manager(object):
         if isinstance(new_group_id, (str, bytes)):
             if grp.name in self._groups:
                 del self._groups[grp.name]
-            grp._name = new_group_id
+            grp.name = new_group_id
         elif is_integer(new_group_id):
             new_group_id = int(new_group_id) # Ensure python int
             del self._groups[group_id]
@@ -225,7 +221,7 @@ class Manager(object):
         # Update
         self._groups[new_group_id] = grp
 
-    def get(self, group, default=None):
+    def _get(self, group, default=None):
         '''Get a group or parameter.
 
         Parameters
@@ -246,7 +242,10 @@ class Manager(object):
             is found, returns the default value.
         '''
         if is_integer(group):
-            return self._groups.get(int(group), default)
+            group = self._groups.get(int(group))
+            if group is None:
+                return default
+            return GroupWritable(group)
         group = group.upper()
         param = None
         if '.' in group:
@@ -255,56 +254,24 @@ class Manager(object):
             group, param = group.split(':', 1)
         if group not in self._groups:
             return default
-        group = self._groups[group]
+        group = GroupWritable(self._groups[group])
         if param is not None:
             return group.get(param, default)
         return group
 
-    def get_int8(self, key):
-        '''Get a parameter value as an 8-bit signed integer.'''
-        return self.get(key).int8_value
-
-    def get_uint8(self, key):
-        '''Get a parameter value as an 8-bit unsigned integer.'''
-        return self.get(key).uint8_value
-
-    def get_int16(self, key):
-        '''Get a parameter value as a 16-bit signed integer.'''
-        return self.get(key).int16_value
-
-    def get_uint16(self, key):
-        '''Get a parameter value as a 16-bit unsigned integer.'''
-        return self.get(key).uint16_value
-
-    def get_int32(self, key):
-        '''Get a parameter value as a 32-bit signed integer.'''
-        return self.get(key).int32_value
-
-    def get_uint32(self, key):
-        '''Get a parameter value as a 32-bit unsigned integer.'''
-        return self.get(key).uint32_value
-
-    def get_float(self, key):
-        '''Get a parameter value as a 32-bit float.'''
-        return self.get(key).float_value
-
-    def get_bytes(self, key):
-        '''Get a parameter value as a byte string.'''
-        return self.get(key).bytes_value
-
-    def get_string(self, key):
-        '''Get a parameter value as a string.'''
-        return self.get(key).string_value
+    @property
+    def header(self):
+        ''' Access to .c3d header data. '''
+        return self._header
 
     def parameter_blocks(self):
         '''Compute the size (in 512B blocks) of the parameter section.'''
-        bytes = 4. + sum(g.binary_size() for g in self._groups.values())
+        bytes = 4. + sum(g.binary_size for g in self._groups.values())
         return int(np.ceil(bytes / 512))
 
     @property
     def point_rate(self):
-        ''' Number of sampled 3D coordinates per second.
-        '''
+        ''' Number of sampled 3D coordinates per second. '''
         try:
             return self.get_float('POINT:RATE')
         except AttributeError:
@@ -312,6 +279,7 @@ class Manager(object):
 
     @property
     def point_scale(self):
+        ''' Scaling applied to non-float data. '''
         try:
             return self.get_float('POINT:SCALE')
         except AttributeError:
@@ -319,8 +287,7 @@ class Manager(object):
 
     @property
     def point_used(self):
-        ''' Number of sampled 3D point coordinates per frame.
-        '''
+        ''' Number of sampled 3D point coordinates per frame. '''
         try:
             return self.get_uint16('POINT:USED')
         except AttributeError:
@@ -328,17 +295,18 @@ class Manager(object):
 
     @property
     def analog_used(self):
-        ''' Number of analog measurements, or channels, for each analog data sample.
-        '''
+        ''' Number of analog measurements, or channels, for each analog data sample. '''
         try:
             return self.get_uint16('ANALOG:USED')
         except AttributeError:
-            return self.header.analog_count
+            per_frame = self.header.analog_per_frame
+            if per_frame > 0:
+                return int(self.header.analog_count / per_frame)
+            return 0
 
     @property
     def analog_rate(self):
-        '''  Number of analog data samples per second.
-        '''
+        '''  Number of analog data samples per second. '''
         try:
             return self.get_float('ANALOG:RATE')
         except AttributeError:
@@ -346,34 +314,36 @@ class Manager(object):
 
     @property
     def analog_per_frame(self):
-        '''  Number of analog samples per 3D frame (point sample).
-        '''
+        '''  Number of analog frames per 3D frame (point sample). '''
         return int(self.analog_rate / self.point_rate)
 
     @property
     def analog_sample_count(self):
-        ''' Number of analog samples per channel.
-        '''
+        ''' Number of analog samples per channel. '''
         has_analog = self.analog_used > 0
         return int(self.frame_count * self.analog_per_frame) * has_analog
 
     @property
     def point_labels(self):
-        return self.get('POINT:LABELS').string_array
+        ''' Labels for each POINT data channel. '''
+        return self._get('POINT:LABELS').string_array
 
     @property
     def analog_labels(self):
+        ''' Labels for each ANALOG data channel. '''
         return self.get('ANALOG:LABELS').string_array
 
     @property
     def frame_count(self):
+        ''' Number of frames recorded in the data. '''
         return self.last_frame - self.first_frame + 1  # Add 1 since range is inclusive [first, last]
 
     @property
     def first_frame(self):
+        ''' Trial frame corresponding to the first frame recorded in the data. '''
         # Start frame seems to be less of an issue to determine.
         # this is a hack for phasespace files ... should put it in a subclass.
-        param = self.get('TRIAL:ACTUAL_START_FIELD')
+        param = self._get('TRIAL:ACTUAL_START_FIELD')
         if param is not None:
             # ACTUAL_START_FIELD is encoded in two 16 byte words...
             words = param.uint16_array
@@ -382,23 +352,24 @@ class Manager(object):
 
     @property
     def last_frame(self):
+        ''' Trial frame corresponding to the last frame recorded in the data (inclusive). '''
         # Number of frames can be represented in many formats, first check if valid header values
         if self.header.first_frame < self.header.last_frame and self.header.last_frame != 65535:
             return self.header.last_frame
 
         # Check different parameter options where the frame can be encoded
         end_frame = [self.header.last_frame, 0.0, 0.0, 0.0]
-        param = self.get('TRIAL:ACTUAL_END_FIELD')
+        param = self._get('TRIAL:ACTUAL_END_FIELD')
         if param is not None:
             # Encoded as 2 16 bit words (rather then 1 32 bit word)
             words = param.uint16_array
             end_frame[1] = words[0] + words[1] * 65536
             #end_frame[1] = param.uint32_value
-        param = self.get('POINT:LONG_FRAMES')
+        param = self._get('POINT:LONG_FRAMES')
         if param is not None:
             # Encoded as float
             end_frame[2] = int(param.float_value)
-        param = self.get('POINT:FRAMES')
+        param = self._get('POINT:FRAMES')
         if param is not None:
             # Can be encoded either as 32 bit float or 16 bit uint
             end_frame[3] = param._as_integer_value
@@ -406,35 +377,34 @@ class Manager(object):
         return int(np.max(end_frame))
 
     def get_screen_axis(self):
-        ''' Set the X_SCREEN and Y_SCREEN parameters in the POINT group.
+        ''' Get the X_SCREEN and Y_SCREEN parameters in the POINT group.
 
         Returns
         -------
         value : Touple on form (str, str) or None
             Touple containing X_SCREEN and Y_SCREEN strings, or None if no parameters could be found.
         '''
-        X = self.get('POINT:X_SCREEN')
-        Y = self.get('POINT:Y_SCREEN')
+        X = self._get('POINT:X_SCREEN')
+        Y = self._get('POINT:Y_SCREEN')
         if X and Y:
             return (X.string_value, Y.string_value)
         return None
 
     def get_analog_transform_parameters(self):
-        ''' Parse analog data transform parameters.
-        '''
+        ''' Parse analog data transform parameters. '''
         # Offsets
         analog_offsets = np.zeros((self.analog_used), int)
-        param = self.get('ANALOG:OFFSET')
+        param = self._get('ANALOG:OFFSET')
         if param is not None and param.num_elements > 0:
             analog_offsets[:] = param.int16_array[:self.analog_used]
 
         # Scale factors
         analog_scales = np.ones((self.analog_used), float)
         gen_scale = 1.
-        param = self.get('ANALOG:GEN_SCALE')
+        param = self._get('ANALOG:GEN_SCALE')
         if param is not None:
             gen_scale = param.float_value
-        param = self.get('ANALOG:SCALE')
+        param = self._get('ANALOG:SCALE')
         if param is not None and param.num_elements > 0:
             analog_scales[:] = param.float_array[:self.analog_used]
 
@@ -448,3 +418,39 @@ class Manager(object):
         analog_scales = np.broadcast_to(analog_scales[:, np.newaxis], (self.analog_used, self.analog_per_frame))
         analog_offsets = np.broadcast_to(analog_offsets[:, np.newaxis], (self.analog_used, self.analog_per_frame))
         return analog_scales, analog_offsets
+
+    def get_int8(self, key):
+        '''Get a parameter value as an 8-bit signed integer.'''
+        return self._get(key).int8_value
+
+    def get_uint8(self, key):
+        '''Get a parameter value as an 8-bit unsigned integer.'''
+        return self._get(key).uint8_value
+
+    def get_int16(self, key):
+        '''Get a parameter value as a 16-bit signed integer.'''
+        return self._get(key).int16_value
+
+    def get_uint16(self, key):
+        '''Get a parameter value as a 16-bit unsigned integer.'''
+        return self._get(key).uint16_value
+
+    def get_int32(self, key):
+        '''Get a parameter value as a 32-bit signed integer.'''
+        return self._get(key).int32_value
+
+    def get_uint32(self, key):
+        '''Get a parameter value as a 32-bit unsigned integer.'''
+        return self._get(key).uint32_value
+
+    def get_float(self, key):
+        '''Get a parameter value as a 32-bit float.'''
+        return self._get(key).float_value
+
+    def get_bytes(self, key):
+        '''Get a parameter value as a byte string.'''
+        return self._get(key).bytes_value
+
+    def get_string(self, key):
+        '''Get a parameter value as a string.'''
+        return self._get(key).string_value
