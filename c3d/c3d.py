@@ -2199,7 +2199,7 @@ class Writer(Manager):
         self._header.last_frame = np.uint16(min(frame, 65535))
 
 
-    def set_screen_axis(self, X, Y):
+    def set_screen_axis(self, X='+X', Y='+Y'):
         ''' Set the X_SCREEN and Y_SCREEN parameters in the POINT group.
 
         Parameter
@@ -2211,8 +2211,8 @@ class Writer(Manager):
             Second axis string with same format as Y. Determines the second Y screen axis.
         '''
         group = self.point_group
-        group.set_str('X_SCREEN', 'X_SCREEN parameter', '+X', 2)
-        group.set_str('Y_SCREEN', 'Y_SCREEN parameter', '+Y', 2)
+        group.set_str('X_SCREEN', 'X_SCREEN parameter', X, 2)
+        group.set_str('Y_SCREEN', 'Y_SCREEN parameter', Y, 2)
 
     def write(self, handle):
         '''Write metadata and point + analog frames to a file handle.
