@@ -1488,6 +1488,20 @@ class Manager(object):
         # Return the largest of the all (queue bad reading...)
         return int(np.max(end_frame))
 
+    def get_screen_axis(self):
+        ''' Set the X_SCREEN and Y_SCREEN parameters in the POINT group.
+
+        Returns
+        -------
+        value : Touple on form (str, str) or None
+            Touple containing X_SCREEN and Y_SCREEN strings, or None if no parameters could be found.
+        '''
+        X = self.get('POINT:X_SCREEN')
+        Y = self.get('POINT:Y_SCREEN')
+        if X and Y:
+            return (X.string_value, Y.string_value)
+        return None
+
     def get_analog_transform_parameters(self):
         ''' Parse analog data transform parameters.
         '''

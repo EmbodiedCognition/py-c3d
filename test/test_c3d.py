@@ -1,10 +1,10 @@
 ''' Basic Reader and Writer tests.
 '''
-
-'import c3d
+import c3d
 import importlib
 import io
 import unittest
+import numpy as np
 from test.base import Base
 from test.zipload import Zipload
 climate_spec = importlib.util.find_spec("climate")
@@ -117,10 +117,17 @@ class WriterTest(Base):
 
         h = io.BytesIO()
         w.set_start_frame(255)
-        w.set_screen_axis()
-        w.set_screen_axis('-Y', '+Z')
         w.set_point_labels(r.point_labels)
         w.set_analog_labels(r.analog_labels)
+
+        # Screen axis
+        X, Y = '-Y', '+Z'
+        w.set_screen_axis()
+        w.set_screen_axis(X, Y)
+        X_v, Y_v = w.get_screen_axis()
+        assert X_v == X and Y == Y_v, 'Mismatch between set & get screen axis.'
+
+        assert np.all(np.equal(r.point_labels, w.point_labels)), 'Expected labels to be equal.'
 
         w.write(h)
 
