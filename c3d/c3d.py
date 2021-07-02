@@ -1895,25 +1895,6 @@ class GroupEditable(Decorator):
             pass
         self.add_empty_array(name, *args, **kwargs)
 
-    #
-    #   Try add decorator functions (catches KeyError)
-    #
-    def try_add(self, name, *args, **kwargs):
-        ''' Add or overwrite a parameter with 'bytes' package formated in accordance with 'format'.
-        '''
-        try:
-            self.add(name, *args, **kwargs)
-        except KeyError as e:
-            pass
-
-    def try_add_str(self, name, *args, **kwargs):
-        ''' Add a string parameter.
-        '''
-        try:
-            self.add_str(name, *args, **kwargs)
-        except KeyError as e:
-            pass
-
 
 class Writer(Manager):
     '''This class writes metadata and frames to a C3D file.
@@ -2217,6 +2198,22 @@ class Writer(Manager):
         self.trial_group.set('ACTUAL_END_FIELD', 'Actual end frame', 2, '<I', frame, 2)
         self._header.last_frame = np.uint16(min(frame, 65535))
 
+
+    def set_screen_axis(self, X, Y):
+        ''' Set the X_SCREEN and Y_SCREEN parameters in the POINT group.
+
+        Parameter
+        ---------
+        X : str
+            2 character string with first character indicating positive or negative axis (+/-),
+            and the second axis (X/Y/Z). Examples: '+X' or '-Y'
+        Y : str
+            Second axis string with same format as Y. Determines the second Y screen axis.
+        '''
+        group = self.point_group
+        group.set_str('X_SCREEN', 'X_SCREEN parameter', '+X', 2)
+        group.set_str('Y_SCREEN', 'Y_SCREEN parameter', '+Y', 2)
+
     def write(self, handle):
         '''Write metadata and point + analog frames to a file handle.
 
@@ -2256,8 +2253,6 @@ class Writer(Manager):
         group.set('SCALE', 'Point data scaling factor', 4, '<f', np.float32(self.point_scale))
         group.set('RATE', 'Point data sample rate', 4, '<f', np.float32(self.point_rate))
         # Optional
-        group.try_add_str('X_SCREEN', 'X_SCREEN parameter', '+X', 2)
-        group.try_add_str('Y_SCREEN', 'Y_SCREEN parameter', '+Y', 2)
         if 'UNITS' not in group:
             group.add_str('UNITS', 'Units used for point data measurements.',
                           self._point_units, len(self._point_units))
