@@ -14,13 +14,11 @@ PROCESSOR_INTEL = 84
 PROCESSOR_DEC = 85
 PROCESSOR_MIPS = 86
 
-INVALID_FLAG = -100000
-
 class DataTypes(object):
     ''' Container defining different data types used for reading file data.
         Data types depend on the processor format the file is stored in.
     '''
-    def __init__(self, proc_type):
+    def __init__(self, proc_type=PROCESSOR_INTEL):
         self._proc_type = proc_type
         self._little_endian_sys = sys.byteorder == 'little'
         self._native = ((self.is_ieee or self.is_dec) and self.little_endian_sys) or \
