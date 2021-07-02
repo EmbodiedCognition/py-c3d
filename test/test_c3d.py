@@ -82,7 +82,23 @@ class ReaderTest(Base):
 
 
 class WriterTest(Base):
-    def test_paramsd(self):
+    def test_add_frames(self):
+        r = c3d.Reader(Zipload._get('sample08.zip', 'TESTDPI.c3d'))
+        w = c3d.Writer(
+            point_rate=r.point_rate,
+            analog_rate=r.analog_rate,
+            point_scale=r.point_scale,
+            gen_scale=r.get_float('ANALOG:GEN_SCALE'),
+        )
+        w.add_frames([(p, a) for _, p, a in r.read_frames()])
+        w.add_frames([(p, a) for _, p, a in r.read_frames()], index=5)
+
+        h = io.BytesIO()
+        w.set_point_labels(r.point_labels)
+        w.set_analog_labels(r.analog_labels)
+        w.write(h)
+
+    def test_set_params(self):
         r = c3d.Reader(Zipload._get('sample08.zip', 'TESTDPI.c3d'))
         w = c3d.Writer(
             point_rate=r.point_rate,
@@ -93,9 +109,13 @@ class WriterTest(Base):
         w.add_frames([(p, a) for _, p, a in r.read_frames()])
 
         h = io.BytesIO()
+        w.set_start_frame(255)
+        w.set_screen_axis()
+        w.set_screen_axis('-Y', '+Z')
         w.set_point_labels(r.point_labels)
-        w.write(h)
+        w.set_analog_labels(r.analog_labels)
 
+        w.write(h)
 
 if __name__ == '__main__':
     unittest.main()

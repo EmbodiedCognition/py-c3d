@@ -2099,13 +2099,16 @@ class Writer(Manager):
         '''
         return GroupEditable(super(Writer, self).add_group(*args, **kwargs))
 
-    def add_frames(self, frames):
+    def add_frames(self, frames, index=None):
         '''Add frames to this writer instance.
 
         Parameters
         ----------
-        frames : single or sequence of (point, analog) pairs
+        frames : Single or sequence of (point, analog) pairs
             A sequence or frame of frame data to add to the writer.
+        index : int or None
+            Insert the frame or sequence at the index (the first sequence frame will be inserted at give index).
+            Note that the index should be relative to 0 rather then the frame number provided by read_frames()!
         '''
         sh = np.shape(frames)
         # Single frame
@@ -2117,7 +2120,11 @@ class Writer(Manager):
             raise ValueError(
                 'Expected frame input to be sequence of point and analog pairs on form (-1, 2). ' +
                 '\Input was of shape {}.'.format(str(sh)))
-        self._frames.extend(frames)
+
+        if index is not None:
+            self._frames[index:index] = frames
+        else:
+            self._frames.extend(frames)
 
     @staticmethod
     def pack_labels(labels):
