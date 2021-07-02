@@ -2211,9 +2211,9 @@ class Writer(Manager):
             Second axis string with same format as Y. Determines the second Y screen axis.
         '''
         if len(X) != 2:
-            raise ValueError('Expected string literal to be a 2 character string for the X_SCREEN parameter'.
+            raise ValueError('Expected string literal to be a 2 character string for the X_SCREEN parameter.')
         if len(Y) != 2:
-            raise ValueError('Expected string literal to be a 2 character string for the Y_SCREEN parameter'.
+            raise ValueError('Expected string literal to be a 2 character string for the Y_SCREEN parameter.')
         group = self.point_group
         group.set_str('X_SCREEN', 'X_SCREEN parameter', X, 2)
         group.set_str('Y_SCREEN', 'Y_SCREEN parameter', Y, 2)
