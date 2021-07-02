@@ -145,24 +145,6 @@ class ParamData(object):
                 return data.flatten()
             return data
 
-    @property
-    def _as_integer_value(self):
-        ''' Get the param as either 32 bit float or unsigned integer.
-            Evaluates if an integer is stored as a floating point representation.
-
-            Note: This is implemented purely for parsing start/end frames.
-        '''
-        if self.total_bytes >= 4:
-            # Check if float value representation is an integer
-            value = self.float_value
-            if int(value) == value:
-                return value
-            return self.uint32_value
-        elif self.total_bytes >= 2:
-            return self.uint16_value
-        else:
-            return self.uint8_value
-
 class ParamReadonly(object):
 
     def __init__(self, data):
@@ -396,6 +378,24 @@ class ParamReadonly(object):
                 byte_arr[i] = self.dtypes.decode_string(byte_arr[i])
             return byte_arr
 
+    @property
+    def _as_integer_value(self):
+        ''' Get the param as either 32 bit float or unsigned integer.
+            Evaluates if an integer is stored as a floating point representation.
+
+            Note: This is implemented purely for parsing start/end frames.
+        '''
+        if self.total_bytes >= 4:
+            # Check if float value representation is an integer
+            value = self.float_value
+            if int(value) == value:
+                return value
+            return self.uint32_value
+        elif self.total_bytes >= 2:
+            return self.uint16_value
+        else:
+            return self.uint8_value
+            
 class ParamWritable(ParamReadonly):
     def __init__(self, data):
         super(ParamWritable, self).__init__(data)

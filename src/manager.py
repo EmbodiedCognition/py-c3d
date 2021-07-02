@@ -372,7 +372,10 @@ class Manager(object):
         param = self._get('POINT:FRAMES')
         if param is not None:
             # Can be encoded either as 32 bit float or 16 bit uint
-            end_frame[3] = param._as_integer_value
+            if param.bytes_per_element == 2:
+                end_frame[3] = param.uint16_value
+            else:
+                end_frame[3] = int(param.float_value)
         # Return the largest of the all (queue bad reading...)
         return int(np.max(end_frame))
 

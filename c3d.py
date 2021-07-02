@@ -531,6 +531,14 @@ class Writer(Manager):
         '''
         return GroupWritable(super(Writer, self)._add_group(*args, **kwargs))
 
+    def rename_group(self, *args):
+        ''' Rename a specified parameter group (see Manager._rename_group for args). '''
+        self._rename_group(*args)
+
+    def remove_group(self, *args):
+        '''Remove the parameter group. (see Manager._rename_group for args). '''
+        self._remove_group(*args)
+
     def add_frames(self, frames, index=None):
         '''Add frames to this writer instance.
 
@@ -566,18 +574,6 @@ class Writer(Manager):
         label_max_size = max(label_max_size, np.max([len(label) for label in labels]))
         label_str = ''.join(label.ljust(label_max_size) for label in labels)
         return label_str, label_max_size
-
-    def add_group(self, *args):
-        ''' Add a new parameter group (see Manager._rename_group for args). '''
-        return self._add_group(*args)
-
-    def rename_group(self, *args):
-        ''' Rename a specified parameter group (see Manager._rename_group for args). '''
-        self._rename_group(*args)
-
-    def remove_group(self, *args):
-        '''Remove the parameter group. (see Manager._rename_group for args). '''
-        self._remove_group(*args)
 
     def set_point_labels(self, labels):
         ''' Set point data labels.
@@ -766,7 +762,7 @@ class Writer(Manager):
         # Groups
         handle.write(struct.pack(
             'BBBB', 0, 0, self.parameter_blocks(), self._dtypes.processor))
-        for group_id, group in self._listed():
+        for group_id, group in self.listed():
             group._data.write(group_id, handle)
 
         # Padding

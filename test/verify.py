@@ -327,10 +327,10 @@ def data_is_equal(areader, breader, alabel, blabel):
         cam_diff = tot_points - np.sum(cam_close)
         assert cam_diff == 0, '\n' + \
             'Mismatch in camera bit flags between {} and {}.\n'.format(alabel, blabel) +\
-            'Number of samples with flag differences larger then 1 bit: {} of {}'.format(cam_diff, tot_points)
+            'Number of samples with flag differences larger then 1: {} of {}'.format(cam_diff, tot_points)
         err_str = '\n' + \
             'Mismatch in camera bit flags between {} and {}.\n'.format(alabel, blabel) +\
-            'Number of samples with flag difference of 1 bit: {} of {}'.format(cam_diff_non_equal, tot_points)
+            'Number of samples with flag difference of 1: {} of {}'.format(cam_diff_non_equal, tot_points)
         warnings.warn(err_str, RuntimeWarning)
     # Residual assert
     assert residual_diff == 0, '\n' +\
