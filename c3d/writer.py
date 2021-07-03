@@ -204,7 +204,7 @@ class Writer(Manager):
         frames : Single or sequence of (point, analog) pairs
             A sequence or frame of frame data to add to the writer.
         index : int or None
-            Insert the frame or sequence at the index (the first sequence frame will be inserted at give index).
+            Insert the frame or sequence at the index (the first sequence frame will be inserted at the given `index`).
             Note that the index should be relative to 0 rather then the frame number provided by read_frames()!
         '''
         sh = np.shape(frames)
