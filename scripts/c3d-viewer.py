@@ -1,8 +1,13 @@
 #!/usr/bin/env python
 
 '''A simple OpenGL viewer for C3D files.'''
-
-import c3d
+try:
+    import c3d
+except ModuleNotFoundError:
+    import sys
+    import os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..\\'))
+    import c3d
 import argparse
 import collections
 import contextlib
@@ -90,7 +95,8 @@ class Viewer(pyglet.window.Window):
         super(Viewer, self).__init__(
             width=800, height=450, resizable=True, vsync=False, config=config)
 
-        self._frames = c3d_reader.read_frames(copy=False)
+        self.c3d_reader = c3d_reader
+        self._frames = iter(())
         self._frame_rate = c3d_reader.header.frame_rate
 
         self._maxlen = 16
@@ -221,6 +227,8 @@ class Viewer(pyglet.window.Window):
         try:
             return next(self._frames)
         except StopIteration:
+            self._frames = self.c3d_reader.read_frames(copy=False)
+            return self._next_frame()
             pyglet.app.exit()
 
     def update(self, dt):
