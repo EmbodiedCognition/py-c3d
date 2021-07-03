@@ -25,9 +25,12 @@ Usage
 Tools
 ~~~~~
 
-This package includes a script for converting C3D motion data to CSV format
+This package includes scripts_ for converting C3D motion data to CSV format
 (``c3d2csv``) and an OpenGL-based visualization tool for observing the motion
 described by a C3D file (``c3d-viewer``).
+
+.. _package documentation: http://c3d.readthedocs.org
+.. _scripts: ./scripts
 
 Library
 ~~~~~~~
