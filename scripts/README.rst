@@ -1,7 +1,7 @@
 Viewer
 ~~~~~
 
-A
+Simple 3D-viewer for .c3d data.
 
 Requirements ::
 
@@ -13,6 +13,6 @@ Run (from script directory) ::
 
 Commands
 
-    Esc - Terminate
-    Space - Pause
-    Mouse - Orientate view
+    Esc : Terminate
+    Space : Pause
+    Mouse : Orientate view
