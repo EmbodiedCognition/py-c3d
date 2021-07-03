@@ -4,14 +4,19 @@
 
 from __future__ import print_function
 
-import c3d
 import sys
 import argparse
+try:
+    import c3d
+except ModuleNotFoundError:
+    import os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..\\'))
+    import c3d
 
 parser = argparse.ArgumentParser(description='Convert a C3D file to CSV (text) format.')
-parser.add_argument('-a', '--include-analog', action='store_true', help='output analog values after point positions')
-parser.add_argument('-c', '--include-camera', action='store_true', help='output camera count with each point position')
-parser.add_argument('-r', '--include-error', action='store_true', help='output error value with each point position')
+parser.add_argument('-a', '--include-analog', action='store_true', help='Output analog channel values after point coordinates.')
+parser.add_argument('-c', '--include-camera', action='store_true', help='Output column with camera counts as the last point coordinate column.')
+parser.add_argument('-r', '--include-error', action='store_true', help='Output column with residual values after point x,y,z coordinate columns.')
 parser.add_argument('-e', '--end', default='\\n', metavar='K', help='write K between records')
 parser.add_argument('-s', '--sep', default=',', metavar='C', help='write C between fields in a record')
 parser.add_argument('input', default='-', metavar='FILE', nargs='+', help='process data from this input FILE')
@@ -24,8 +29,9 @@ def convert(filename, args, sep, end):
     if open_file_streams:
         input = open(filename, 'rb')
         output = open(filename.replace('.c3d', '.csv'), 'w')
+
     try:
-        for frame_no, points, analog in c3d.Reader(input).read_frames(copy=False):
+        for frame_no, points, analog in c3d.Reader(input).read_frames(copy=False, camera_sum=True):
             fields = [frame_no]
             for x, y, z, err, cam in points:
                 fields.append(str(x))

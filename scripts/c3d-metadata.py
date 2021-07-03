@@ -4,9 +4,14 @@
 
 from __future__ import print_function
 
-import c3d
 import argparse
 import sys
+try:
+    import c3d
+except ModuleNotFoundError:
+    import os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..\\'))
+    import c3d
 
 parser = argparse.ArgumentParser(description='Display C3D group and parameter information.')
 parser.add_argument('input', default='-', metavar='FILE', nargs='+',
@@ -15,9 +20,9 @@ parser.add_argument('input', default='-', metavar='FILE', nargs='+',
 
 def print_metadata(reader):
     print('Header information:\n{}'.format(reader.header))
-    for key, g in sorted(reader.group_items()):
+    for key, g in sorted(reader.items()):
         print('')
-        for key, p in sorted(g.param_items()):
+        for key, p in sorted(g.items()):
             print_param(g, p)
 
 
@@ -26,7 +31,7 @@ def print_param(g, p):
 
     if len(p.dimensions) == 0:
         val = None
-        width = len(p.bytes)
+        width = p.total_bytes
         if width == 2:
             val = p.int16_value
         elif width == 4:
@@ -51,7 +56,7 @@ def print_param(g, p):
         C, R = p.dimensions
         for r in range(R):
             print('{0.name}.{1.name}[{2}] = {3}'.format(
-                g, p, r, repr(p.bytes[r * C:(r+1) * C])))
+                g, p, r, repr(p.bytes_value[r * C:(r+1) * C])))
 
 
 def main(args):

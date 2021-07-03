@@ -1,8 +1,8 @@
 import numpy as np
 import warnings
-from src.header import Header
-from src.group import GroupData, GroupReadonly, Group
-from src.utils import is_integer, is_iterable
+from .header import Header
+from .group import GroupData, GroupReadonly, Group
+from .utils import is_integer, is_iterable
 
 
 class Manager(object):

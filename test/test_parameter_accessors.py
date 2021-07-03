@@ -2,7 +2,7 @@
 '''
 import unittest
 import c3d
-from src.group import Group
+from c3d.group import Group
 import numpy as np
 import test.verify as verify
 from test.zipload import Zipload

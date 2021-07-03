@@ -1,8 +1,8 @@
 import struct
 import unittest
 import numpy as np
-from src.dtypes import DataTypes, PROCESSOR_INTEL
-from src.parameter import ParamData, ParamReadonly
+from c3d.dtypes import DataTypes, PROCESSOR_INTEL
+from c3d.parameter import ParamData, ParamReadonly
 
 
 def genByteWordArr(word, shape):

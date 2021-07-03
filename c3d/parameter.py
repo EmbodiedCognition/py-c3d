@@ -262,7 +262,7 @@ class ParamReadonly(object):
     @property
     def bytes_value(self):
         '''Get the param as a raw byte string.'''
-        return self._data.bytes.copy()
+        return self._data.bytes
 
     @property
     def string_value(self):
