@@ -1,3 +1,5 @@
+''' Trailing utility functions.
+'''
 import numpy as np
 import struct
 

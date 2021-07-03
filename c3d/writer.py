@@ -40,7 +40,7 @@ class Writer(Manager):
                  point_rate=480.,
                  analog_rate=0.,
                  point_scale=-1.):
-        '''Set metadata for this writer.
+        '''Set minimal metadata for this writer.
 
         '''
         self._dtypes = DataTypes() # Only support INTEL format from writing
@@ -55,7 +55,7 @@ class Writer(Manager):
     @staticmethod
     def from_reader(reader, conversion=None):
         '''
-        source : 'class' Manager
+        source : `c3d.manager.Manager`
             Source to copy.
         conversion : str
             Conversion mode, None is equivalent to the default mode. Supported modes are:
@@ -216,7 +216,7 @@ class Writer(Manager):
         if sh[1] != 2:
             raise ValueError(
                 'Expected frame input to be sequence of point and analog pairs on form (-1, 2). ' +
-                '\Input was of shape {}.'.format(str(sh)))
+                'Input was of shape {}.'.format(str(sh)))
 
         if index is not None:
             self._frames[index:index] = frames
@@ -225,6 +225,32 @@ class Writer(Manager):
 
     @staticmethod
     def pack_labels(labels):
+        ''' Static method used to pack and pad the set of `labels` strings before
+            passing the output into a `c3d.group.Group.add_str`.
+
+        Parameters
+        ----------
+        labels : iterable
+            List of strings to pack and pad into a single string suitable for encoding in a Parameter entry.
+
+        Example
+        -------
+        >>> labels = ['RFT1', 'RFT2', 'RFT3', 'LFT1', 'LFT2', 'LFT3']
+        >>> param_str, label_max_size = Writer.pack_labels(labels)
+        >>> writer.point_group.add_str('LABELS',
+                                       'Point labels.',
+                                       label_str,
+                                       label_max_size,
+                                       len(labels))
+
+        Returns
+        -------
+        param_str : str
+            String containing `labels` packed into a single variable where
+            each string is padded to match the longest `labels` string.
+        label_max_size : int
+            Number of bytes associated with the longest `label` string, all strings are padded to this length.
+        '''
         labels = np.ravel(labels)
         # Get longest label name
         label_max_size = 0
@@ -319,8 +345,8 @@ class Writer(Manager):
         if len(Y) != 2:
             raise ValueError('Expected string literal to be a 2 character string for the Y_SCREEN parameter.')
         group = self.point_group
-        group.set_str('X_SCREEN', 'X_SCREEN parameter', X, 2)
-        group.set_str('Y_SCREEN', 'Y_SCREEN parameter', Y, 2)
+        group.set_str('X_SCREEN', 'X_SCREEN parameter', X)
+        group.set_str('Y_SCREEN', 'Y_SCREEN parameter', Y)
 
     def write(self, handle):
         '''Write metadata and point + analog frames to a file handle.
@@ -353,23 +379,23 @@ class Writer(Manager):
         group.set('FRAMES', 'Total frame count', 2, '<H', min(UINT16_MAX, nframes))
         if nframes >= UINT16_MAX:
             # Should be floating point
-            group.set('LONG_FRAMES', 'Total frame count', 4, '<f', np.float32(nframes))
+            group.set('LONG_FRAMES', 'Total frame count', 4, '<f', nframes)
         elif 'LONG_FRAMES' in group:
             # Docs states it should not exist if frame_count < 65535
             group.remove_param('LONG_FRAMES')
         group.set('DATA_START', 'First data block containing frame samples.', 2, '<H', 0)
-        group.set('SCALE', 'Point data scaling factor', 4, '<f', np.float32(self.point_scale))
-        group.set('RATE', 'Point data sample rate', 4, '<f', np.float32(self.point_rate))
+        group.set('SCALE', 'Point data scaling factor', 4, '<f', self.point_scale)
+        group.set('RATE', 'Point data sample rate', 4, '<f', self.point_rate)
         # Optional
         if 'UNITS' not in group:
-            group.add_str('UNITS', 'Units used for point data measurements.', 'mm', 2)
+            group.add_str('UNITS', 'Units used for point data measurements.', 'mm')
         if 'DESCRIPTIONS' not in group:
-            group.add_str('DESCRIPTIONS', 'Channel descriptions.', ' ' * ppf, 1, ppf)
+            group.add_str('DESCRIPTIONS', 'Channel descriptions.', '  ' * ppf, 2, ppf)
 
         # ANALOG group
         group = self.analog_group
         group.set('USED', 'Analog channel count', 2, '<H', apf)
-        group.set('RATE', 'Analog samples per second', 4, '<f', np.float32(self.analog_rate))
+        group.set('RATE', 'Analog samples per second', 4, '<f', self.analog_rate)
         if 'GEN_SCALE' not in group:
             self.set_analog_general_scale(1.0)
         # Optional
@@ -378,7 +404,7 @@ class Writer(Manager):
         if 'OFFSET' not in group:
             self.set_analog_offsets(None)
         if 'DESCRIPTIONS' not in group:
-            group.add_str('DESCRIPTIONS', 'Channel descriptions.', ' ' * apf, 1, apf)
+            group.add_str('DESCRIPTIONS', 'Channel descriptions.', '  ' * apf, 2, apf)
 
         # TRIAL group
         self.set_start_frame(first_frame)

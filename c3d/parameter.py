@@ -1,3 +1,5 @@
+''' Classes used to represent the concept of a parameter in a .c3d file.
+'''
 import struct
 import numpy as np
 from .utils import DEC_to_IEEE, DEC_to_IEEE_BYTES
@@ -18,7 +20,7 @@ class ParamData(object):
         string data (including arrays of strings), this should be -1.
     dimensions : list of int
         For array data, this describes the dimensions of the array, stored in
-        column-major order. For arrays of strings, the dimensions here will be
+        column-major (Fortran) order. For arrays of strings, the dimensions here will be
         the number of columns (length of each string) followed by the number of
         rows (number of strings).
     bytes : str
@@ -47,7 +49,7 @@ class ParamData(object):
         return '<Param: {}>'.format(self.desc)
 
     @property
-    def num_elements(self):
+    def num_elements(self) -> int:
         '''Return the number of elements in this parameter's array value.'''
         e = 1
         for d in self.dimensions:
@@ -55,12 +57,12 @@ class ParamData(object):
         return e
 
     @property
-    def total_bytes(self):
+    def total_bytes(self) -> int:
         '''Return the number of bytes used for storing this parameter's data.'''
         return self.num_elements * abs(self.bytes_per_element)
 
     @property
-    def binary_size(self):
+    def binary_size(self) -> int:
         '''Return the number of bytes needed to store this parameter.'''
         return (
             1 +  # group_id
@@ -146,6 +148,8 @@ class ParamData(object):
             return data
 
 class ParamReadonly(object):
+    ''' Wrapper exposing readonly attributes of a `c3d.parameter.ParamData` entry.
+    '''
 
     def __init__(self, data):
         self._data = data
@@ -154,40 +158,42 @@ class ParamReadonly(object):
         return self._data is other._data
 
     @property
-    def name(self):
-        ''' Name string. '''
+    def name(self) -> str:
+        ''' Get the parameter name. '''
         return self._data.name
 
     @property
-    def desc(self):
-        ''' Descriptor string. '''
+    def desc(self) -> str:
+        ''' Get the parameter descriptor. '''
         return self._data.desc
 
     @property
     def dtypes(self):
+        ''' Convenience accessor to the `c3d.dtypes.DataTypes` instance associated with the parameter. '''
         return self._data.dtypes
 
     @property
-    def dimensions(self):
+    def dimensions(self) -> (int, ...):
+        ''' Shape of the parameter data (Fortran shape). '''
         return self._data.dimensions
 
     @property
-    def num_elements(self):
+    def num_elements(self) -> int:
         '''Return the number of elements in this parameter's array value.'''
         return self._data.num_elements
 
     @property
-    def bytes_per_element(self):
+    def bytes_per_element(self) -> int:
         '''Return the number of bytes used to store each data element.'''
         return self._data.bytes_per_element
 
     @property
-    def total_bytes(self):
+    def total_bytes(self) -> int:
         '''Return the number of bytes used for storing this parameter's data.'''
         return self._data.total_bytes
 
     @property
-    def binary_size(self):
+    def binary_size(self) -> int:
         '''Return the number of bytes needed to store this parameter.'''
         return self._data.binary_size
 
@@ -223,8 +229,7 @@ class ParamReadonly(object):
 
     @property
     def uint_value(self):
-        ''' Get the param as a unsigned integer of appropriate type.
-        '''
+        ''' Get the param as a unsigned integer of appropriate type. '''
         if self.total_bytes >= 4:
             return self.uint32_value
         elif self.total_bytes >= 2:
@@ -234,8 +239,7 @@ class ParamReadonly(object):
 
     @property
     def int_value(self):
-        ''' Get the param as a signed integer of appropriate type.
-        '''
+        ''' Get the param as a signed integer of appropriate type. '''
         if self.total_bytes >= 4:
             return self.int32_value
         elif self.total_bytes >= 2:
@@ -428,19 +432,20 @@ class ParamReadonly(object):
             return self.uint8_value
 
 class Param(ParamReadonly):
+    ''' Wrapper exposing both readable and writable attributes of a `c3d.parameter.ParamData` entry.
+    '''
     def __init__(self, data):
         super(Param, self).__init__(data)
 
     def readonly(self):
-        ''' Readonly '''
+        ''' Returns a readonly `c3d.parameter.ParamReadonly` instance. '''
         return ParamReadonly(self._data)
 
     @property
-    def bytes(self):
-        ''' Raw access to parameter bytes. '''
+    def bytes(self) -> bytes:
+        ''' Get or set the parameter bytes. '''
         return self._data.bytes
 
     @bytes.setter
     def bytes(self, value):
-        ''' Set parameter bytes. '''
         self._data.bytes = value

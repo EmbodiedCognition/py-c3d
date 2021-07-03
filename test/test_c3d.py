@@ -126,8 +126,15 @@ class WriterTest(Base):
         w.set_screen_axis(X, Y)
         X_v, Y_v = w.get_screen_axis()
         assert X_v == X and Y == Y_v, 'Mismatch between set & get screen axis.'
-
         assert np.all(np.equal(r.point_labels, w.point_labels)), 'Expected labels to be equal.'
+
+        test_name = 'TEST_PARAM'
+        test_string = 'lorem ipsum'
+        w.point_group.add_str(test_name, 'void descriptor', test_string)
+
+        assert w.point_group.get(test_name).total_bytes == len(test_string), \
+               "Mismatch in number of bytes encoded by 'Group.add_str'"
+
 
         w.write(h)
 

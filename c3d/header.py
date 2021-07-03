@@ -1,3 +1,6 @@
+'''
+Defines the header class used for reading, writing and tracking the metadata in the header of a .c3d file.
+'''
 import sys
 import struct
 import numpy as np

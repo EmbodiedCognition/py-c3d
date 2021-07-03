@@ -36,9 +36,8 @@ class Reader(Manager):
 
         Raises
         ------
-        ValueError
-            If the processor metadata in the C3D file is anything other than 84
-            (Intel format).
+        AssertionError
+            If the metadata in the C3D file is inconsistent.
         '''
         super(Reader, self).__init__(Header(handle))
 
@@ -276,14 +275,15 @@ class Reader(Manager):
                 self._handle.tell() - final_byte_index))
 
     @property
-    def proc_type(self):
+    def proc_type(self) -> int:
         '''Get the processory type associated with the data format in the file.
         '''
         return self._dtypes.proc_type
 
     def to_writer(self, conversion=None):
-        ''' Convert to 'Writer' using the conversion mode.
-            See Writer.from_reader() for supported conversion modes and possible exceptions.
+        ''' Converts the reader to a `c3d.writer.Writer` instance using the conversion mode.
+
+        See `c3d.writer.Writer.from_reader()` for supported conversion modes.
         '''
         from .writer import Writer
         return Writer.from_reader(self, conversion=conversion)
@@ -304,7 +304,7 @@ class Reader(Manager):
 
         Returns
         -------
-        value : :class:`GroupReadonly` or :class:`Param`
+        value : `c3d.group.GroupReadonly` or `c3d.parameter.ParamReadonly`
             Either a group or parameter with the specified name(s). If neither
             is found, returns the default value.
         '''
@@ -314,31 +314,16 @@ class Reader(Manager):
         return default
 
     def items(self):
-        ''' Acquire iterable over parameter group pairs.
-
-        Returns
-        -------
-        items : Touple of ((str, :class:`GroupReadonly`), ...)
-            Python touple containing pairs of name keys and parameter group entries.
+        ''' Get iterable over pairs of (str, `c3d.group.GroupReadonly`) entries.
         '''
         return ((k, v.readonly()) for k, v in super(Reader, self).items())
 
     def values(self):
-        ''' Acquire iterable over parameter group entries.
-
-        Returns
-        -------
-        values : Touple of (:class:`GroupReadonly`, ...)
-            Python touple containing unique parameter group entries.
+        ''' Get iterable over `c3d.group.GroupReadonly` entries.
         '''
         return (v.readonly() for k, v in super(Reader, self).items())
 
     def listed(self):
-        ''' Acquire iterable over parameter group entries.
-
-        Returns
-        -------
-        items : Touple of ((int, :class:`GroupReadonly`), ...)
-            Python touple containing unique parameter group entries.
+        ''' Get iterable over pairs of (int, `c3d.group.GroupReadonly`) entries.
         '''
         return ((k, v.readonly()) for k, v in super(Reader, self).listed())

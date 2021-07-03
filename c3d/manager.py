@@ -1,3 +1,5 @@
+''' Defines the base class containing common attributes for both the Reader and Writer instances.
+'''
 import numpy as np
 import warnings
 from .header import Header
@@ -14,7 +16,7 @@ class Manager(object):
 
     Attributes
     ----------
-    header : `Header`
+    header : `c3d.header.Header`
         Header information for the C3D file.
     '''
 
@@ -27,42 +29,22 @@ class Manager(object):
         return key in self._groups
 
     def items(self):
-        ''' Acquire iterable over parameter group pairs.
-
-        Returns
-        -------
-        items : Touple of ((str, :class:`Group`), ...)
-            Python touple containing pairs of name keys and parameter group entries.
+        ''' Get iterable over pairs of (str, `c3d.group.Group`) entries.
         '''
         return ((k, v) for k, v in self._groups.items() if isinstance(k, str))
 
     def values(self):
-        ''' Acquire iterable over parameter group entries.
-
-        Returns
-        -------
-        values : Touple of (:class:`Group`, ...)
-            Python touple containing unique parameter group entries.
+        ''' Get iterable over `c3d.group.Group` entries.
         '''
         return (v for k, v in self._groups.items() if isinstance(k, str))
 
     def keys(self):
-        ''' Acquire iterable over parameter group entry string keys.
-
-        Returns
-        -------
-        keys : Touple of (str, ...)
-            Python touple containing keys for the parameter group entries.
+        ''' Get iterable over parameter name keys.
         '''
         return (k for k in self._groups.keys() if isinstance(k, str))
 
     def listed(self):
-        ''' Acquire iterable over sorted numerical parameter group pairs.
-
-        Returns
-        -------
-        items : Touple of ((int, :class:`Group`), ...)
-            Sorted python touple containing pairs of numerical keys and parameter group entries.
+        ''' Get iterable over pairs of (int, `c3d.group.Group`) entries.
         '''
         return sorted((i, g) for i, g in self._groups.items() if isinstance(i, int))
 
@@ -110,7 +92,6 @@ class Manager(object):
             if self._header.data_block != start:
                 warnings.warn('inconsistent data block! {} header != {} POINT:DATA_START'.format(
                     self._header.data_block, start))
-                raise RuntimeError()
         except AttributeError:
             warnings.warn('''no pointer available in POINT:DATA_START indicating the start of the data block, using
                              header pointer as fallback''')
@@ -239,7 +220,7 @@ class Manager(object):
 
         Returns
         -------
-        value : :class:`Group` or :class:`Param`
+        value : `c3d.group.Group` or `c3d.parameter.Param`
             Either a group or parameter with the specified name(s). If neither
             is found, returns the default value.
         '''
@@ -262,17 +243,17 @@ class Manager(object):
         return group
 
     @property
-    def header(self):
+    def header(self) -> '`c3d.header.Header`':
         ''' Access to .c3d header data. '''
         return self._header
 
-    def parameter_blocks(self):
+    def parameter_blocks(self) -> int:
         '''Compute the size (in 512B blocks) of the parameter section.'''
         bytes = 4. + sum(g._data.binary_size for g in self._groups.values())
         return int(np.ceil(bytes / 512))
 
     @property
-    def point_rate(self):
+    def point_rate(self) -> float:
         ''' Number of sampled 3D coordinates per second. '''
         try:
             return self.get_float('POINT:RATE')
@@ -280,7 +261,7 @@ class Manager(object):
             return self.header.frame_rate
 
     @property
-    def point_scale(self):
+    def point_scale(self) -> float:
         ''' Scaling applied to non-float data. '''
         try:
             return self.get_float('POINT:SCALE')
@@ -288,7 +269,7 @@ class Manager(object):
             return self.header.scale_factor
 
     @property
-    def point_used(self):
+    def point_used(self) -> int:
         ''' Number of sampled 3D point coordinates per frame. '''
         try:
             return self.get_uint16('POINT:USED')
@@ -296,7 +277,7 @@ class Manager(object):
             return self.header.point_count
 
     @property
-    def analog_used(self):
+    def analog_used(self) -> int:
         ''' Number of analog measurements, or channels, for each analog data sample. '''
         try:
             return self.get_uint16('ANALOG:USED')
@@ -307,7 +288,7 @@ class Manager(object):
             return 0
 
     @property
-    def analog_rate(self):
+    def analog_rate(self) -> float:
         '''  Number of analog data samples per second. '''
         try:
             return self.get_float('ANALOG:RATE')
@@ -315,33 +296,33 @@ class Manager(object):
             return self.header.analog_per_frame * self.point_rate
 
     @property
-    def analog_per_frame(self):
+    def analog_per_frame(self) -> int:
         '''  Number of analog frames per 3D frame (point sample). '''
         return int(self.analog_rate / self.point_rate)
 
     @property
-    def analog_sample_count(self):
+    def analog_sample_count(self) -> int:
         ''' Number of analog samples per channel. '''
         has_analog = self.analog_used > 0
         return int(self.frame_count * self.analog_per_frame) * has_analog
 
     @property
-    def point_labels(self):
+    def point_labels(self) -> list:
         ''' Labels for each POINT data channel. '''
         return self.get('POINT:LABELS').string_array
 
     @property
-    def analog_labels(self):
+    def analog_labels(self) -> list:
         ''' Labels for each ANALOG data channel. '''
         return self.get('ANALOG:LABELS').string_array
 
     @property
-    def frame_count(self):
+    def frame_count(self) -> int:
         ''' Number of frames recorded in the data. '''
         return self.last_frame - self.first_frame + 1  # Add 1 since range is inclusive [first, last]
 
     @property
-    def first_frame(self):
+    def first_frame(self) -> int:
         ''' Trial frame corresponding to the first frame recorded in the data. '''
         # Start frame seems to be less of an issue to determine.
         # this is a hack for phasespace files ... should put it in a subclass.
@@ -353,7 +334,7 @@ class Manager(object):
         return self.header.first_frame
 
     @property
-    def last_frame(self):
+    def last_frame(self) -> int:
         ''' Trial frame corresponding to the last frame recorded in the data (inclusive). '''
         # Number of frames can be represented in many formats, first check if valid header values
         if self.header.first_frame < self.header.last_frame and self.header.last_frame != 65535:
@@ -386,7 +367,7 @@ class Manager(object):
 
         Returns
         -------
-        value : Touple on form (str, str) or None
+        value : (str, str) or None
             Touple containing X_SCREEN and Y_SCREEN strings, or None if no parameters could be found.
         '''
         X = self.get('POINT:X_SCREEN')

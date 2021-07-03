@@ -1,3 +1,7 @@
+'''
+State object defining the data types associated with a given .c3d processor format.
+'''
+
 import sys
 import codecs
 import numpy as np
@@ -7,7 +11,7 @@ PROCESSOR_DEC = 85
 PROCESSOR_MIPS = 86
 
 class DataTypes(object):
-    ''' Container defining different data types used for reading file data.
+    ''' Container defining the data types used when parsing byte data.
         Data types depend on the processor format the file is stored in.
     '''
     def __init__(self, proc_type=PROCESSOR_INTEL):
@@ -44,55 +48,55 @@ class DataTypes(object):
             self.int64 = np.int64
 
     @property
-    def is_ieee(self):
+    def is_ieee(self) -> bool:
         ''' True if the associated file is in the Intel format.
         '''
         return self._proc_type == PROCESSOR_INTEL
 
     @property
-    def is_dec(self):
+    def is_dec(self) -> bool:
         ''' True if the associated file is in the DEC format.
         '''
         return self._proc_type == PROCESSOR_DEC
 
     @property
-    def is_mips(self):
+    def is_mips(self) -> bool:
         ''' True if the associated file is in the SGI/MIPS format.
         '''
         return self._proc_type == PROCESSOR_MIPS
 
     @property
-    def proc_type(self):
+    def proc_type(self) -> str:
         ''' Get the processory type associated with the data format in the file.
         '''
         processor_type = ['INTEL', 'DEC', 'MIPS']
         return processor_type[self._proc_type - PROCESSOR_INTEL]
 
     @property
-    def processor(self):
+    def processor(self) -> int:
         ''' Get the processor number encoded in the .c3d file.
         '''
         return self._proc_type
 
     @property
-    def native(self):
+    def native(self) -> bool:
         ''' True if the native (system) byte order matches the file byte order.
         '''
         return self._native
 
     @property
-    def little_endian_sys(self):
+    def little_endian_sys(self) -> bool:
         ''' True if native byte order is little-endian.
         '''
         return self._little_endian_sys
 
     @property
-    def big_endian_sys(self):
+    def big_endian_sys(self) -> bool:
         ''' True if native byte order is big-endian.
         '''
         return not self._little_endian_sys
 
-    def decode_string(self, bytes):
+    def decode_string(self, bytes) -> str:
         ''' Decode a byte array to a string.
         '''
         # Attempt to decode using different decoders
