@@ -1,4 +1,4 @@
-''' Defines the base class containing common attributes for both the Reader and Writer instances.
+''' Manager base class defining common attributes for both the Reader and Writer instances.
 '''
 import numpy as np
 import warnings

@@ -1,5 +1,5 @@
 '''
-Defines the header class used for reading, writing and tracking the metadata in the header of a .c3d file.
+Defines the header class used for reading, writing and tracking metadata in the .c3d header.
 '''
 import sys
 import struct
