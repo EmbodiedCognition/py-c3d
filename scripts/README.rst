@@ -20,13 +20,13 @@ Invoke as::
 
     c3d2csv.py 'path-to-c3d-file' -options
 
-Commandline options
+Commandline options ::
 
     -r : Output column with residual values after point x,y,z coordinate columns.
     -c : Output column with camera counts as the last point coordinate column.
     -a : Output analog channel values after point coordinates.
-    -e <end-line>: Endline string appended after each record (defaults to '\n').
-    -s <separator>: Separator string inserted between records (defaults to ',').
+    -e <end-line> : Endline string appended after each record (defaults to '\n').
+    -s <separator> : Separator string inserted between records (defaults to ',').
 
 
 NPZ converter
