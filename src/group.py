@@ -356,7 +356,7 @@ class Group(GroupReadonly):
         self._data.rename_param(name, new_name)
 
     #
-    #   Add decorator functions (throws on overwrite)
+    #   Add convenience functions (throws on overwrite)
     #
     def add(self, name, desc, bpe, format, data, *dimensions):
         ''' Add a parameter with 'data' package formated in accordance with 'format'.
@@ -409,7 +409,7 @@ class Group(GroupReadonly):
                        bytes_per_element=bpe, dimensions=[0])
 
     #
-    #   Set decorator functions (overwrite)
+    #   Set convenience functions (overwrite)
     #
     def set(self, name, *args, **kwargs):
         ''' Add or overwrite a parameter with 'bytes' package formated in accordance with 'format'.

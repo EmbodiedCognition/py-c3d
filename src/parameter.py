@@ -222,12 +222,42 @@ class ParamReadonly(object):
         return self._data._as(self.dtypes.uint32)
 
     @property
+    def uint_value(self):
+        ''' Get the param as a unsigned integer of appropriate type.
+        '''
+        if self.total_bytes >= 4:
+            return self.uint32_value
+        elif self.total_bytes >= 2:
+            return self.uint16_value
+        else:
+            return self.uint8_value
+
+    @property
+    def int_value(self):
+        ''' Get the param as a signed integer of appropriate type.
+        '''
+        if self.total_bytes >= 4:
+            return self.int32_value
+        elif self.total_bytes >= 2:
+            return self.int16_value
+        else:
+            return self.int8_value
+
+    @property
     def float_value(self):
-        '''Get the param as a 32-bit float.'''
-        if self.dtypes.is_dec:
-            return DEC_to_IEEE(self._data._as(np.uint32))
-        else:  # is_mips or is_ieee
-            return self._data._as(self.dtypes.float32)
+        '''Get the param as a floating point value of appropriate type.'''
+        if self.total_bytes > 4:
+            if self.dtypes.is_dec:
+                raise AttributeError("64 bit DEC floating point is not supported.")
+            # 64-bit floating point is not a standard
+            return self._data._as(self.dtypes.float64)
+        elif self.total_bytes == 4:
+            if self.dtypes.is_dec:
+                return DEC_to_IEEE(self._data._as(np.uint32))
+            else:  # is_mips or is_ieee
+                return self._data._as(self.dtypes.float32)
+        else:
+            raise AttributeError("Only 32 and 64 bit floating point is supported.")
 
     @property
     def bytes_value(self):
@@ -382,11 +412,9 @@ class ParamReadonly(object):
             return byte_arr
 
     @property
-    def _as_integer_value(self):
+    def _as_integer_or_float_value(self):
         ''' Get the param as either 32 bit float or unsigned integer.
             Evaluates if an integer is stored as a floating point representation.
-
-            Note: This is implemented purely for parsing start/end frames.
         '''
         if self.total_bytes >= 4:
             # Check if float value representation is an integer
