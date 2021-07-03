@@ -64,7 +64,7 @@ class GroupSample():
         for i, (n, g), (n2, g2) in zip(enumerator, sorted(self.s_grp_items), sorted(self.group_items)):
             assert n == n2, 'Group numeric id missmatch after changes for entry %i. ' % i +\
                             'Initially %i, after change entry was %i' % (n, n2)
-            assert g._data == g2._data, 'Group listed order changed for entry %i.' % i
+            assert g == g2, 'Group listed order changed for entry %i.' % i
 
     def assert_group_list(self):
         '''Assert all numerical (int, Group) pairs persisted after change.'''
@@ -72,7 +72,7 @@ class GroupSample():
         for i, (n, g), (n2, g2) in zip(enumerator, self.s_grp_list, self.group_listed):
             assert n == n2, 'Group string id missmatch after changes for entry %i. ' % i +\
                             'Initially %i, after change entry was %i' % (n, n2)
-            assert g._data == g2._data, 'Group listed order changed for entry %i.' % i
+            assert g == g2, 'Group listed order changed for entry %i.' % i
 
     def verify_add_group(self, N):
         '''Add N groups and verify count at each iteration.'''
@@ -184,7 +184,7 @@ class TestGroupAccessors(Base):
             grp2 = writer.get(test_name)
 
             assert grp2 is not None, "Rename failed, group with name '%s' does not exist."
-            assert grp._data == grp2._data, 'Rename failed, group acquired from new name is not identical.'
+            assert grp == grp2, 'Rename failed, group acquired from new name is not identical.'
 
         ref.assert_entry_count()
         ref.assert_group_list()
@@ -212,7 +212,7 @@ class TestGroupAccessors(Base):
             grp2 = writer.get(test_num)
 
             assert grp2 is not None, "Rename failed, group with name '%s' does not exist."
-            assert grp._data == grp2._data, 'Rename failed, group acquired from new name is not identical.'
+            assert grp == grp2, 'Rename failed, group acquired from new name is not identical.'
 
         ref.assert_entry_count()
         ref.assert_group_items()

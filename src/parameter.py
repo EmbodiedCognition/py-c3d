@@ -150,6 +150,9 @@ class ParamReadonly(object):
     def __init__(self, data):
         self._data = data
 
+    def __eq__(self, other):
+        return self._data is other._data
+
     @property
     def name(self):
         ''' Name string. '''
@@ -395,10 +398,10 @@ class ParamReadonly(object):
             return self.uint16_value
         else:
             return self.uint8_value
-            
-class ParamWritable(ParamReadonly):
+
+class Param(ParamReadonly):
     def __init__(self, data):
-        super(ParamWritable, self).__init__(data)
+        super(Param, self).__init__(data)
 
     def readonly(self):
         ''' Readonly '''

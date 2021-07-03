@@ -1,6 +1,6 @@
 import struct
 import numpy as np
-from .parameter import ParamData, ParamReadonly, ParamWritable
+from .parameter import ParamData, Param
 from .utils import Decorator
 
 class GroupData(object):
@@ -85,7 +85,7 @@ class GroupData(object):
         name = name.upper()
         if name in self._params:
             raise KeyError('Parameter already exists with key {}'.format(name))
-        self._params[name] = ParamData(name, self._dtypes, **kwargs)
+        self._params[name] = Param(ParamData(name, self._dtypes, **kwargs))
 
     def remove_param(self, name):
         '''Remove the specified parameter.
@@ -102,7 +102,7 @@ class GroupData(object):
 
         Parameters
         ----------
-        name : str, or 'ParamData'
+        name : str, or 'Param'
             Parameter instance, or name.
         new_name : str
             New name for the parameter.
@@ -116,14 +116,12 @@ class GroupData(object):
         '''
         if new_name in self._params:
             raise ValueError("Key {} already exist.".format(new_name))
-        if isinstance(name, ParamData):
+        if isinstance(name, Param):
             param = name
             name = param.name
         else:
             # Aquire instance using id
-            param = self._params.get(name, None)
-            if param is None:
-                raise KeyError('No parameter found matching the identifier: {}'.format(str(name)))
+            param = self._params[name]
         del self._params[name]
         self._params[new_name] = param
 
@@ -145,7 +143,7 @@ class GroupData(object):
         handle.write(struct.pack('B', len(desc)))
         handle.write(desc)
         for param in self._params.values():
-            param.write(group_id, handle)
+            param._data.write(group_id, handle)
 
 class GroupReadonly(object):
     ''' Handle exposing readable attributes of a GroupData entry.
@@ -155,6 +153,9 @@ class GroupReadonly(object):
 
     def __contains__(self, key):
         return key in self._data._params
+
+    def __eq__(self, other):
+        return self._data is other._data
 
     @property
     def name(self):
@@ -168,11 +169,11 @@ class GroupReadonly(object):
 
     def items(self):
         ''' Acquire iterator for paramater key-entry pairs. '''
-        return ((k, ParamReadonly(v)) for k, v in self._data._params.items())
+        return ((k, v.readonly()) for k, v in self._data._params.items())
 
     def values(self):
         ''' Acquire iterator for parameter entries. '''
-        return (ParamReadonly(v) for v in self._data._params.values())
+        return (v.readonly() for v in self._data._params.values())
 
     def keys(self):
         ''' Acquire iterator for parameter entry keys. '''
@@ -193,9 +194,9 @@ class GroupReadonly(object):
         param : :class:`ParamReadable`
             A parameter from the current group.
         '''
-        val = self._data._params.get(key)
+        val = self._data._params.get(key, default)
         if val:
-            return ParamReadonly(val)
+            return val.readonly()
         return default
 
     def get_int8(self, key):
@@ -234,13 +235,13 @@ class GroupReadonly(object):
         '''Get the value of the given parameter as a string.'''
         return self._data[key.upper()].string_value
 
-class GroupWritable(GroupReadonly):
+class Group(GroupReadonly):
     ''' Handle exposing readable and writeable attributes of a GroupData entry.
 
      Group instance decorator providing convenience functions for Writer editing.
     '''
     def __init__(self, data):
-        super(GroupWritable, self).__init__(data)
+        super(Group, self).__init__(data)
 
     def readonly(self):
         ''' Make access readonly. '''
@@ -280,11 +281,11 @@ class GroupWritable(GroupReadonly):
 
     def items(self):
         ''' Acquire iterator for paramater key-entry pairs. '''
-        return ((k, ParamWritable(v)) for k, v in self._data._params.items())
+        return ((k, v) for k, v in self._data._params.items())
 
     def values(self):
         ''' Acquire iterator for parameter entries. '''
-        return (ParamWritable(v) for v in self._data._params.values())
+        return (v for v in self._data._params.values())
 
     def get(self, key, default=None):
         '''Get a parameter by key.
@@ -301,10 +302,7 @@ class GroupWritable(GroupReadonly):
         param : :class:`ParamReadable`
             A parameter from the current group.
         '''
-        val = self._data._params.get(key)
-        if val:
-            return ParamWritable(val)
-        return default
+        return self._data._params.get(key, default)
     #
     #  Forward param editing
     #
@@ -343,7 +341,7 @@ class GroupWritable(GroupReadonly):
 
         Parameters
         ----------
-        name : str, or 'ParamData'
+        name : str, or 'Param'
             Parameter instance, or name.
         new_name : str
             New name for the parameter.

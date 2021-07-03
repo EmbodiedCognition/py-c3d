@@ -2,7 +2,7 @@
 '''
 import unittest
 import c3d
-from src.group import GroupReadonly, GroupWritable
+from src.group import Group
 import numpy as np
 import test.verify as verify
 from test.zipload import Zipload
@@ -17,8 +17,8 @@ def add_dummy_param(group, name='TEST_NAME', shape=(10, 2), flt_range=(-1e6, 1e6
 class ParamSample():
     ''' Helper object to verify parameter entries persist or terminate properly. '''
     def __init__(self, group):
-        assert isinstance(group, GroupWritable), \
-            'Must pass GroupWritable to ParamSample instance, was %s' % type(group)
+        assert isinstance(group, Group), \
+            'Must pass Group to ParamSample instance, was %s' % type(group)
         self.group = group
         self.sample()
 
@@ -56,7 +56,7 @@ class ParamSample():
             if n == ignore:
                 continue
             g2 = self.group.get(n)
-            assert g._data == g2._data, 'Group listed order changed for entry %i.' % i
+            assert g == g2, 'Group listed order changed for entry %i.' % i
 
     def verify_add_parameter(self, N):
         '''Add N parameters and verify count at each iteration.'''
@@ -142,7 +142,7 @@ class TestParameterAccessors(Base):
                 g.rename_param(key, nname)
                 prm2 = g.get(nname)
                 assert prm2 is not None, "Rename failed, renamed param does not exist."
-                assert prm._data == prm2._data, 'Rename failed, param acquired from new name is not identical.'
+                assert prm == prm2, 'Rename failed, param acquired from new name is not identical.'
 
             ref.assert_entry_count()
             try:

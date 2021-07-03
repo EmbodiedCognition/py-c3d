@@ -1,7 +1,7 @@
 import numpy as np
 import warnings
 from src.header import Header
-from src.group import GroupData, GroupReadonly, GroupWritable
+from src.group import GroupData, GroupReadonly, Group
 from src.utils import is_integer, is_iterable
 
 
@@ -34,7 +34,7 @@ class Manager(object):
         items : Touple of ((str, :class:`Group`), ...)
             Python touple containing pairs of name keys and parameter group entries.
         '''
-        return ((k, GroupWritable(v)) for k, v in self._groups.items() if isinstance(k, str))
+        return ((k, v) for k, v in self._groups.items() if isinstance(k, str))
 
     def values(self):
         ''' Acquire iterable over parameter group entries.
@@ -44,7 +44,7 @@ class Manager(object):
         values : Touple of (:class:`Group`, ...)
             Python touple containing unique parameter group entries.
         '''
-        return (GroupWritable(v) for k, v in self._groups.items() if isinstance(k, str))
+        return (v for k, v in self._groups.items() if isinstance(k, str))
 
     def keys(self):
         ''' Acquire iterable over parameter group entry string keys.
@@ -64,7 +64,7 @@ class Manager(object):
         items : Touple of ((int, :class:`Group`), ...)
             Sorted python touple containing pairs of numerical keys and parameter group entries.
         '''
-        return sorted((i, GroupWritable(g)) for i, g in self._groups.items() if isinstance(i, int))
+        return sorted((i, g) for i, g in self._groups.items() if isinstance(i, int))
 
     def _check_metadata(self):
         ''' Ensure that the metadata in our file is self-consistent. '''
@@ -117,7 +117,7 @@ class Manager(object):
 
         def check_parameters(params):
             for name in params:
-                if self._get(name) is None:
+                if self.get(name) is None:
                     warnings.warn('missing parameter {}'.format(name))
 
         if self.point_used > 0:
@@ -129,7 +129,7 @@ class Manager(object):
         else:
             warnings.warn('No analog data found in file.')
 
-    def _add_group(self, group_id, name, desc):
+    def _add_group(self, group_id, name=None, desc=None):
         '''Add a new parameter group.
 
         Parameters
@@ -155,15 +155,17 @@ class Manager(object):
         '''
         if not is_integer(group_id):
             raise TypeError('Expected Group numerical key to be integer, was %s.' % type(group_id))
-        if not (isinstance(name, str) or name is None):
-            raise TypeError('Expected Group name key to be string, was %s.' % type(name))
+        if not isinstance(name, str):
+            if name is not None:
+                raise TypeError('Expected Group name key to be string, was %s.' % type(name))
+        else:
+            name = name.upper()
         group_id = int(group_id) # Asserts python int
         if group_id in self._groups:
             raise KeyError('Group with numerical key {} already exists'.format(group_id))
-        name = name.upper()
         if name in self._groups:
             raise KeyError('No group matched name key {}'.format(name))
-        group = self._groups[name] = self._groups[group_id] = GroupData(self._dtypes, name, desc)
+        group = self._groups[name] = self._groups[group_id] = Group(GroupData(self._dtypes, name, desc))
         return group
 
     def _remove_group(self, group_id):
@@ -221,7 +223,7 @@ class Manager(object):
         # Update
         self._groups[new_group_id] = grp
 
-    def _get(self, group, default=None):
+    def get(self, group, default=None):
         '''Get a group or parameter.
 
         Parameters
@@ -245,7 +247,7 @@ class Manager(object):
             group = self._groups.get(int(group))
             if group is None:
                 return default
-            return GroupWritable(group)
+            return group
         group = group.upper()
         param = None
         if '.' in group:
@@ -254,7 +256,7 @@ class Manager(object):
             group, param = group.split(':', 1)
         if group not in self._groups:
             return default
-        group = GroupWritable(self._groups[group])
+        group = self._groups[group]
         if param is not None:
             return group.get(param, default)
         return group
@@ -266,7 +268,7 @@ class Manager(object):
 
     def parameter_blocks(self):
         '''Compute the size (in 512B blocks) of the parameter section.'''
-        bytes = 4. + sum(g.binary_size for g in self._groups.values())
+        bytes = 4. + sum(g._data.binary_size for g in self._groups.values())
         return int(np.ceil(bytes / 512))
 
     @property
@@ -326,7 +328,7 @@ class Manager(object):
     @property
     def point_labels(self):
         ''' Labels for each POINT data channel. '''
-        return self._get('POINT:LABELS').string_array
+        return self.get('POINT:LABELS').string_array
 
     @property
     def analog_labels(self):
@@ -343,7 +345,7 @@ class Manager(object):
         ''' Trial frame corresponding to the first frame recorded in the data. '''
         # Start frame seems to be less of an issue to determine.
         # this is a hack for phasespace files ... should put it in a subclass.
-        param = self._get('TRIAL:ACTUAL_START_FIELD')
+        param = self.get('TRIAL:ACTUAL_START_FIELD')
         if param is not None:
             # ACTUAL_START_FIELD is encoded in two 16 byte words...
             words = param.uint16_array
@@ -359,17 +361,17 @@ class Manager(object):
 
         # Check different parameter options where the frame can be encoded
         end_frame = [self.header.last_frame, 0.0, 0.0, 0.0]
-        param = self._get('TRIAL:ACTUAL_END_FIELD')
+        param = self.get('TRIAL:ACTUAL_END_FIELD')
         if param is not None:
             # Encoded as 2 16 bit words (rather then 1 32 bit word)
             words = param.uint16_array
             end_frame[1] = words[0] + words[1] * 65536
             #end_frame[1] = param.uint32_value
-        param = self._get('POINT:LONG_FRAMES')
+        param = self.get('POINT:LONG_FRAMES')
         if param is not None:
             # Encoded as float
             end_frame[2] = int(param.float_value)
-        param = self._get('POINT:FRAMES')
+        param = self.get('POINT:FRAMES')
         if param is not None:
             # Can be encoded either as 32 bit float or 16 bit uint
             if param.bytes_per_element == 2:
@@ -387,8 +389,8 @@ class Manager(object):
         value : Touple on form (str, str) or None
             Touple containing X_SCREEN and Y_SCREEN strings, or None if no parameters could be found.
         '''
-        X = self._get('POINT:X_SCREEN')
-        Y = self._get('POINT:Y_SCREEN')
+        X = self.get('POINT:X_SCREEN')
+        Y = self.get('POINT:Y_SCREEN')
         if X and Y:
             return (X.string_value, Y.string_value)
         return None
@@ -397,17 +399,17 @@ class Manager(object):
         ''' Parse analog data transform parameters. '''
         # Offsets
         analog_offsets = np.zeros((self.analog_used), int)
-        param = self._get('ANALOG:OFFSET')
+        param = self.get('ANALOG:OFFSET')
         if param is not None and param.num_elements > 0:
             analog_offsets[:] = param.int16_array[:self.analog_used]
 
         # Scale factors
         analog_scales = np.ones((self.analog_used), float)
         gen_scale = 1.
-        param = self._get('ANALOG:GEN_SCALE')
+        param = self.get('ANALOG:GEN_SCALE')
         if param is not None:
             gen_scale = param.float_value
-        param = self._get('ANALOG:SCALE')
+        param = self.get('ANALOG:SCALE')
         if param is not None and param.num_elements > 0:
             analog_scales[:] = param.float_array[:self.analog_used]
 
@@ -424,36 +426,36 @@ class Manager(object):
 
     def get_int8(self, key):
         '''Get a parameter value as an 8-bit signed integer.'''
-        return self._get(key).int8_value
+        return self.get(key).int8_value
 
     def get_uint8(self, key):
         '''Get a parameter value as an 8-bit unsigned integer.'''
-        return self._get(key).uint8_value
+        return self.get(key).uint8_value
 
     def get_int16(self, key):
         '''Get a parameter value as a 16-bit signed integer.'''
-        return self._get(key).int16_value
+        return self.get(key).int16_value
 
     def get_uint16(self, key):
         '''Get a parameter value as a 16-bit unsigned integer.'''
-        return self._get(key).uint16_value
+        return self.get(key).uint16_value
 
     def get_int32(self, key):
         '''Get a parameter value as a 32-bit signed integer.'''
-        return self._get(key).int32_value
+        return self.get(key).int32_value
 
     def get_uint32(self, key):
         '''Get a parameter value as a 32-bit unsigned integer.'''
-        return self._get(key).uint32_value
+        return self.get(key).uint32_value
 
     def get_float(self, key):
         '''Get a parameter value as a 32-bit float.'''
-        return self._get(key).float_value
+        return self.get(key).float_value
 
     def get_bytes(self, key):
         '''Get a parameter value as a byte string.'''
-        return self._get(key).bytes_value
+        return self.get(key).bytes_value
 
     def get_string(self, key):
         '''Get a parameter value as a string.'''
-        return self._get(key).string_value
+        return self.get(key).string_value

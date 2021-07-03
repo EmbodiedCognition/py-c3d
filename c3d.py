@@ -9,7 +9,6 @@ import struct
 import warnings
 from src.manager import Manager
 from src.header import Header
-from src.group import GroupData, GroupWritable, GroupReadonly
 from src.dtypes import DataTypes
 from src.utils import is_integer, is_iterable, DEC_to_IEEE_BYTES
 
@@ -87,7 +86,9 @@ class Reader(Manager):
             if group_id > 0:
                 # We've just started reading a parameter. If its group doesn't
                 # exist, create a blank one. add the parameter to the group.
-                group = self._groups.setdefault(group_id, GroupData(self._dtypes))
+                group = super(Reader, self).get(group_id)
+                if group is None:
+                    group = self._add_group(group_id)
                 group.add_param(name, handle=buf)
             else:
                 # We've just started reading a group. If a group with the
@@ -97,7 +98,7 @@ class Reader(Manager):
                 group_id = abs(group_id)
                 size, = struct.unpack('B', buf.read(1))
                 desc = size and buf.read(size) or ''
-                group = self._get(group_id)
+                group = super(Reader, self).get(group_id)
                 if group is not None:
                     self._rename_group(group, name)  # Inserts name key
                     group.desc = desc
@@ -309,30 +310,40 @@ class Reader(Manager):
             Either a group or parameter with the specified name(s). If neither
             is found, returns the default value.
         '''
-        val = self._get(key)
-        if val is None:
-            return default
-        return val.readonly()
+        val = super(Reader, self).get(key)
+        if val:
+            return val.readonly()
+        return default
 
     def items(self):
         ''' Acquire iterable over parameter group pairs.
 
         Returns
         -------
-        items : Touple of ((str, :class:`Group`), ...)
+        items : Touple of ((str, :class:`GroupReadonly`), ...)
             Python touple containing pairs of name keys and parameter group entries.
         '''
-        return ((k, GroupReadonly(v)) for k, v in self._groups.items() if isinstance(k, str))
+        return ((k, v.readonly()) for k, v in super(Reader, self).items())
 
     def values(self):
         ''' Acquire iterable over parameter group entries.
 
         Returns
         -------
-        values : Touple of (:class:`Group`, ...)
+        values : Touple of (:class:`GroupReadonly`, ...)
             Python touple containing unique parameter group entries.
         '''
-        return (GroupReadonly(v) for k, v in self._groups.items() if isinstance(k, str))
+        return (v.readonly() for k, v in super(Reader, self).items())
+
+    def listed(self):
+        ''' Acquire iterable over parameter group entries.
+
+        Returns
+        -------
+        items : Touple of ((int, :class:`GroupReadonly`), ...)
+            Python touple containing unique parameter group entries.
+        '''
+        return ((k, v.readonly()) for k, v in super(Reader, self).listed())
 
 class Writer(Manager):
     '''This class writes metadata and frames to a C3D file.
@@ -503,41 +514,23 @@ class Writer(Manager):
         ''' Get or create the TRIAL parameter group.'''
         return self.get_create('TRIAL')
 
-    def get(self, group, default=None):
-        '''Get a writable group or a parameter instance.
-
-        Parameters
-        ----------
-        key : str
-            Key, see Manager.get() for valid key formats.
-        default : any
-            Return this value if the named group and parameter are not found.
-
-        Returns
-        -------
-        value : :class:`GroupWritable` or :class:`ParamWritable`
-            Either a decorated group instance or parameter with the specified name(s). If neither
-            is found, the default value is returned.
-        '''
-        return super(Writer, self)._get(group, default)
-
-    def add_group(self, *args, **kwargs):
+    def add_group(self, group_id, name, desc):
         '''Add a new parameter group. See Manager.add_group() for more information.
 
         Returns
         -------
-        group : :class:`GroupWritable`
+        group : :class:`Group`
             An editable group instance.
         '''
-        return GroupWritable(super(Writer, self)._add_group(*args, **kwargs))
+        return super(Writer, self)._add_group(group_id, name, desc)
 
     def rename_group(self, *args):
         ''' Rename a specified parameter group (see Manager._rename_group for args). '''
-        self._rename_group(*args)
+        super(Writer, self)._rename_group(*args)
 
     def remove_group(self, *args):
         '''Remove the parameter group. (see Manager._rename_group for args). '''
-        self._remove_group(*args)
+        super(Writer, self)._remove_group(*args)
 
     def add_frames(self, frames, index=None):
         '''Add frames to this writer instance.
