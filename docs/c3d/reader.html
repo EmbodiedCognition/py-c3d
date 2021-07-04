@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.2" />
+<title>c3d.reader API documentation</title>
+<meta name="description" content="A Python module for reading and writing C3D files." />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>c3d.reader</code></h1>
+</header>
+<section id="section-intro">
+<p>A Python module for reading and writing C3D files.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="c3d.reader.Reader"><code class="flex name class">
+<span>class <span class="ident">Reader</span></span>
+<span>(</span><span>handle)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This class provides methods for reading the data in a C3D file.</p>
+<p>A C3D file contains metadata and frame-based data describing 3D motion.</p>
+<p>You can iterate over the frames in the file by calling <code>read_frames()</code> after
+construction:</p>
+<pre><code class="python-repl">&gt;&gt;&gt; r = c3d.Reader(open('capture.c3d', 'rb'))
+&gt;&gt;&gt; for frame_no, points, analog in r.read_frames():
+...     print('{0.shape} points in this frame'.format(points))
+</code></pre>
+<p>Initialize this C3D file by reading header and parameter data.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>handle</code></strong> :&ensp;<code>file handle</code></dt>
+<dd>Read metadata and C3D motion frames from the given file handle. This
+handle is assumed to be <code>seek</code>-able and <code>read</code>-able. The handle must
+remain open for the life of the <code><a title="c3d.reader.Reader" href="#c3d.reader.Reader">Reader</a></code> instance. The <code><a title="c3d.reader.Reader" href="#c3d.reader.Reader">Reader</a></code> does
+not <code>close</code> the handle.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>AssertionError</code></dt>
+<dd>If the metadata in the C3D file is inconsistent.</dd>
+</dl></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="c3d.manager.Manager" href="manager.html#c3d.manager.Manager">Manager</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="c3d.reader.Reader.proc_type"><code class="name">var <span class="ident">proc_type</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Get the processory type associated with the data format in the file.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="c3d.reader.Reader.get"><code class="name flex">
+<span>def <span class="ident">get</span></span>(<span>self, key, default=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get a readonly group or parameter.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>key</code></strong> :&ensp;<code>str</code></dt>
+<dd>If this string contains a period (.), then the part before the
+period will be used to retrieve a group, and the part after the
+period will be used to retrieve a parameter from that group. If this
+string does not contain a period, then just a group will be
+returned.</dd>
+<dt><strong><code>default</code></strong> :&ensp;<code>any</code></dt>
+<dd>Return this value if the named group and parameter are not found.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>value</code></strong> :&ensp;<code><a title="c3d.group.GroupReadonly" href="group.html#c3d.group.GroupReadonly">GroupReadonly</a></code> or <code><a title="c3d.parameter.ParamReadonly" href="parameter.html#c3d.parameter.ParamReadonly">ParamReadonly</a></code></dt>
+<dd>Either a group or parameter with the specified name(s). If neither
+is found, returns the default value.</dd>
+</dl></div>
+</dd>
+<dt id="c3d.reader.Reader.items"><code class="name flex">
+<span>def <span class="ident">items</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get iterable over pairs of (str, <code><a title="c3d.group.GroupReadonly" href="group.html#c3d.group.GroupReadonly">GroupReadonly</a></code>) entries.</p></div>
+</dd>
+<dt id="c3d.reader.Reader.listed"><code class="name flex">
+<span>def <span class="ident">listed</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get iterable over pairs of (int, <code><a title="c3d.group.GroupReadonly" href="group.html#c3d.group.GroupReadonly">GroupReadonly</a></code>) entries.</p></div>
+</dd>
+<dt id="c3d.reader.Reader.read_frames"><code class="name flex">
+<span>def <span class="ident">read_frames</span></span>(<span>self, copy=True, analog_transform=True, check_nan=True, camera_sum=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Iterate over the data frames from our C3D file handle.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>copy</code></strong> :&ensp;<code>bool</code></dt>
+<dd>If False, the reader returns a reference to the same data buffers
+for every frame. The default is True, which causes the reader to
+return a unique data buffer for each frame. Set this to False if you
+consume frames as you iterate over them, or True if you store them
+for later.</dd>
+<dt><strong><code>analog_transform</code></strong> :&ensp;<code>bool</code>, default=<code>True</code></dt>
+<dd>If True, ANALOG:SCALE, ANALOG:GEN_SCALE, and ANALOG:OFFSET transforms
+available in the file are applied to the analog channels.</dd>
+<dt><strong><code>check_nan</code></strong> :&ensp;<code>bool</code>, default=<code>True</code></dt>
+<dd>If True, point x,y,z coordinates with nan values will be marked invalidated
+and residuals will be set to -1.</dd>
+<dt><strong><code>camera_sum</code></strong> :&ensp;<code>bool</code>, default=<code>False</code></dt>
+<dd>Camera flag bits will be summed, converting the fifth column to a camera visibility counter.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>frames</code></strong> :&ensp;<code>sequence</code> of <code>(frame number, points, analog)</code></dt>
+<dd>
+<p>This method generates a sequence of (frame number, points, analog)
+tuples, one tuple per frame. The first element of each tuple is the
+frame number. The second is a numpy array of parsed, 5D point data
+and the third element of each tuple is a numpy array of analog
+values that were recorded during the frame. (Often the analog data
+are sampled at a higher frequency than the 3D point data, resulting
+in multiple analog frames per frame of point data.)</p>
+<p>The first three columns in the returned point data are the (x, y, z)
+coordinates of the observed motion capture point. The fourth column
+is an estimate of the error for this particular point, and the fifth
+column is the number of cameras that observed the point in question.
+Both the fourth and fifth values are -1 if the point is considered
+to be invalid.</p>
+</dd>
+</dl></div>
+</dd>
+<dt id="c3d.reader.Reader.to_writer"><code class="name flex">
+<span>def <span class="ident">to_writer</span></span>(<span>self, conversion=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Converts the reader to a <code><a title="c3d.writer.Writer" href="writer.html#c3d.writer.Writer">Writer</a></code> instance using the conversion mode.</p>
+<p>See <code><a title="c3d.writer.Writer.from_reader" href="writer.html#c3d.writer.Writer.from_reader">Writer.from_reader()</a></code> for supported conversion modes.</p></div>
+</dd>
+<dt id="c3d.reader.Reader.values"><code class="name flex">
+<span>def <span class="ident">values</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get iterable over <code><a title="c3d.group.GroupReadonly" href="group.html#c3d.group.GroupReadonly">GroupReadonly</a></code> entries.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="c3d.manager.Manager" href="manager.html#c3d.manager.Manager">Manager</a></b></code>:
+<ul class="hlist">
+<li><code><a title="c3d.manager.Manager.analog_labels" href="manager.html#c3d.manager.Manager.analog_labels">analog_labels</a></code></li>
+<li><code><a title="c3d.manager.Manager.analog_per_frame" href="manager.html#c3d.manager.Manager.analog_per_frame">analog_per_frame</a></code></li>
+<li><code><a title="c3d.manager.Manager.analog_rate" href="manager.html#c3d.manager.Manager.analog_rate">analog_rate</a></code></li>
+<li><code><a title="c3d.manager.Manager.analog_sample_count" href="manager.html#c3d.manager.Manager.analog_sample_count">analog_sample_count</a></code></li>
+<li><code><a title="c3d.manager.Manager.analog_used" href="manager.html#c3d.manager.Manager.analog_used">analog_used</a></code></li>
+<li><code><a title="c3d.manager.Manager.first_frame" href="manager.html#c3d.manager.Manager.first_frame">first_frame</a></code></li>
+<li><code><a title="c3d.manager.Manager.frame_count" href="manager.html#c3d.manager.Manager.frame_count">frame_count</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_analog_transform" href="manager.html#c3d.manager.Manager.get_analog_transform">get_analog_transform</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_analog_transform_parameters" href="manager.html#c3d.manager.Manager.get_analog_transform_parameters">get_analog_transform_parameters</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_bytes" href="manager.html#c3d.manager.Manager.get_bytes">get_bytes</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_float" href="manager.html#c3d.manager.Manager.get_float">get_float</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_int16" href="manager.html#c3d.manager.Manager.get_int16">get_int16</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_int32" href="manager.html#c3d.manager.Manager.get_int32">get_int32</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_int8" href="manager.html#c3d.manager.Manager.get_int8">get_int8</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_screen_axis" href="manager.html#c3d.manager.Manager.get_screen_axis">get_screen_axis</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_string" href="manager.html#c3d.manager.Manager.get_string">get_string</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_uint16" href="manager.html#c3d.manager.Manager.get_uint16">get_uint16</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_uint32" href="manager.html#c3d.manager.Manager.get_uint32">get_uint32</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_uint8" href="manager.html#c3d.manager.Manager.get_uint8">get_uint8</a></code></li>
+<li><code><a title="c3d.manager.Manager.header" href="manager.html#c3d.manager.Manager.header">header</a></code></li>
+<li><code><a title="c3d.manager.Manager.keys" href="manager.html#c3d.manager.Manager.keys">keys</a></code></li>
+<li><code><a title="c3d.manager.Manager.last_frame" href="manager.html#c3d.manager.Manager.last_frame">last_frame</a></code></li>
+<li><code><a title="c3d.manager.Manager.parameter_blocks" href="manager.html#c3d.manager.Manager.parameter_blocks">parameter_blocks</a></code></li>
+<li><code><a title="c3d.manager.Manager.point_labels" href="manager.html#c3d.manager.Manager.point_labels">point_labels</a></code></li>
+<li><code><a title="c3d.manager.Manager.point_rate" href="manager.html#c3d.manager.Manager.point_rate">point_rate</a></code></li>
+<li><code><a title="c3d.manager.Manager.point_scale" href="manager.html#c3d.manager.Manager.point_scale">point_scale</a></code></li>
+<li><code><a title="c3d.manager.Manager.point_used" href="manager.html#c3d.manager.Manager.point_used">point_used</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="c3d" href="index.html">c3d</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="c3d.reader.Reader" href="#c3d.reader.Reader">Reader</a></code></h4>
+<ul class="two-column">
+<li><code><a title="c3d.reader.Reader.get" href="#c3d.reader.Reader.get">get</a></code></li>
+<li><code><a title="c3d.reader.Reader.items" href="#c3d.reader.Reader.items">items</a></code></li>
+<li><code><a title="c3d.reader.Reader.listed" href="#c3d.reader.Reader.listed">listed</a></code></li>
+<li><code><a title="c3d.reader.Reader.proc_type" href="#c3d.reader.Reader.proc_type">proc_type</a></code></li>
+<li><code><a title="c3d.reader.Reader.read_frames" href="#c3d.reader.Reader.read_frames">read_frames</a></code></li>
+<li><code><a title="c3d.reader.Reader.to_writer" href="#c3d.reader.Reader.to_writer">to_writer</a></code></li>
+<li><code><a title="c3d.reader.Reader.values" href="#c3d.reader.Reader.values">values</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,10 +1,17 @@
+Scripts
+========
 
+The package installation comes with some pre-packaged scripts for
+viewing, and converting .c3d files to .csv and .npz formats.
+See the [script directory] on github for more information.
+
+[script directory]: ../scripts
 
 Examples
 ========
 
 Access to data blocks in a .c3d file is provided through the `c3d.reader.Reader` and `c3d.writer.Writer` classes.
-Implementation of the examples are provided in the `example/` in the github repository.
+Runnable implementation of the examples are provided in the `examples/` directory in the github repository.
 
 Reading
 -------
