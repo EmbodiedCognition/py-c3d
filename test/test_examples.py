@@ -16,8 +16,16 @@ class Examples(Base):
     '''
     def test_write(self):
         import write
+        path = 'random-points.c3d'
+
+        with open(path, 'rb') as f:
+            reader = c3d.Reader(f)
+            assert reader.frame_count == 100, \
+                'Expected 30 point frames in write.py test, was {}'.format(reader.frame_count)
+            assert reader.point_used == 24, \
+                'Expected 5 point samples in write.py test, was {}'.format(reader.point_used)
         # Raises 'FileNotFound' if the file was not generated
-        os.remove('..\\random-points.c3d')
+        os.remove(path)
 
 
 if __name__ == '__main__':
