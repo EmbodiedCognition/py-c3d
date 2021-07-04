@@ -52,19 +52,19 @@ instance:
 
 The function `c3d.writer.Writer.add_frames` take pairs of ``numpy`` or ``python
 arrays``, with the first array in each tuple defining point data and the second
-defining the analog data for the frame. Leaving one of the arrays empty indicates
+analog data for the frame. Leaving one of the arrays empty indicates
 to the writer that no analog --- or point data--- should be included in the file.
 References of the data arrays are tracked until `c3d.writer.Writer.write`
-is called, which serializes metadata and data frames into a C3D binary file stream.
+is called, which serializes the metadata and data frames into a C3D binary file stream.
 
 Editing
 -------
 
 Editing c3d files is possible by combining the use of `c3d.reader.Reader` and `c3d.writer.Writer`
-instances through the use of `c3d.reader.Reader.to_writer`. By opening a .c3d file stream through
+instances through the use of `c3d.reader.Reader.to_writer`. Opening a .c3d file stream through
 a reader instance, `c3d.reader.Reader.to_writer` can be used to create an independent Writer instance
-copying the file contents onto the heap. Rereading the `reader` frame data from the file
-and inserting the frames in reverse, a looped version of the .c3d file can be created!
+containing a heap copy of the file contents. Rereading the data frames from the file
+and inserting into the writer in reverse, a looped version of the .c3d file can be created!
 
     import c3d
 

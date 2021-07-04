@@ -28,7 +28,7 @@
 <p>This package provides pure Python modules for reading, writing, and editing binary
 motion-capture files in the <a href="https://www.c3d.org/HTML/default.htm">C3D file format</a>.</p>
 <h2 id="installing">Installing</h2>
-<p>See the <a href="https://mattiasfredriksson.github.io/py-c3d/">main page</a>.</p>
+<p>See the <a href="https://mattiasfredriksson.github.io/py-c3d/">main page</a> or <a href="https://github.com/EmbodiedCognition/py-c3d">github page</a>.</p>
 <h1 id="examples">Examples</h1>
 <p>Access to data blocks in a .c3d file is provided through the <code><a title="c3d.reader.Reader" href="reader.html#c3d.reader.Reader">Reader</a></code> and <code><a title="c3d.writer.Writer" href="writer.html#c3d.writer.Writer">Writer</a></code> classes.
 Runnable implementation of the examples are provided in the <a href="https://github.com/EmbodiedCognition/py-c3d/tree/master/examples">examples/</a> directory in the github repository.</p>
@@ -71,16 +71,16 @@ with open('random-points.c3d', 'wb') as h:
 </code></pre>
 <p>The function <code><a title="c3d.writer.Writer.add_frames" href="writer.html#c3d.writer.Writer.add_frames">Writer.add_frames()</a></code> take pairs of <code>numpy</code> or <code>python
 arrays</code>, with the first array in each tuple defining point data and the second
-defining the analog data for the frame. Leaving one of the arrays empty indicates
+analog data for the frame. Leaving one of the arrays empty indicates
 to the writer that no analog &mdash; or point data&mdash; should be included in the file.
 References of the data arrays are tracked until <code><a title="c3d.writer.Writer.write" href="writer.html#c3d.writer.Writer.write">Writer.write()</a></code>
-is called, which serializes metadata and data frames into a C3D binary file stream.</p>
+is called, which serializes the metadata and data frames into a C3D binary file stream.</p>
 <h2 id="editing">Editing</h2>
 <p>Editing c3d files is possible by combining the use of <code><a title="c3d.reader.Reader" href="reader.html#c3d.reader.Reader">Reader</a></code> and <code><a title="c3d.writer.Writer" href="writer.html#c3d.writer.Writer">Writer</a></code>
-instances through the use of <code><a title="c3d.reader.Reader.to_writer" href="reader.html#c3d.reader.Reader.to_writer">Reader.to_writer()</a></code>. By opening a .c3d file stream through
+instances through the use of <code><a title="c3d.reader.Reader.to_writer" href="reader.html#c3d.reader.Reader.to_writer">Reader.to_writer()</a></code>. Opening a .c3d file stream through
 a reader instance, <code><a title="c3d.reader.Reader.to_writer" href="reader.html#c3d.reader.Reader.to_writer">Reader.to_writer()</a></code> can be used to create an independent Writer instance
-copying the file contents onto the heap. Rereading the <code><a title="c3d.reader" href="reader.html">c3d.reader</a></code> frame data from the file
-and inserting the frames in reverse, a looped version of the .c3d file can be created!</p>
+containing a heap copy of the file contents. Rereading the data frames from the file
+and inserting into the writer in reverse, a looped version of the .c3d file can be created!</p>
 <pre><code>import c3d
 
 with open('my-motion.c3d', 'rb') as file:
