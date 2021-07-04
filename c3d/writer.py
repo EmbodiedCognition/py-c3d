@@ -4,10 +4,9 @@ import copy
 import numpy as np
 import struct
 #import warnings
+from . import utils
 from .manager import Manager
 from .dtypes import DataTypes
-from .utils import is_integer, is_iterable
-
 
 class Writer(Manager):
     '''This class writes metadata and frames to a C3D file.
@@ -55,15 +54,27 @@ class Writer(Manager):
     @staticmethod
     def from_reader(reader, conversion=None):
         '''
+
+        Parameters
+        ----------
         source : `c3d.manager.Manager`
             Source to copy.
         conversion : str
             Conversion mode, None is equivalent to the default mode. Supported modes are:
-                'consume'       - (Default) Reader object will be consumed and explicitly deleted.
+
+                'consume'       - (Default) Reader object will be
+                                  consumed and explicitly deleted.
+
                 'copy'          - Reader objects will be deep copied.
-                'copy_metadata' - Similar to 'copy' but only copies metadata and not point and analog frame data.
-                'copy_shallow'  - Similar to 'copy' but group parameters are not copied.
-                'copy_header'   - Similar to 'copy_shallow' but only the header is copied (frame data is not copied).
+
+                'copy_metadata' - Similar to 'copy' but only copies metadata and
+                                  not point and analog frame data.
+
+                'copy_shallow'  - Similar to 'copy' but group parameters are
+                                  not copied.
+
+                'copy_header'   - Similar to 'copy_shallow' but only the
+                                  header is copied (frame data is not copied).
 
         Returns
         -------
@@ -209,13 +220,30 @@ class Writer(Manager):
         '''
         sh = np.shape(frames)
         # Single frame
-        if len(sh) != 2:
+        if len(sh) < 2:
             frames = [frames]
             sh = np.shape(frames)
+
+        # Check data shapes match
+        if len(self._frames) > 0:
+            point0, analog0 = self._frames[0]
+            psh, ash = np.shape(point0), np.shape(analog0)
+            for f in frames:
+                if np.shape(f[0]) != psh:
+                    raise ValueError(
+                        'Shape of analog data does not previous frames. Expexted shape {}, was {}.'.format(
+                        str(psh), str(np.shape(f[0]))
+                        ))
+                if np.shape(f[1]) != ash:
+                    raise ValueError(
+                        'Shape of analog data does not previous frames. Expexted shape {}, was {}.'.format(
+                        str(ash), str(np.shape(f[1]))
+                        ))
+
         # Sequence of invalid shape
         if sh[1] != 2:
             raise ValueError(
-                'Expected frame input to be sequence of point and analog pairs on form (-1, 2). ' +
+                'Expected frame input to be sequence of point and analog pairs on form (None, 2). ' +
                 'Input was of shape {}.'.format(str(sh)))
 
         if index is not None:
@@ -223,52 +251,21 @@ class Writer(Manager):
         else:
             self._frames.extend(frames)
 
-    @staticmethod
-    def pack_labels(labels):
-        ''' Static method used to pack and pad the set of `labels` strings before
-            passing the output into a `c3d.group.Group.add_str`.
-
-        Parameters
-        ----------
-        labels : iterable
-            List of strings to pack and pad into a single string suitable for encoding in a Parameter entry.
-
-        Example
-        -------
-        >>> labels = ['RFT1', 'RFT2', 'RFT3', 'LFT1', 'LFT2', 'LFT3']
-        >>> param_str, label_max_size = Writer.pack_labels(labels)
-        >>> writer.point_group.add_str('LABELS',
-                                       'Point labels.',
-                                       label_str,
-                                       label_max_size,
-                                       len(labels))
-
-        Returns
-        -------
-        param_str : str
-            String containing `labels` packed into a single variable where
-            each string is padded to match the longest `labels` string.
-        label_max_size : int
-            Number of bytes associated with the longest `label` string, all strings are padded to this length.
-        '''
-        labels = np.ravel(labels)
-        # Get longest label name
-        label_max_size = 0
-        label_max_size = max(label_max_size, np.max([len(label) for label in labels]))
-        label_str = ''.join(label.ljust(label_max_size) for label in labels)
-        return label_str, label_max_size
-
     def set_point_labels(self, labels):
         ''' Set point data labels.
         '''
-        label_str, label_max_size = Writer.pack_labels(labels)
+        label_str, label_max_size = utils.pack_labels(labels)
         self.point_group.add_str('LABELS', 'Point labels.', label_str, label_max_size, len(labels))
 
     def set_analog_labels(self, labels):
         ''' Set analog data labels.
         '''
-        label_str, label_max_size = Writer.pack_labels(labels)
-        self.analog_group.add_str('LABELS', 'Analog labels.', label_str, label_max_size, len(labels))
+        grp = self.analog_group
+        if labels is None:
+            grp.add_empty_array('LABELS', 'Analog labels.', -1)
+        else:
+            label_str, label_max_size = utils.pack_labels(labels)
+            grp.add_str('LABELS', 'Analog labels.', label_str, label_max_size, len(labels))
 
     def set_analog_general_scale(self, value):
         ''' Set ANALOG:GEN_SCALE factor (uniform analog scale factor).
@@ -283,7 +280,7 @@ class Writer(Manager):
         values : iterable or None
             Iterable containing individual scale factors for encoding analog channel data.
         '''
-        if is_iterable(values):
+        if utils.is_iterable(values):
             data = np.array([v for v in values], dtype=np.float32)
             self.analog_group.set_array('SCALE', 'Analog channel scale factors', data)
         elif values is None:
@@ -299,7 +296,7 @@ class Writer(Manager):
         values : iterable or None
             Iterable containing individual offsets for encoding analog channel data.
         '''
-        if is_iterable(values):
+        if utils.is_iterable(values):
             data = np.array([v for v in values], dtype=np.int16)
             self.analog_group.set_array('OFFSET', 'Analog channel offsets', data)
         elif values is None:
@@ -310,8 +307,8 @@ class Writer(Manager):
     def set_start_frame(self, frame=1):
         ''' Set the 'TRIAL:ACTUAL_START_FIELD' parameter and header.first_frame entry.
 
-        Parameter
-        ---------
+        Parameters
+        ----------
         frame : int
             Number for the first frame recorded in the file.
             Frame counter for a trial recording always start at 1 for the first frame.
@@ -332,11 +329,11 @@ class Writer(Manager):
     def set_screen_axis(self, X='+X', Y='+Y'):
         ''' Set the X_SCREEN and Y_SCREEN parameters in the POINT group.
 
-        Parameter
-        ---------
+        Parameters
+        ----------
         X : str
-            2 character string with first character indicating positive or negative axis (+/-),
-            and the second axis (X/Y/Z). Examples: '+X' or '-Y'
+            Two byte string with first character indicating positive or negative axis (+/-),
+            and the second axis (X/Y/Z). Example strings '+X' or '-Y'
         Y : str
             Second axis string with same format as Y. Determines the second Y screen axis.
         '''
@@ -349,7 +346,7 @@ class Writer(Manager):
         group.set_str('Y_SCREEN', 'Y_SCREEN parameter', Y)
 
     def write(self, handle):
-        '''Write metadata and point + analog frames to a file handle.
+        '''Write metadata, point and analog frames to a file handle.
 
         Parameters
         ----------
@@ -415,7 +412,7 @@ class Writer(Manager):
         self.get('POINT:DATA_START').bytes = struct.pack('<H', start_block)
         self._header.data_block = np.uint16(start_block)
         self._header.point_count = np.uint16(ppf)
-        self._header.analog_count = np.uint16(np.prod(analog.shape))
+        self._header.analog_count = np.uint16(np.prod(np.shape(analog)))
 
         self._write_metadata(handle)
         self._write_frames(handle)

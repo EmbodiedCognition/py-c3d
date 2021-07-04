@@ -7,14 +7,51 @@ def is_integer(value):
     '''Check if value input is integer.'''
     return isinstance(value, (int, np.int32, np.int64))
 
+
 def is_iterable(value):
     '''Check if value is iterable.'''
     return hasattr(value, '__iter__')
+
 
 def type_npy2struct(dtype):
     ''' Convert numpy dtype format to a struct package format string.
     '''
     return dtype.byteorder + dtype.char
+
+
+def pack_labels(labels):
+    ''' Static method used to pack and pad the set of `labels` strings before
+        passing the output into a `c3d.group.Group.add_str`.
+
+    Parameters
+    ----------
+    labels : iterable
+        List of strings to pack and pad into a single string suitable for encoding in a Parameter entry.
+
+    Example
+    -------
+    >>> labels = ['RFT1', 'RFT2', 'RFT3', 'LFT1', 'LFT2', 'LFT3']
+    >>> param_str, label_max_size = Writer.pack_labels(labels)
+    >>> writer.point_group.add_str('LABELS',
+                                   'Point labels.',
+                                   label_str,
+                                   label_max_size,
+                                   len(labels))
+
+    Returns
+    -------
+    param_str : str
+        String containing `labels` packed into a single variable where
+        each string is padded to match the longest `labels` string.
+    label_max_size : int
+        Number of bytes associated with the longest `label` string, all strings are padded to this length.
+    '''
+    labels = np.ravel(labels)
+    # Get longest label name
+    label_max_size = 0
+    label_max_size = max(label_max_size, np.max([len(label) for label in labels]))
+    label_str = ''.join(label.ljust(label_max_size) for label in labels)
+    return label_str, label_max_size
 
 class Decorator(object):
     '''Base class for extending (decorating) a python object.
