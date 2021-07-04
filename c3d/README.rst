@@ -19,6 +19,8 @@ Use [numpy style] doc strings.
 Docstring example
 -----------
 
+.. code-block:: python
+
     def my_function(aparam, bparam):
         ''' Short summary.
 
