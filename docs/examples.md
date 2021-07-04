@@ -4,6 +4,7 @@ Examples
 ========
 
 Access to data blocks in a .c3d file is provided through the `c3d.reader.Reader` and `c3d.writer.Writer` classes.
+Implementation of the examples are provided in the `example/` in the github repository.
 
 Reading
 -------
