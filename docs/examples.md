@@ -36,7 +36,7 @@ instance:
 
 The function `c3d.writer.Writer.add_frames` takes ``numpy`` array of
 point data---and, optionally, a ``numpy`` array of analog data---and adds it to
-an internal data buffer. The :func:`write <c3d.Writer.write>` method serializes
+an internal data buffer. The function `c3d.writer.Writer.write` serializes
 all of the frame data to a C3D binary file.
 
 Editing
