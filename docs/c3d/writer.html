@@ -83,12 +83,12 @@ class Writer(Manager):
 
     @staticmethod
     def from_reader(reader, conversion=None):
-        &#39;&#39;&#39;
+        &#39;&#39;&#39; Convert a `c3d.reader.Reader` to a persistent `c3d.writer.Writer` instance.
 
         Parameters
         ----------
-        source : `c3d.manager.Manager`
-            Source to copy.
+        source : `c3d.reader.Reader`
+            Source to copy data from.
         conversion : str
             Conversion mode, None is equivalent to the default mode. Supported modes are:
 
@@ -108,8 +108,8 @@ class Writer(Manager):
 
         Returns
         -------
-        param : :class:`Writer`
-            A writeable and persistent representation of the &#39;Reader&#39; object.
+        param : `c3d.writer.Writer`
+            A writeable and persistent representation of the `c3d.reader.Reader` object.
 
         Raises
         ------
@@ -625,12 +625,12 @@ POINT:SCALE parameter").</dd>
 
     @staticmethod
     def from_reader(reader, conversion=None):
-        &#39;&#39;&#39;
+        &#39;&#39;&#39; Convert a `c3d.reader.Reader` to a persistent `c3d.writer.Writer` instance.
 
         Parameters
         ----------
-        source : `c3d.manager.Manager`
-            Source to copy.
+        source : `c3d.reader.Reader`
+            Source to copy data from.
         conversion : str
             Conversion mode, None is equivalent to the default mode. Supported modes are:
 
@@ -650,8 +650,8 @@ POINT:SCALE parameter").</dd>
 
         Returns
         -------
-        param : :class:`Writer`
-            A writeable and persistent representation of the &#39;Reader&#39; object.
+        param : `c3d.writer.Writer`
+            A writeable and persistent representation of the `c3d.reader.Reader` object.
 
         Raises
         ------
@@ -1088,10 +1088,11 @@ POINT:SCALE parameter").</dd>
 <span>def <span class="ident">from_reader</span></span>(<span>reader, conversion=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><h2 id="parameters">Parameters</h2>
+<div class="desc"><p>Convert a <code><a title="c3d.reader.Reader" href="reader.html#c3d.reader.Reader">Reader</a></code> to a persistent <code><a title="c3d.writer.Writer" href="#c3d.writer.Writer">Writer</a></code> instance.</p>
+<h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>source</code></strong> :&ensp;<code><a title="c3d.manager.Manager" href="manager.html#c3d.manager.Manager">Manager</a></code></dt>
-<dd>Source to copy.</dd>
+<dt><strong><code>source</code></strong> :&ensp;<code><a title="c3d.reader.Reader" href="reader.html#c3d.reader.Reader">Reader</a></code></dt>
+<dd>Source to copy data from.</dd>
 <dt><strong><code>conversion</code></strong> :&ensp;<code>str</code></dt>
 <dd>Conversion mode, None is equivalent to the default mode. Supported modes are:<pre><code>'consume'       - (Default) Reader object will be
                   consumed and explicitly deleted.
@@ -1111,8 +1112,8 @@ POINT:SCALE parameter").</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><strong><code>param</code></strong> :&ensp;<code>:class:</code>Writer``</dt>
-<dd>A writeable and persistent representation of the 'Reader' object.</dd>
+<dt><strong><code>param</code></strong> :&ensp;<code><a title="c3d.writer.Writer" href="#c3d.writer.Writer">Writer</a></code></dt>
+<dd>A writeable and persistent representation of the <code><a title="c3d.reader.Reader" href="reader.html#c3d.reader.Reader">Reader</a></code> object.</dd>
 </dl>
 <h2 id="raises">Raises</h2>
 <dl>
@@ -1126,12 +1127,12 @@ If attempting to convert non-Intel files using mode other than 'shallow_copy'.</
 </summary>
 <pre><code class="python">@staticmethod
 def from_reader(reader, conversion=None):
-    &#39;&#39;&#39;
+    &#39;&#39;&#39; Convert a `c3d.reader.Reader` to a persistent `c3d.writer.Writer` instance.
 
     Parameters
     ----------
-    source : `c3d.manager.Manager`
-        Source to copy.
+    source : `c3d.reader.Reader`
+        Source to copy data from.
     conversion : str
         Conversion mode, None is equivalent to the default mode. Supported modes are:
 
@@ -1151,8 +1152,8 @@ def from_reader(reader, conversion=None):
 
     Returns
     -------
-    param : :class:`Writer`
-        A writeable and persistent representation of the &#39;Reader&#39; object.
+    param : `c3d.writer.Writer`
+        A writeable and persistent representation of the `c3d.reader.Reader` object.
 
     Raises
     ------
