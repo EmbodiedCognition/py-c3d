@@ -1,7 +1,7 @@
 
 * [Documentation]
 
-* [Tool scripts]
+* [Scripts]
 
 
 [Documentation]: ./c3d/
