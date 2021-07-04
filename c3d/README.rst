@@ -12,9 +12,9 @@ Pycodestyle can be installed with the pip command
 Docstrings
 -----------
 
-Use [numpy style] doc strings.
+Use `numpy style`_ doc strings.
 
-[numpy style]: https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard
+.. _`numpy style`: https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard
 
 Docstring example
 -----------
