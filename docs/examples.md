@@ -12,7 +12,7 @@ To read the frames from a C3D file, use a `c3d.reader.Reader` instance:
 
     import c3d
 
-    with open(file_path, 'rb') as file:
+    with open('my-motion.c3d', 'rb') as file:
         reader = c3d.Reader(file)
         for i, points, analog in reader.read_frames():
             print('frame {}: point {}, analog {}'.format(
@@ -58,3 +58,20 @@ is called, which serializes metadata and data frames into a C3D binary file stre
 
 Editing
 -------
+
+Editing c3d files is possible by combining the use of `c3d.reader.Reader` and `c3d.writer.Writer`
+instances through the use of `c3d.reader.Reader.to_writer`. By opening a .c3d file stream through
+a reader instance, `c3d.reader.Reader.to_writer` can be used to create an independent Writer instance
+copying the file contents onto the heap. Rereading the `reader` frame data from the file
+and inserting the frames in reverse, a looped version of the .c3d file can be created!
+
+    import c3d
+
+    with open('my-motion.c3d', 'rb') as file:
+        reader = c3d.Reader(file)
+        writer = reader.to_writer('copy')
+        for i, points, analog in reader.read_frames():
+            writer.add_frames((points, analog), index=reader.frame_count)
+
+    with open('my-looped-motion.c3d', 'wb') as h:
+        writer.write(h)

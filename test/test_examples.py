@@ -30,6 +30,16 @@ class Examples(Base):
         # Raises 'FileNotFound' if the file was not generated
         os.remove(path)
 
+    def test_edit(self):
+        import edit
+        path = 'my-looped-motion.c3d'
+
+        with open(path, 'rb') as f:
+            reader = c3d.Reader(f)
+            assert reader.frame_count == 900, \
+                'Expected 900 point frames in edit.py test, was {}'.format(reader.frame_count)
+        # Raises 'FileNotFound' if the file was not generated
+        os.remove(path)
 
 if __name__ == '__main__':
     unittest.main()
