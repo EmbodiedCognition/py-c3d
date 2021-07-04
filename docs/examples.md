@@ -101,10 +101,10 @@ Note that for accessing parameters in the `c3d.reader.Reader`, `c3d.reader.Reade
 returns a `c3d.group.GroupReadonly` instance. Convenience functions are provided
 for some of the common metadata fields
 such as `c3d.manager.Manager.frame_count`. In the case you require specific
-metadata fields, consider visiting the documentation for the [C3D format] and/or inspect
+metadata fields, consider exploring the [C3D format manual] and/or inspect
 the file using the c3d-metadata script.
 
-[C3D format]: https://c3d.org/docs/C3D_User_Guide.pdf
+[C3D format manual]: https://c3d.org/docs/C3D_User_Guide.pdf
 
 Writing metadata
 ----------------
