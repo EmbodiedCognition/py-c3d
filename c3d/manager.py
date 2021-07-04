@@ -118,7 +118,6 @@ class Manager(object):
             elif lab.num_elements > 0:
                 warnings.warn('No analog data found in file, but file contains ANALOG:LABELS entries')
 
-
     def _add_group(self, group_id, name=None, desc=None):
         '''Add a new parameter group.
 
@@ -150,7 +149,7 @@ class Manager(object):
                 raise TypeError('Expected Group name key to be string, was %s.' % type(name))
         else:
             name = name.upper()
-        group_id = int(group_id) # Asserts python int
+        group_id = int(group_id)  # Asserts python int
         if group_id in self._groups:
             raise KeyError('Group with numerical key {} already exists'.format(group_id))
         if name in self._groups:
@@ -206,7 +205,7 @@ class Manager(object):
                 del self._groups[grp.name]
             grp.name = new_group_id
         elif is_integer(new_group_id):
-            new_group_id = int(new_group_id) # Ensure python int
+            new_group_id = int(new_group_id)  # Ensure python int
             del self._groups[group_id]
         else:
             raise KeyError('Invalid group identifier of type: %s' % str(type(new_group_id)))
@@ -356,7 +355,7 @@ class Manager(object):
             # Encoded as 2 16 bit words (rather then 1 32 bit word)
             words = param.uint16_array
             end_frame[1] = words[0] + words[1] * 65536
-            #end_frame[1] = param.uint32_value
+            # end_frame[1] = param.uint32_value
         param = self.get('POINT:LONG_FRAMES')
         if param is not None:
             # Encoded as float

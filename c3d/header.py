@@ -6,6 +6,7 @@ import struct
 import numpy as np
 from .utils import UNPACK_FLOAT_IEEE, DEC_to_IEEE
 
+
 class Header(object):
     '''Header information from a C3D file.
 
@@ -260,7 +261,7 @@ class Header(object):
                                   str(18) + 's',      # Flags
                                   'H',                # __
                                   str(18 * 4) + 's'   # Labels
-                                 )
+                                  )
         # Pack bytes
         event_timings = np.zeros(18, dtype=np.float32)
         event_disp_flags = np.zeros(18, dtype=np.uint8)
@@ -280,7 +281,7 @@ class Header(object):
         event_disp_flags[:write_count] = 1
 
         # Update event headers in self
-        self.long_event_labels = 0x3039 # Magic number
+        self.long_event_labels = 0x3039  # Magic number
         self.event_count = write_count
         # Update event block
         self.event_timings = event_timings[:write_count]
@@ -291,4 +292,4 @@ class Header(object):
                                        event_disp_flags.tobytes(),
                                        0,
                                        label_bytes
-                                      )
+                                       )

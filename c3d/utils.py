@@ -3,6 +3,7 @@
 import numpy as np
 import struct
 
+
 def is_integer(value):
     '''Check if value input is integer.'''
     return isinstance(value, (int, np.int32, np.int64))
@@ -53,23 +54,28 @@ def pack_labels(labels):
     label_str = ''.join(label.ljust(label_max_size) for label in labels)
     return label_str, label_max_size
 
+
 class Decorator(object):
     '''Base class for extending (decorating) a python object.
     '''
     def __init__(self, decoratee):
         self._decoratee = decoratee
+
     def __getattr__(self, name):
         return getattr(self._decoratee, name)
+
 
 def UNPACK_FLOAT_IEEE(uint_32):
     '''Unpacks a single 32 bit unsigned int to a IEEE float representation
     '''
     return struct.unpack('f', struct.pack("<I", uint_32))[0]
 
+
 def UNPACK_FLOAT_MIPS(uint_32):
     '''Unpacks a single 32 bit unsigned int to a IEEE float representation
     '''
     return struct.unpack('f', struct.pack(">I", uint_32))[0]
+
 
 def DEC_to_IEEE(uint_32):
     '''Convert the 32 bit representation of a DEC float to IEEE format.

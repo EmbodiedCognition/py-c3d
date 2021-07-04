@@ -245,13 +245,12 @@ class Reader(Manager):
             # Update discarded - sign
             points[invalid, 3] = -1
 
-
             # Fifth value is the camera-observation byte
             if camera_sum:
                 # Convert to observation sum
                 points[:, 4] = sum((camera_byte & (1 << k)) >> k for k in range(7))
             else:
-                points[:, 4] = camera_byte #.astype(np.float32)
+                points[:, 4] = camera_byte  # .astype(np.float32)
 
             # Check if analog data exist, and parse if so
             if N_analog > 0:

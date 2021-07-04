@@ -4,6 +4,7 @@ import struct
 import numpy as np
 from .utils import DEC_to_IEEE, DEC_to_IEEE_BYTES
 
+
 class ParamData(object):
     '''A class representing a single named parameter from a C3D file.
 
@@ -146,6 +147,7 @@ class ParamData(object):
             if len(self.dimensions) < 2:    # Check if data is contained in a single dimension
                 return data.flatten()
             return data
+
 
 class ParamReadonly(object):
     ''' Wrapper exposing readonly attributes of a `c3d.parameter.ParamData` entry.
@@ -430,6 +432,7 @@ class ParamReadonly(object):
             return self.uint16_value
         else:
             return self.uint8_value
+
 
 class Param(ParamReadonly):
     ''' Wrapper exposing both readable and writable attributes of a `c3d.parameter.ParamData` entry.

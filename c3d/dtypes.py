@@ -10,6 +10,7 @@ PROCESSOR_INTEL = 84
 PROCESSOR_DEC = 85
 PROCESSOR_MIPS = 86
 
+
 class DataTypes(object):
     ''' Container defining the data types used when parsing byte data.
         Data types depend on the processor format the file is stored in.

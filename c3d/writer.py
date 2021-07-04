@@ -3,10 +3,11 @@
 import copy
 import numpy as np
 import struct
-#import warnings
+# import warnings
 from . import utils
 from .manager import Manager
 from .dtypes import DataTypes
+
 
 class Writer(Manager):
     '''This class writes metadata and frames to a C3D file.
@@ -42,7 +43,7 @@ class Writer(Manager):
         '''Set minimal metadata for this writer.
 
         '''
-        self._dtypes = DataTypes() # Only support INTEL format from writing
+        self._dtypes = DataTypes()  # Only support INTEL format from writing
         super(Writer, self).__init__()
 
         # Header properties
@@ -99,12 +100,14 @@ class Writer(Manager):
         if not (is_consume or is_shallow_copy or is_deep_copy):
             raise ValueError(
                 "Unknown mode argument %s. Supported modes are: 'consume', 'copy', or 'shallow_copy'".format(
-                conversion))
+                    conversion
+                ))
         if not reader._dtypes.is_ieee and not is_shallow_copy:
             # Can't copy/consume non-Intel files due to the uncertainty of converting parameter data.
             raise ValueError(
                 "File was read in %s format and only 'shallow_copy' mode is supported for non Intel files!".format(
-                reader._dtypes.proc_type))
+                    reader._dtypes.proc_type
+                ))
 
         if is_consume:
             writer._header = reader._header
@@ -232,12 +235,12 @@ class Writer(Manager):
                 if np.shape(f[0]) != psh:
                     raise ValueError(
                         'Shape of analog data does not previous frames. Expexted shape {}, was {}.'.format(
-                        str(psh), str(np.shape(f[0]))
+                            str(psh), str(np.shape(f[0]))
                         ))
                 if np.shape(f[1]) != ash:
                     raise ValueError(
                         'Shape of analog data does not previous frames. Expexted shape {}, was {}.'.format(
-                        str(ash), str(np.shape(f[1]))
+                            str(ash), str(np.shape(f[1]))
                         ))
 
         # Sequence of invalid shape
@@ -339,7 +342,6 @@ class Writer(Manager):
         self.trial_group.set('ACTUAL_END_FIELD', 'Actual end frame', 2, '<I', frame, 2)
         self._header.last_frame = np.uint16(min(frame, 65535))
 
-
     def set_screen_axis(self, X='+X', Y='+Y'):
         ''' Set the X_SCREEN and Y_SCREEN parameters in the POINT group.
 
@@ -375,9 +377,8 @@ class Writer(Manager):
         ppf = len(points)
         apf = len(analog)
 
-
         first_frame = self.first_frame
-        if first_frame <= 0: # Bad value
+        if first_frame <= 0:  # Bad value
             first_frame = 1
         nframes = len(self._frames)
         last_frame = first_frame + nframes - 1
