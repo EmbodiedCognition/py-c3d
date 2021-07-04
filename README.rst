@@ -29,7 +29,6 @@ This package includes scripts_ for converting C3D motion data to CSV format
 (``c3d2csv``) and an OpenGL-based visualization tool for observing the motion
 described by a C3D file (``c3d-viewer``).
 
-.. _package documentation: http://c3d.readthedocs.org
 .. _scripts: ./scripts
 
 Library
@@ -50,18 +49,8 @@ To use the C3D library, just import the package and create a ``Reader`` or
 You can also get and set metadata fields using the library; see the `package
 documentation`_ for more details.
 
-.. _package documentation: http://c3d.readthedocs.org
+.. _package documentation: https://mattiasfredriksson.github.io/py-c3d/c3d/
 
-Tests
-~~~~~
-
-To run tests available in the test folder, following command can be run from the root of the package directory::
-
-    python -m unittest discover .
-
-Test scripts will automatically download test files from `c3d.org`_.
-
-.. _c3d.org: https://www.c3d.org/sampledata.html
 
 Caveats
 -------

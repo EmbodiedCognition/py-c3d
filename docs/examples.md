@@ -1,12 +1,3 @@
-Scripts
-========
-
-The package installation comes with some pre-packaged scripts for
-viewing, and converting .c3d files to .csv and .npz formats.
-See the [scripts/] directory on github for more information.
-
-[scripts/]: https://github.com/EmbodiedCognition/py-c3d/tree/master/scripts
-
 Examples
 ========
 
