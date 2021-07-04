@@ -59,8 +59,8 @@ Caveats
 
 The package is tested against the `software examples`_ but may still not support
 every possible format. For example, parameters serialized in multiple parameters 
-are not handled automatically (such as POINT:LABELS and POINT:LABELS2). Reading and 
-writing files from a big-endian system is also not supported. 
+are not handled automatically (such as a LABELS field stored in both POINT:LABELS and 
+POINT:LABELS2). Reading and writing files from a big-endian system is also not supported. 
 
 Tests are currently only run on Windows, which means that Linux and Mac users may 
 experience some issues. If you experience issues with a file or feature, feel free 
