@@ -8,20 +8,20 @@ Use pycodestyle with the settings
 Pycodestyle can be installed with the pip command
 
     pip install pycodestyle
-    
+
 Docstrings
 -----------
 
-Use `numpy style`_ doc strings
+Use [numpy style] doc strings
 
-.. _numpy style: https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard
+[numpy style] https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard
 
 Docstring example
 -----------
 
     def my_function(aparam, bparam):
         ''' Short summary.
-        
+
         Description, classes can be referred to through package/module `c3d.reader.Reader`.
         Methods can be referred to in the same way e.g. `c3d.reader.Reader.read_frames`.
 
@@ -44,11 +44,9 @@ Docstring example
         ValueError
             It occurs for some reason.
         '''
-        
+
         ...
         some_code
         ...
-        
+
         return aarg, barg
-        
-    
