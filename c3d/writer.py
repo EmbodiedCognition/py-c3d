@@ -253,12 +253,26 @@ class Writer(Manager):
 
     def set_point_labels(self, labels):
         ''' Set point data labels.
+
+        Parameters
+        ----------
+        labels : iterable
+            Set POINT:LABELS parameter entry from a set of string labels.
         '''
-        label_str, label_max_size = utils.pack_labels(labels)
-        self.point_group.add_str('LABELS', 'Point labels.', label_str, label_max_size, len(labels))
+        grp = self.point_group
+        if labels is None:
+            grp.add_empty_array('LABELS', 'Point labels.', -1)
+        else:
+            label_str, label_max_size = utils.pack_labels(labels)
+            grp.add_str('LABELS', 'Point labels.', label_str, label_max_size, len(labels))
 
     def set_analog_labels(self, labels):
         ''' Set analog data labels.
+
+        Parameters
+        ----------
+        labels : iterable
+            Set ANALOG:LABELS parameter entry from a set of string labels.
         '''
         grp = self.analog_group
         if labels is None:
