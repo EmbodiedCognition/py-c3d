@@ -3,6 +3,8 @@
 Examples
 ========
 
+Access to data blocks in a .c3d file is provided through the `c3d.reader.Reader` and `c3d.writer.Writer` classes.
+
 Reading
 -------
 
@@ -47,12 +49,12 @@ instance:
     with open('random-points.c3d', 'wb') as h:
         writer.write(h)
 
-The function `c3d.writer.Writer.add_frames` take pairs of ``numpy`` or python
-arrays. First array in each frame tuple contains the point data and the second
-contains analog data for the frame, leaving one of the arrays empty indicates
-no analog --- or point data--- should be included in the file. References of the
-data arrays are tracked until `c3d.writer.Writer.write` is called, serializing
-metadata and data frames to a C3D binary file.
+The function `c3d.writer.Writer.add_frames` take pairs of ``numpy`` or ``python
+arrays``, with the first array in each tuple defining point data and the second
+defining the analog data for the frame. Leaving one of the arrays empty indicates
+to the writer that no analog --- or point data--- should be included in the file.
+References of the data arrays are tracked until `c3d.writer.Writer.write`
+is called, which serializes metadata and data frames into a C3D binary file stream.
 
 Editing
 -------

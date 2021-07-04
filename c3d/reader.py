@@ -114,6 +114,14 @@ class Reader(Manager):
             return a unique data buffer for each frame. Set this to False if you
             consume frames as you iterate over them, or True if you store them
             for later.
+        analog_transform : bool, default=True
+            If True, ANALOG:SCALE, ANALOG:GEN_SCALE, and ANALOG:OFFSET transforms
+            available in the file are applied to the analog channels.
+        check_nan : bool, default=True
+            If True, point x,y,z coordinates with nan values will be marked invalidated
+            and residuals will be set to -1.
+        camera_sum : bool, default=False
+            Camera flag bits will be summed, converting the fifth column to a camera visibility counter.
 
         Returns
         -------
@@ -241,7 +249,7 @@ class Reader(Manager):
             # Fifth value is the camera-observation byte
             if camera_sum:
                 # Convert to observation sum
-                points[:, 4] = sum((camera_byte & (1 << k)) >> k for k in range(8))
+                points[:, 4] = sum((camera_byte & (1 << k)) >> k for k in range(7))
             else:
                 points[:, 4] = camera_byte #.astype(np.float32)
 
