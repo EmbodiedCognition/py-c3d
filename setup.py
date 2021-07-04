@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
     name='c3d',
-    version='0.5.0',
+    version='0.6.0',
     py_modules=['c3d.dtypes', 'c3d.group', 'c3d.header', 'c3d.manager', 'c3d.reader', 'c3d.writer', 'c3d.parameter', 'c3d.utils', 'scripts.c3d-viewer'],
     author='UT Vision, Cognition, and Action Lab',
     author_email='leif@cs.utexas.edu',
