@@ -22,6 +22,8 @@ repository and build and install using the normal Python setup process::
 Usage
 -----
 
+Documentation and examples are available in the `package documentation`_.
+
 Tools
 ~~~~~
 
@@ -41,29 +43,32 @@ To use the C3D library, just import the package and create a ``Reader`` and/or
 
     import c3d
 
-    with open('data.c3d', 'rb') as handle:
-        reader = c3d.Reader(handle)
-        for i, (points, analog) in enumerate(reader.read_frames()):
-            print('Frame {}: {}'.format(i, points.round(2)))
+    with open('my-motion.c3d', 'rb') as file:
+        reader = c3d.Reader(file)
+        for i, points, analog in reader.read_frames():
+            print('frame {}: point {}, analog {}'.format(
+                  i, points.shape, analog.shape))
 
 You can also get and set metadata fields using the library; see the `package
 documentation`_ for more details.
 
 .. _package documentation: https://mattiasfredriksson.github.io/py-c3d/c3d/
 
-
 Caveats
 -------
 
-This library is minimally effective, in the sense that the only motion tracking
-system I have access to (for testing) is a Phasespace system. If you try out the
-library and find that it doesn't work with your motion tracking system, let me
-know. Pull requests are also welcome!
+The package is tested against the `software examples`_ but may still not support
+every possible format. For example, parameters serialized in multiple parameters 
+are not handled automatically (such as POINT:LABELS and POINT:LABELS2). Reading and 
+writing files from a big-endian system is also not supported. 
 
-Also, if you're looking for more functionality than just reading and writing C3D
-files, there are a lot of better toolkits out there that support a lot more file
-formats and provide more functionality, perhaps at the cost of increased
-complexity. The `biomechanical toolkit`_ is a good package for analyzing motion
-data.
+Tests are currently only run on Windows, which means that Linux and Mac users may 
+experience some issues. If you experience issues with a file or feature, feel free 
+to post an issue (preferably by including example file/code/python exception) 
+or make a pull request!
 
-.. _biomechanical toolkit: http://code.google.com/p/b-tk/
+The package is also Python only, for other languages there are other packages such as `ezc3d`_.
+
+.. _software examples: https://www.c3d.org/sampledata.html
+.. _ezc3d: https://github.com/pyomeca/ezc3d
+
