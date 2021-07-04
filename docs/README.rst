@@ -17,4 +17,4 @@ Once installed, documentation can be updated from the root directory with the co
 
 Once updated you can access the documentation in the `docs/c3d/`_ folder.
 
-.. _docs/c3d/: docs/c3d/index.html 
+.. _docs/c3d/: ./c3d/index.html 
