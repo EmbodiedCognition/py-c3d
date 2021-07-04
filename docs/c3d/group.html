@@ -34,6 +34,7 @@ import numpy as np
 from .parameter import ParamData, Param
 from .utils import Decorator
 
+
 class GroupData(object):
     &#39;&#39;&#39;A group of parameters stored in a C3D file.
 
@@ -176,6 +177,7 @@ class GroupData(object):
         for param in self._params.values():
             param._data.write(group_id, handle)
 
+
 class GroupReadonly(object):
     &#39;&#39;&#39; Wrapper exposing readonly attributes of a `c3d.group.GroupData` entry.
     &#39;&#39;&#39;
@@ -266,6 +268,7 @@ class GroupReadonly(object):
         &#39;&#39;&#39;Get the value of the given parameter as a string.&#39;&#39;&#39;
         return self._data[key.upper()].string_value
 
+
 class Group(GroupReadonly):
     &#39;&#39;&#39; Wrapper exposing readable and writeable attributes of a `c3d.group.GroupData` entry.
     &#39;&#39;&#39;
@@ -318,6 +321,7 @@ class Group(GroupReadonly):
             A parameter from the current group.
         &#39;&#39;&#39;
         return self._data._params.get(key, default)
+
     #
     #  Forward param editing
     #
@@ -562,6 +566,7 @@ class Group(GroupReadonly):
             A parameter from the current group.
         &#39;&#39;&#39;
         return self._data._params.get(key, default)
+
     #
     #  Forward param editing
     #

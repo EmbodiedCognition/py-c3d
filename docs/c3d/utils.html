@@ -32,6 +32,7 @@
 import numpy as np
 import struct
 
+
 def is_integer(value):
     &#39;&#39;&#39;Check if value input is integer.&#39;&#39;&#39;
     return isinstance(value, (int, np.int32, np.int64))
@@ -82,23 +83,28 @@ def pack_labels(labels):
     label_str = &#39;&#39;.join(label.ljust(label_max_size) for label in labels)
     return label_str, label_max_size
 
+
 class Decorator(object):
     &#39;&#39;&#39;Base class for extending (decorating) a python object.
     &#39;&#39;&#39;
     def __init__(self, decoratee):
         self._decoratee = decoratee
+
     def __getattr__(self, name):
         return getattr(self._decoratee, name)
+
 
 def UNPACK_FLOAT_IEEE(uint_32):
     &#39;&#39;&#39;Unpacks a single 32 bit unsigned int to a IEEE float representation
     &#39;&#39;&#39;
     return struct.unpack(&#39;f&#39;, struct.pack(&#34;&lt;I&#34;, uint_32))[0]
 
+
 def UNPACK_FLOAT_MIPS(uint_32):
     &#39;&#39;&#39;Unpacks a single 32 bit unsigned int to a IEEE float representation
     &#39;&#39;&#39;
     return struct.unpack(&#39;f&#39;, struct.pack(&#34;&gt;I&#34;, uint_32))[0]
+
 
 def DEC_to_IEEE(uint_32):
     &#39;&#39;&#39;Convert the 32 bit representation of a DEC float to IEEE format.
@@ -445,6 +451,7 @@ each string is padded to match the longest <code>labels</code> string.</dd>
     &#39;&#39;&#39;
     def __init__(self, decoratee):
         self._decoratee = decoratee
+
     def __getattr__(self, name):
         return getattr(self._decoratee, name)</code></pre>
 </details>

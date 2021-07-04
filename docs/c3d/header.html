@@ -35,6 +35,7 @@ import struct
 import numpy as np
 from .utils import UNPACK_FLOAT_IEEE, DEC_to_IEEE
 
+
 class Header(object):
     &#39;&#39;&#39;Header information from a C3D file.
 
@@ -289,7 +290,7 @@ class Header(object):
                                   str(18) + &#39;s&#39;,      # Flags
                                   &#39;H&#39;,                # __
                                   str(18 * 4) + &#39;s&#39;   # Labels
-                                 )
+                                  )
         # Pack bytes
         event_timings = np.zeros(18, dtype=np.float32)
         event_disp_flags = np.zeros(18, dtype=np.uint8)
@@ -309,7 +310,7 @@ class Header(object):
         event_disp_flags[:write_count] = 1
 
         # Update event headers in self
-        self.long_event_labels = 0x3039 # Magic number
+        self.long_event_labels = 0x3039  # Magic number
         self.event_count = write_count
         # Update event block
         self.event_timings = event_timings[:write_count]
@@ -320,7 +321,7 @@ class Header(object):
                                        event_disp_flags.tobytes(),
                                        0,
                                        label_bytes
-                                      )</code></pre>
+                                       )</code></pre>
 </details>
 </section>
 <section>
@@ -645,7 +646,7 @@ not given, Header attributes are initialized with default values.</dd>
                                   str(18) + &#39;s&#39;,      # Flags
                                   &#39;H&#39;,                # __
                                   str(18 * 4) + &#39;s&#39;   # Labels
-                                 )
+                                  )
         # Pack bytes
         event_timings = np.zeros(18, dtype=np.float32)
         event_disp_flags = np.zeros(18, dtype=np.uint8)
@@ -665,7 +666,7 @@ not given, Header attributes are initialized with default values.</dd>
         event_disp_flags[:write_count] = 1
 
         # Update event headers in self
-        self.long_event_labels = 0x3039 # Magic number
+        self.long_event_labels = 0x3039  # Magic number
         self.event_count = write_count
         # Update event block
         self.event_timings = event_timings[:write_count]
@@ -676,7 +677,7 @@ not given, Header attributes are initialized with default values.</dd>
                                        event_disp_flags.tobytes(),
                                        0,
                                        label_bytes
-                                      )</code></pre>
+                                       )</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
@@ -755,7 +756,7 @@ not be relative to the first_frame header parameter.</dd>
                               str(18) + &#39;s&#39;,      # Flags
                               &#39;H&#39;,                # __
                               str(18 * 4) + &#39;s&#39;   # Labels
-                             )
+                              )
     # Pack bytes
     event_timings = np.zeros(18, dtype=np.float32)
     event_disp_flags = np.zeros(18, dtype=np.uint8)
@@ -775,7 +776,7 @@ not be relative to the first_frame header parameter.</dd>
     event_disp_flags[:write_count] = 1
 
     # Update event headers in self
-    self.long_event_labels = 0x3039 # Magic number
+    self.long_event_labels = 0x3039  # Magic number
     self.event_count = write_count
     # Update event block
     self.event_timings = event_timings[:write_count]
@@ -786,7 +787,7 @@ not be relative to the first_frame header parameter.</dd>
                                    event_disp_flags.tobytes(),
                                    0,
                                    label_bytes
-                                  )</code></pre>
+                                   )</code></pre>
 </details>
 </dd>
 <dt id="c3d.header.Header.read"><code class="name flex">

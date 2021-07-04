@@ -32,10 +32,11 @@
 import copy
 import numpy as np
 import struct
-#import warnings
+# import warnings
 from . import utils
 from .manager import Manager
 from .dtypes import DataTypes
+
 
 class Writer(Manager):
     &#39;&#39;&#39;This class writes metadata and frames to a C3D file.
@@ -71,7 +72,7 @@ class Writer(Manager):
         &#39;&#39;&#39;Set minimal metadata for this writer.
 
         &#39;&#39;&#39;
-        self._dtypes = DataTypes() # Only support INTEL format from writing
+        self._dtypes = DataTypes()  # Only support INTEL format from writing
         super(Writer, self).__init__()
 
         # Header properties
@@ -128,12 +129,14 @@ class Writer(Manager):
         if not (is_consume or is_shallow_copy or is_deep_copy):
             raise ValueError(
                 &#34;Unknown mode argument %s. Supported modes are: &#39;consume&#39;, &#39;copy&#39;, or &#39;shallow_copy&#39;&#34;.format(
-                conversion))
+                    conversion
+                ))
         if not reader._dtypes.is_ieee and not is_shallow_copy:
             # Can&#39;t copy/consume non-Intel files due to the uncertainty of converting parameter data.
             raise ValueError(
                 &#34;File was read in %s format and only &#39;shallow_copy&#39; mode is supported for non Intel files!&#34;.format(
-                reader._dtypes.proc_type))
+                    reader._dtypes.proc_type
+                ))
 
         if is_consume:
             writer._header = reader._header
@@ -261,12 +264,12 @@ class Writer(Manager):
                 if np.shape(f[0]) != psh:
                     raise ValueError(
                         &#39;Shape of analog data does not previous frames. Expexted shape {}, was {}.&#39;.format(
-                        str(psh), str(np.shape(f[0]))
+                            str(psh), str(np.shape(f[0]))
                         ))
                 if np.shape(f[1]) != ash:
                     raise ValueError(
                         &#39;Shape of analog data does not previous frames. Expexted shape {}, was {}.&#39;.format(
-                        str(ash), str(np.shape(f[1]))
+                            str(ash), str(np.shape(f[1]))
                         ))
 
         # Sequence of invalid shape
@@ -368,7 +371,6 @@ class Writer(Manager):
         self.trial_group.set(&#39;ACTUAL_END_FIELD&#39;, &#39;Actual end frame&#39;, 2, &#39;&lt;I&#39;, frame, 2)
         self._header.last_frame = np.uint16(min(frame, 65535))
 
-
     def set_screen_axis(self, X=&#39;+X&#39;, Y=&#39;+Y&#39;):
         &#39;&#39;&#39; Set the X_SCREEN and Y_SCREEN parameters in the POINT group.
 
@@ -404,9 +406,8 @@ class Writer(Manager):
         ppf = len(points)
         apf = len(analog)
 
-
         first_frame = self.first_frame
-        if first_frame &lt;= 0: # Bad value
+        if first_frame &lt;= 0:  # Bad value
             first_frame = 1
         nframes = len(self._frames)
         last_frame = first_frame + nframes - 1
@@ -613,7 +614,7 @@ POINT:SCALE parameter").</dd>
         &#39;&#39;&#39;Set minimal metadata for this writer.
 
         &#39;&#39;&#39;
-        self._dtypes = DataTypes() # Only support INTEL format from writing
+        self._dtypes = DataTypes()  # Only support INTEL format from writing
         super(Writer, self).__init__()
 
         # Header properties
@@ -670,12 +671,14 @@ POINT:SCALE parameter").</dd>
         if not (is_consume or is_shallow_copy or is_deep_copy):
             raise ValueError(
                 &#34;Unknown mode argument %s. Supported modes are: &#39;consume&#39;, &#39;copy&#39;, or &#39;shallow_copy&#39;&#34;.format(
-                conversion))
+                    conversion
+                ))
         if not reader._dtypes.is_ieee and not is_shallow_copy:
             # Can&#39;t copy/consume non-Intel files due to the uncertainty of converting parameter data.
             raise ValueError(
                 &#34;File was read in %s format and only &#39;shallow_copy&#39; mode is supported for non Intel files!&#34;.format(
-                reader._dtypes.proc_type))
+                    reader._dtypes.proc_type
+                ))
 
         if is_consume:
             writer._header = reader._header
@@ -803,12 +806,12 @@ POINT:SCALE parameter").</dd>
                 if np.shape(f[0]) != psh:
                     raise ValueError(
                         &#39;Shape of analog data does not previous frames. Expexted shape {}, was {}.&#39;.format(
-                        str(psh), str(np.shape(f[0]))
+                            str(psh), str(np.shape(f[0]))
                         ))
                 if np.shape(f[1]) != ash:
                     raise ValueError(
                         &#39;Shape of analog data does not previous frames. Expexted shape {}, was {}.&#39;.format(
-                        str(ash), str(np.shape(f[1]))
+                            str(ash), str(np.shape(f[1]))
                         ))
 
         # Sequence of invalid shape
@@ -910,7 +913,6 @@ POINT:SCALE parameter").</dd>
         self.trial_group.set(&#39;ACTUAL_END_FIELD&#39;, &#39;Actual end frame&#39;, 2, &#39;&lt;I&#39;, frame, 2)
         self._header.last_frame = np.uint16(min(frame, 65535))
 
-
     def set_screen_axis(self, X=&#39;+X&#39;, Y=&#39;+Y&#39;):
         &#39;&#39;&#39; Set the X_SCREEN and Y_SCREEN parameters in the POINT group.
 
@@ -946,9 +948,8 @@ POINT:SCALE parameter").</dd>
         ppf = len(points)
         apf = len(analog)
 
-
         first_frame = self.first_frame
-        if first_frame &lt;= 0: # Bad value
+        if first_frame &lt;= 0:  # Bad value
             first_frame = 1
         nframes = len(self._frames)
         last_frame = first_frame + nframes - 1
@@ -1171,12 +1172,14 @@ def from_reader(reader, conversion=None):
     if not (is_consume or is_shallow_copy or is_deep_copy):
         raise ValueError(
             &#34;Unknown mode argument %s. Supported modes are: &#39;consume&#39;, &#39;copy&#39;, or &#39;shallow_copy&#39;&#34;.format(
-            conversion))
+                conversion
+            ))
     if not reader._dtypes.is_ieee and not is_shallow_copy:
         # Can&#39;t copy/consume non-Intel files due to the uncertainty of converting parameter data.
         raise ValueError(
             &#34;File was read in %s format and only &#39;shallow_copy&#39; mode is supported for non Intel files!&#34;.format(
-            reader._dtypes.proc_type))
+                reader._dtypes.proc_type
+            ))
 
     if is_consume:
         writer._header = reader._header
@@ -1332,12 +1335,12 @@ Note that the index should be relative to 0 rather then the frame number provide
             if np.shape(f[0]) != psh:
                 raise ValueError(
                     &#39;Shape of analog data does not previous frames. Expexted shape {}, was {}.&#39;.format(
-                    str(psh), str(np.shape(f[0]))
+                        str(psh), str(np.shape(f[0]))
                     ))
             if np.shape(f[1]) != ash:
                 raise ValueError(
                     &#39;Shape of analog data does not previous frames. Expexted shape {}, was {}.&#39;.format(
-                    str(ash), str(np.shape(f[1]))
+                        str(ash), str(np.shape(f[1]))
                     ))
 
     # Sequence of invalid shape
@@ -1659,9 +1662,8 @@ writer does not close the handle.</dd>
     ppf = len(points)
     apf = len(analog)
 
-
     first_frame = self.first_frame
-    if first_frame &lt;= 0: # Bad value
+    if first_frame &lt;= 0:  # Bad value
         first_frame = 1
     nframes = len(self._frames)
     last_frame = first_frame + nframes - 1
