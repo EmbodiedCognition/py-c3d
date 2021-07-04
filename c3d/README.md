@@ -29,8 +29,8 @@ Docstring example
         ----------
         aparam : `c3d.reader.Reader`
             This is the first input parameter.
-        bparam : str
-            The second parameter should be a string.
+        bparam : str, optional
+            The second parameter is an optional string argument.
 
         Returns
         -------
