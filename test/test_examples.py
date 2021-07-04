@@ -15,7 +15,12 @@ class Examples(Base):
     ''' Test basic writer functionality
     '''
     def test_read(self):
-        import read
+        # Silence print
+        with open(os.devnull, 'w') as f:
+            stdout = sys.stdout
+            sys.stdout = f
+            import read
+            sys.stdout = stdout
 
     def test_write(self):
         import write

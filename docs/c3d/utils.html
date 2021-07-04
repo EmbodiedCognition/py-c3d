@@ -23,6 +23,159 @@
 </header>
 <section id="section-intro">
 <p>Trailing utility functions.</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#39;&#39;&#39; Trailing utility functions.
+&#39;&#39;&#39;
+import numpy as np
+import struct
+
+def is_integer(value):
+    &#39;&#39;&#39;Check if value input is integer.&#39;&#39;&#39;
+    return isinstance(value, (int, np.int32, np.int64))
+
+
+def is_iterable(value):
+    &#39;&#39;&#39;Check if value is iterable.&#39;&#39;&#39;
+    return hasattr(value, &#39;__iter__&#39;)
+
+
+def type_npy2struct(dtype):
+    &#39;&#39;&#39; Convert numpy dtype format to a struct package format string.
+    &#39;&#39;&#39;
+    return dtype.byteorder + dtype.char
+
+
+def pack_labels(labels):
+    &#39;&#39;&#39; Static method used to pack and pad the set of `labels` strings before
+        passing the output into a `c3d.group.Group.add_str`.
+
+    Parameters
+    ----------
+    labels : iterable
+        List of strings to pack and pad into a single string suitable for encoding in a Parameter entry.
+
+    Example
+    -------
+    &gt;&gt;&gt; labels = [&#39;RFT1&#39;, &#39;RFT2&#39;, &#39;RFT3&#39;, &#39;LFT1&#39;, &#39;LFT2&#39;, &#39;LFT3&#39;]
+    &gt;&gt;&gt; param_str, label_max_size = Writer.pack_labels(labels)
+    &gt;&gt;&gt; writer.point_group.add_str(&#39;LABELS&#39;,
+                                   &#39;Point labels.&#39;,
+                                   label_str,
+                                   label_max_size,
+                                   len(labels))
+
+    Returns
+    -------
+    param_str : str
+        String containing `labels` packed into a single variable where
+        each string is padded to match the longest `labels` string.
+    label_max_size : int
+        Number of bytes associated with the longest `label` string, all strings are padded to this length.
+    &#39;&#39;&#39;
+    labels = np.ravel(labels)
+    # Get longest label name
+    label_max_size = 0
+    label_max_size = max(label_max_size, np.max([len(label) for label in labels]))
+    label_str = &#39;&#39;.join(label.ljust(label_max_size) for label in labels)
+    return label_str, label_max_size
+
+class Decorator(object):
+    &#39;&#39;&#39;Base class for extending (decorating) a python object.
+    &#39;&#39;&#39;
+    def __init__(self, decoratee):
+        self._decoratee = decoratee
+    def __getattr__(self, name):
+        return getattr(self._decoratee, name)
+
+def UNPACK_FLOAT_IEEE(uint_32):
+    &#39;&#39;&#39;Unpacks a single 32 bit unsigned int to a IEEE float representation
+    &#39;&#39;&#39;
+    return struct.unpack(&#39;f&#39;, struct.pack(&#34;&lt;I&#34;, uint_32))[0]
+
+def UNPACK_FLOAT_MIPS(uint_32):
+    &#39;&#39;&#39;Unpacks a single 32 bit unsigned int to a IEEE float representation
+    &#39;&#39;&#39;
+    return struct.unpack(&#39;f&#39;, struct.pack(&#34;&gt;I&#34;, uint_32))[0]
+
+def DEC_to_IEEE(uint_32):
+    &#39;&#39;&#39;Convert the 32 bit representation of a DEC float to IEEE format.
+
+    Params:
+    ----
+    uint_32 : 32 bit unsigned integer containing the DEC single precision float point bits.
+    Returns : IEEE formated floating point of the same shape as the input.
+    &#39;&#39;&#39;
+    # Follows the bit pattern found:
+    #   http://home.fnal.gov/~yang/Notes/ieee_vs_dec_float.txt
+    # Further formating descriptions can be found:
+    #   http://www.irig106.org/docs/106-07/appendixO.pdf
+    # In accodance with the first ref. first &amp; second 16 bit words are placed
+    # in a big endian 16 bit word representation, and needs to be inverted.
+    # Second reference describe the DEC-&gt;IEEE conversion.
+
+    # Warning! Unsure if NaN numbers are managed appropriately.
+
+    # Shuffle the first two bit words from DEC bit representation to an ordered representation.
+    # Note that the most significant fraction bits are placed in the first 7 bits.
+    #
+    # Below are the DEC layout in accordance with the references:
+    # ___________________________________________________________________________________
+    # |         Mantissa (16:0)         |       SIGN    |       Exponent (8:0)  |       Mantissa (23:17)        |
+    # ___________________________________________________________________________________
+    # |32-                                        -16|   15        |14-                           -7|6-                                   -0|
+    #
+    # Legend:
+    # _______________________________________________________
+    # | Part (left bit of segment : right bit) | Part | ..
+    # _______________________________________________________
+    # |Bit adress -     ..       - Bit adress | Bit adress - ..
+    ####
+
+    # Swap the first and last 16  bits for a consistent alignment of the fraction
+    reshuffled = ((uint_32 &amp; 0xFFFF0000) &gt;&gt; 16) | ((uint_32 &amp; 0x0000FFFF) &lt;&lt; 16)
+    # After the shuffle each part are in little-endian and ordered as: SIGN-Exponent-Fraction
+    exp_bits = ((reshuffled &amp; 0xFF000000) - 1) &amp; 0xFF000000
+    reshuffled = (reshuffled &amp; 0x00FFFFFF) | exp_bits
+    return UNPACK_FLOAT_IEEE(reshuffled)
+
+
+def DEC_to_IEEE_BYTES(bytes):
+    &#39;&#39;&#39;Convert byte array containing 32 bit DEC floats to IEEE format.
+
+    Params:
+    ----
+    bytes : Byte array where every 4 bytes represent a single precision DEC float.
+    Returns : IEEE formated floating point of the same shape as the input.
+    &#39;&#39;&#39;
+
+    # See comments in DEC_to_IEEE() for DEC format definition
+
+    # Reshuffle
+    bytes = memoryview(bytes)
+    reshuffled = np.empty(len(bytes), dtype=np.dtype(&#39;B&#39;))
+    reshuffled[::4] = bytes[2::4]
+    reshuffled[1::4] = bytes[3::4]
+    reshuffled[2::4] = bytes[::4]
+    # Decrement exponent by 2, if exp. &gt; 1
+    reshuffled[3::4] = bytes[1::4] + (np.bitwise_and(bytes[1::4], 0x7f) == 0) - 1
+
+    # There are different ways to adjust for differences in DEC/IEEE representation
+    # after reshuffle. Two simple methods are:
+    # 1) Decrement exponent bits by 2, then convert to IEEE.
+    # 2) Convert to IEEE directly and divide by four.
+    # 3) Handle edge cases, expensive in python...
+    # However these are simple methods, and do not accurately convert when:
+    # 1) Exponent &lt; 2 (without bias), impossible to decrement exponent without adjusting fraction/mantissa.
+    # 2) Exponent == 0, DEC numbers are then 0 or undefined while IEEE is not. NaN are produced when exponent == 255.
+    # Here method 1) is used, which mean that only small numbers will be represented incorrectly.
+
+    return np.frombuffer(reshuffled.tobytes(),
+                         dtype=np.float32,
+                         count=int(len(bytes) / 4))</code></pre>
+</details>
 </section>
 <section>
 </section>
@@ -39,6 +192,51 @@
 <h2 id="params">Params:</h2>
 <p>uint_32 : 32 bit unsigned integer containing the DEC single precision float point bits.
 Returns : IEEE formated floating point of the same shape as the input.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def DEC_to_IEEE(uint_32):
+    &#39;&#39;&#39;Convert the 32 bit representation of a DEC float to IEEE format.
+
+    Params:
+    ----
+    uint_32 : 32 bit unsigned integer containing the DEC single precision float point bits.
+    Returns : IEEE formated floating point of the same shape as the input.
+    &#39;&#39;&#39;
+    # Follows the bit pattern found:
+    #   http://home.fnal.gov/~yang/Notes/ieee_vs_dec_float.txt
+    # Further formating descriptions can be found:
+    #   http://www.irig106.org/docs/106-07/appendixO.pdf
+    # In accodance with the first ref. first &amp; second 16 bit words are placed
+    # in a big endian 16 bit word representation, and needs to be inverted.
+    # Second reference describe the DEC-&gt;IEEE conversion.
+
+    # Warning! Unsure if NaN numbers are managed appropriately.
+
+    # Shuffle the first two bit words from DEC bit representation to an ordered representation.
+    # Note that the most significant fraction bits are placed in the first 7 bits.
+    #
+    # Below are the DEC layout in accordance with the references:
+    # ___________________________________________________________________________________
+    # |         Mantissa (16:0)         |       SIGN    |       Exponent (8:0)  |       Mantissa (23:17)        |
+    # ___________________________________________________________________________________
+    # |32-                                        -16|   15        |14-                           -7|6-                                   -0|
+    #
+    # Legend:
+    # _______________________________________________________
+    # | Part (left bit of segment : right bit) | Part | ..
+    # _______________________________________________________
+    # |Bit adress -     ..       - Bit adress | Bit adress - ..
+    ####
+
+    # Swap the first and last 16  bits for a consistent alignment of the fraction
+    reshuffled = ((uint_32 &amp; 0xFFFF0000) &gt;&gt; 16) | ((uint_32 &amp; 0x0000FFFF) &lt;&lt; 16)
+    # After the shuffle each part are in little-endian and ordered as: SIGN-Exponent-Fraction
+    exp_bits = ((reshuffled &amp; 0xFF000000) - 1) &amp; 0xFF000000
+    reshuffled = (reshuffled &amp; 0x00FFFFFF) | exp_bits
+    return UNPACK_FLOAT_IEEE(reshuffled)</code></pre>
+</details>
 </dd>
 <dt id="c3d.utils.DEC_to_IEEE_BYTES"><code class="name flex">
 <span>def <span class="ident">DEC_to_IEEE_BYTES</span></span>(<span>bytes)</span>
@@ -48,30 +246,102 @@ Returns : IEEE formated floating point of the same shape as the input.</p></div>
 <h2 id="params">Params:</h2>
 <p>bytes : Byte array where every 4 bytes represent a single precision DEC float.
 Returns : IEEE formated floating point of the same shape as the input.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def DEC_to_IEEE_BYTES(bytes):
+    &#39;&#39;&#39;Convert byte array containing 32 bit DEC floats to IEEE format.
+
+    Params:
+    ----
+    bytes : Byte array where every 4 bytes represent a single precision DEC float.
+    Returns : IEEE formated floating point of the same shape as the input.
+    &#39;&#39;&#39;
+
+    # See comments in DEC_to_IEEE() for DEC format definition
+
+    # Reshuffle
+    bytes = memoryview(bytes)
+    reshuffled = np.empty(len(bytes), dtype=np.dtype(&#39;B&#39;))
+    reshuffled[::4] = bytes[2::4]
+    reshuffled[1::4] = bytes[3::4]
+    reshuffled[2::4] = bytes[::4]
+    # Decrement exponent by 2, if exp. &gt; 1
+    reshuffled[3::4] = bytes[1::4] + (np.bitwise_and(bytes[1::4], 0x7f) == 0) - 1
+
+    # There are different ways to adjust for differences in DEC/IEEE representation
+    # after reshuffle. Two simple methods are:
+    # 1) Decrement exponent bits by 2, then convert to IEEE.
+    # 2) Convert to IEEE directly and divide by four.
+    # 3) Handle edge cases, expensive in python...
+    # However these are simple methods, and do not accurately convert when:
+    # 1) Exponent &lt; 2 (without bias), impossible to decrement exponent without adjusting fraction/mantissa.
+    # 2) Exponent == 0, DEC numbers are then 0 or undefined while IEEE is not. NaN are produced when exponent == 255.
+    # Here method 1) is used, which mean that only small numbers will be represented incorrectly.
+
+    return np.frombuffer(reshuffled.tobytes(),
+                         dtype=np.float32,
+                         count=int(len(bytes) / 4))</code></pre>
+</details>
 </dd>
 <dt id="c3d.utils.UNPACK_FLOAT_IEEE"><code class="name flex">
 <span>def <span class="ident">UNPACK_FLOAT_IEEE</span></span>(<span>uint_32)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Unpacks a single 32 bit unsigned int to a IEEE float representation</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def UNPACK_FLOAT_IEEE(uint_32):
+    &#39;&#39;&#39;Unpacks a single 32 bit unsigned int to a IEEE float representation
+    &#39;&#39;&#39;
+    return struct.unpack(&#39;f&#39;, struct.pack(&#34;&lt;I&#34;, uint_32))[0]</code></pre>
+</details>
 </dd>
 <dt id="c3d.utils.UNPACK_FLOAT_MIPS"><code class="name flex">
 <span>def <span class="ident">UNPACK_FLOAT_MIPS</span></span>(<span>uint_32)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Unpacks a single 32 bit unsigned int to a IEEE float representation</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def UNPACK_FLOAT_MIPS(uint_32):
+    &#39;&#39;&#39;Unpacks a single 32 bit unsigned int to a IEEE float representation
+    &#39;&#39;&#39;
+    return struct.unpack(&#39;f&#39;, struct.pack(&#34;&gt;I&#34;, uint_32))[0]</code></pre>
+</details>
 </dd>
 <dt id="c3d.utils.is_integer"><code class="name flex">
 <span>def <span class="ident">is_integer</span></span>(<span>value)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Check if value input is integer.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_integer(value):
+    &#39;&#39;&#39;Check if value input is integer.&#39;&#39;&#39;
+    return isinstance(value, (int, np.int32, np.int64))</code></pre>
+</details>
 </dd>
 <dt id="c3d.utils.is_iterable"><code class="name flex">
 <span>def <span class="ident">is_iterable</span></span>(<span>value)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Check if value is iterable.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_iterable(value):
+    &#39;&#39;&#39;Check if value is iterable.&#39;&#39;&#39;
+    return hasattr(value, &#39;__iter__&#39;)</code></pre>
+</details>
 </dd>
 <dt id="c3d.utils.pack_labels"><code class="name flex">
 <span>def <span class="ident">pack_labels</span></span>(<span>labels)</span>
@@ -101,12 +371,59 @@ each string is padded to match the longest <code>labels</code> string.</dd>
 <dt><strong><code>label_max_size</code></strong> :&ensp;<code>int</code></dt>
 <dd>Number of bytes associated with the longest <code>label</code> string, all strings are padded to this length.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def pack_labels(labels):
+    &#39;&#39;&#39; Static method used to pack and pad the set of `labels` strings before
+        passing the output into a `c3d.group.Group.add_str`.
+
+    Parameters
+    ----------
+    labels : iterable
+        List of strings to pack and pad into a single string suitable for encoding in a Parameter entry.
+
+    Example
+    -------
+    &gt;&gt;&gt; labels = [&#39;RFT1&#39;, &#39;RFT2&#39;, &#39;RFT3&#39;, &#39;LFT1&#39;, &#39;LFT2&#39;, &#39;LFT3&#39;]
+    &gt;&gt;&gt; param_str, label_max_size = Writer.pack_labels(labels)
+    &gt;&gt;&gt; writer.point_group.add_str(&#39;LABELS&#39;,
+                                   &#39;Point labels.&#39;,
+                                   label_str,
+                                   label_max_size,
+                                   len(labels))
+
+    Returns
+    -------
+    param_str : str
+        String containing `labels` packed into a single variable where
+        each string is padded to match the longest `labels` string.
+    label_max_size : int
+        Number of bytes associated with the longest `label` string, all strings are padded to this length.
+    &#39;&#39;&#39;
+    labels = np.ravel(labels)
+    # Get longest label name
+    label_max_size = 0
+    label_max_size = max(label_max_size, np.max([len(label) for label in labels]))
+    label_str = &#39;&#39;.join(label.ljust(label_max_size) for label in labels)
+    return label_str, label_max_size</code></pre>
+</details>
 </dd>
 <dt id="c3d.utils.type_npy2struct"><code class="name flex">
 <span>def <span class="ident">type_npy2struct</span></span>(<span>dtype)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Convert numpy dtype format to a struct package format string.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def type_npy2struct(dtype):
+    &#39;&#39;&#39; Convert numpy dtype format to a struct package format string.
+    &#39;&#39;&#39;
+    return dtype.byteorder + dtype.char</code></pre>
+</details>
 </dd>
 </dl>
 </section>
@@ -119,6 +436,18 @@ each string is padded to match the longest <code>labels</code> string.</dd>
 </code></dt>
 <dd>
 <div class="desc"><p>Base class for extending (decorating) a python object.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Decorator(object):
+    &#39;&#39;&#39;Base class for extending (decorating) a python object.
+    &#39;&#39;&#39;
+    def __init__(self, decoratee):
+        self._decoratee = decoratee
+    def __getattr__(self, name):
+        return getattr(self._decoratee, name)</code></pre>
+</details>
 </dd>
 </dl>
 </section>

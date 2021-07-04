@@ -1,4 +1,4 @@
-'''A Python module for reading and writing C3D files.'''
+'''Contains the Reader class for reading C3D files.'''
 
 import io
 import numpy as np

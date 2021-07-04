@@ -1,4 +1,4 @@
-'''A Python module for reading and writing C3D files.'''
+'''Contains the Writer class for writing C3D files.'''
 
 import copy
 import numpy as np
@@ -167,7 +167,7 @@ class Writer(Manager):
         return self.numeric_key_max + 1
 
     def get_create(self, label):
-        ''' Get or create the specified parameter group.'''
+        ''' Get or create a parameter `c3d.group.Group`.'''
         label = label.upper()
         group = self.get(label)
         if group is None:
@@ -194,7 +194,7 @@ class Writer(Manager):
 
         Returns
         -------
-        group : :class:`Group`
+        group : `c3d.group.Group`
             An editable group instance.
         '''
         return super(Writer, self)._add_group(group_id, name, desc)
@@ -292,7 +292,7 @@ class Writer(Manager):
         Parameters
         ----------
         values : iterable or None
-            Iterable containing individual scale factors for encoding analog channel data.
+            Iterable containing individual scale factors (float32) for scaling analog channel data.
         '''
         if utils.is_iterable(values):
             data = np.array([v for v in values], dtype=np.float32)
@@ -308,7 +308,7 @@ class Writer(Manager):
         Parameters
         ----------
         values : iterable or None
-            Iterable containing individual offsets for encoding analog channel data.
+            Iterable containing individual offsets (int16) for encoding analog channel data.
         '''
         if utils.is_iterable(values):
             data = np.array([v for v in values], dtype=np.int16)

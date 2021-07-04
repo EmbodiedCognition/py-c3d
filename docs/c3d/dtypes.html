@@ -23,6 +23,121 @@
 </header>
 <section id="section-intro">
 <p>State object defining the data types associated with a given .c3d processor format.</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#39;&#39;&#39;
+State object defining the data types associated with a given .c3d processor format.
+&#39;&#39;&#39;
+
+import sys
+import codecs
+import numpy as np
+
+PROCESSOR_INTEL = 84
+PROCESSOR_DEC = 85
+PROCESSOR_MIPS = 86
+
+class DataTypes(object):
+    &#39;&#39;&#39; Container defining the data types used when parsing byte data.
+        Data types depend on the processor format the file is stored in.
+    &#39;&#39;&#39;
+    def __init__(self, proc_type=PROCESSOR_INTEL):
+        self._proc_type = proc_type
+        self._little_endian_sys = sys.byteorder == &#39;little&#39;
+        self._native = ((self.is_ieee or self.is_dec) and self.little_endian_sys) or \
+                       (self.is_mips and self.big_endian_sys)
+        if self.big_endian_sys:
+            warnings.warn(&#39;Systems with native byte order of big-endian are not supported.&#39;)
+
+        if self._proc_type == PROCESSOR_MIPS:
+            # Big-Endian (SGI/MIPS format)
+            self.float32 = np.dtype(np.float32).newbyteorder(&#39;&gt;&#39;)
+            self.float64 = np.dtype(np.float64).newbyteorder(&#39;&gt;&#39;)
+            self.uint8 = np.uint8
+            self.uint16 = np.dtype(np.uint16).newbyteorder(&#39;&gt;&#39;)
+            self.uint32 = np.dtype(np.uint32).newbyteorder(&#39;&gt;&#39;)
+            self.uint64 = np.dtype(np.uint64).newbyteorder(&#39;&gt;&#39;)
+            self.int8 = np.int8
+            self.int16 = np.dtype(np.int16).newbyteorder(&#39;&gt;&#39;)
+            self.int32 = np.dtype(np.int32).newbyteorder(&#39;&gt;&#39;)
+            self.int64 = np.dtype(np.int64).newbyteorder(&#39;&gt;&#39;)
+        else:
+            # Little-Endian format (Intel or DEC format)
+            self.float32 = np.float32
+            self.float64 = np.float64
+            self.uint8 = np.uint8
+            self.uint16 = np.uint16
+            self.uint32 = np.uint32
+            self.uint64 = np.uint64
+            self.int8 = np.int8
+            self.int16 = np.int16
+            self.int32 = np.int32
+            self.int64 = np.int64
+
+    @property
+    def is_ieee(self) -&gt; bool:
+        &#39;&#39;&#39; True if the associated file is in the Intel format.
+        &#39;&#39;&#39;
+        return self._proc_type == PROCESSOR_INTEL
+
+    @property
+    def is_dec(self) -&gt; bool:
+        &#39;&#39;&#39; True if the associated file is in the DEC format.
+        &#39;&#39;&#39;
+        return self._proc_type == PROCESSOR_DEC
+
+    @property
+    def is_mips(self) -&gt; bool:
+        &#39;&#39;&#39; True if the associated file is in the SGI/MIPS format.
+        &#39;&#39;&#39;
+        return self._proc_type == PROCESSOR_MIPS
+
+    @property
+    def proc_type(self) -&gt; str:
+        &#39;&#39;&#39; Get the processory type associated with the data format in the file.
+        &#39;&#39;&#39;
+        processor_type = [&#39;INTEL&#39;, &#39;DEC&#39;, &#39;MIPS&#39;]
+        return processor_type[self._proc_type - PROCESSOR_INTEL]
+
+    @property
+    def processor(self) -&gt; int:
+        &#39;&#39;&#39; Get the processor number encoded in the .c3d file.
+        &#39;&#39;&#39;
+        return self._proc_type
+
+    @property
+    def native(self) -&gt; bool:
+        &#39;&#39;&#39; True if the native (system) byte order matches the file byte order.
+        &#39;&#39;&#39;
+        return self._native
+
+    @property
+    def little_endian_sys(self) -&gt; bool:
+        &#39;&#39;&#39; True if native byte order is little-endian.
+        &#39;&#39;&#39;
+        return self._little_endian_sys
+
+    @property
+    def big_endian_sys(self) -&gt; bool:
+        &#39;&#39;&#39; True if native byte order is big-endian.
+        &#39;&#39;&#39;
+        return not self._little_endian_sys
+
+    def decode_string(self, bytes) -&gt; str:
+        &#39;&#39;&#39; Decode a byte array to a string.
+        &#39;&#39;&#39;
+        # Attempt to decode using different decoders
+        decoders = [&#39;utf-8&#39;, &#39;latin-1&#39;]
+        for dec in decoders:
+            try:
+                return codecs.decode(bytes, dec)
+            except UnicodeDecodeError:
+                continue
+        # Revert to using default decoder but replace characters
+        return codecs.decode(bytes, decoders[0], &#39;replace&#39;)</code></pre>
+</details>
 </section>
 <section>
 </section>
@@ -40,39 +155,223 @@
 <dd>
 <div class="desc"><p>Container defining the data types used when parsing byte data.
 Data types depend on the processor format the file is stored in.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DataTypes(object):
+    &#39;&#39;&#39; Container defining the data types used when parsing byte data.
+        Data types depend on the processor format the file is stored in.
+    &#39;&#39;&#39;
+    def __init__(self, proc_type=PROCESSOR_INTEL):
+        self._proc_type = proc_type
+        self._little_endian_sys = sys.byteorder == &#39;little&#39;
+        self._native = ((self.is_ieee or self.is_dec) and self.little_endian_sys) or \
+                       (self.is_mips and self.big_endian_sys)
+        if self.big_endian_sys:
+            warnings.warn(&#39;Systems with native byte order of big-endian are not supported.&#39;)
+
+        if self._proc_type == PROCESSOR_MIPS:
+            # Big-Endian (SGI/MIPS format)
+            self.float32 = np.dtype(np.float32).newbyteorder(&#39;&gt;&#39;)
+            self.float64 = np.dtype(np.float64).newbyteorder(&#39;&gt;&#39;)
+            self.uint8 = np.uint8
+            self.uint16 = np.dtype(np.uint16).newbyteorder(&#39;&gt;&#39;)
+            self.uint32 = np.dtype(np.uint32).newbyteorder(&#39;&gt;&#39;)
+            self.uint64 = np.dtype(np.uint64).newbyteorder(&#39;&gt;&#39;)
+            self.int8 = np.int8
+            self.int16 = np.dtype(np.int16).newbyteorder(&#39;&gt;&#39;)
+            self.int32 = np.dtype(np.int32).newbyteorder(&#39;&gt;&#39;)
+            self.int64 = np.dtype(np.int64).newbyteorder(&#39;&gt;&#39;)
+        else:
+            # Little-Endian format (Intel or DEC format)
+            self.float32 = np.float32
+            self.float64 = np.float64
+            self.uint8 = np.uint8
+            self.uint16 = np.uint16
+            self.uint32 = np.uint32
+            self.uint64 = np.uint64
+            self.int8 = np.int8
+            self.int16 = np.int16
+            self.int32 = np.int32
+            self.int64 = np.int64
+
+    @property
+    def is_ieee(self) -&gt; bool:
+        &#39;&#39;&#39; True if the associated file is in the Intel format.
+        &#39;&#39;&#39;
+        return self._proc_type == PROCESSOR_INTEL
+
+    @property
+    def is_dec(self) -&gt; bool:
+        &#39;&#39;&#39; True if the associated file is in the DEC format.
+        &#39;&#39;&#39;
+        return self._proc_type == PROCESSOR_DEC
+
+    @property
+    def is_mips(self) -&gt; bool:
+        &#39;&#39;&#39; True if the associated file is in the SGI/MIPS format.
+        &#39;&#39;&#39;
+        return self._proc_type == PROCESSOR_MIPS
+
+    @property
+    def proc_type(self) -&gt; str:
+        &#39;&#39;&#39; Get the processory type associated with the data format in the file.
+        &#39;&#39;&#39;
+        processor_type = [&#39;INTEL&#39;, &#39;DEC&#39;, &#39;MIPS&#39;]
+        return processor_type[self._proc_type - PROCESSOR_INTEL]
+
+    @property
+    def processor(self) -&gt; int:
+        &#39;&#39;&#39; Get the processor number encoded in the .c3d file.
+        &#39;&#39;&#39;
+        return self._proc_type
+
+    @property
+    def native(self) -&gt; bool:
+        &#39;&#39;&#39; True if the native (system) byte order matches the file byte order.
+        &#39;&#39;&#39;
+        return self._native
+
+    @property
+    def little_endian_sys(self) -&gt; bool:
+        &#39;&#39;&#39; True if native byte order is little-endian.
+        &#39;&#39;&#39;
+        return self._little_endian_sys
+
+    @property
+    def big_endian_sys(self) -&gt; bool:
+        &#39;&#39;&#39; True if native byte order is big-endian.
+        &#39;&#39;&#39;
+        return not self._little_endian_sys
+
+    def decode_string(self, bytes) -&gt; str:
+        &#39;&#39;&#39; Decode a byte array to a string.
+        &#39;&#39;&#39;
+        # Attempt to decode using different decoders
+        decoders = [&#39;utf-8&#39;, &#39;latin-1&#39;]
+        for dec in decoders:
+            try:
+                return codecs.decode(bytes, dec)
+            except UnicodeDecodeError:
+                continue
+        # Revert to using default decoder but replace characters
+        return codecs.decode(bytes, decoders[0], &#39;replace&#39;)</code></pre>
+</details>
 <h3>Instance variables</h3>
 <dl>
 <dt id="c3d.dtypes.DataTypes.big_endian_sys"><code class="name">var <span class="ident">big_endian_sys</span> : bool</code></dt>
 <dd>
 <div class="desc"><p>True if native byte order is big-endian.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def big_endian_sys(self) -&gt; bool:
+    &#39;&#39;&#39; True if native byte order is big-endian.
+    &#39;&#39;&#39;
+    return not self._little_endian_sys</code></pre>
+</details>
 </dd>
 <dt id="c3d.dtypes.DataTypes.is_dec"><code class="name">var <span class="ident">is_dec</span> : bool</code></dt>
 <dd>
 <div class="desc"><p>True if the associated file is in the DEC format.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def is_dec(self) -&gt; bool:
+    &#39;&#39;&#39; True if the associated file is in the DEC format.
+    &#39;&#39;&#39;
+    return self._proc_type == PROCESSOR_DEC</code></pre>
+</details>
 </dd>
 <dt id="c3d.dtypes.DataTypes.is_ieee"><code class="name">var <span class="ident">is_ieee</span> : bool</code></dt>
 <dd>
 <div class="desc"><p>True if the associated file is in the Intel format.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def is_ieee(self) -&gt; bool:
+    &#39;&#39;&#39; True if the associated file is in the Intel format.
+    &#39;&#39;&#39;
+    return self._proc_type == PROCESSOR_INTEL</code></pre>
+</details>
 </dd>
 <dt id="c3d.dtypes.DataTypes.is_mips"><code class="name">var <span class="ident">is_mips</span> : bool</code></dt>
 <dd>
 <div class="desc"><p>True if the associated file is in the SGI/MIPS format.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def is_mips(self) -&gt; bool:
+    &#39;&#39;&#39; True if the associated file is in the SGI/MIPS format.
+    &#39;&#39;&#39;
+    return self._proc_type == PROCESSOR_MIPS</code></pre>
+</details>
 </dd>
 <dt id="c3d.dtypes.DataTypes.little_endian_sys"><code class="name">var <span class="ident">little_endian_sys</span> : bool</code></dt>
 <dd>
 <div class="desc"><p>True if native byte order is little-endian.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def little_endian_sys(self) -&gt; bool:
+    &#39;&#39;&#39; True if native byte order is little-endian.
+    &#39;&#39;&#39;
+    return self._little_endian_sys</code></pre>
+</details>
 </dd>
 <dt id="c3d.dtypes.DataTypes.native"><code class="name">var <span class="ident">native</span> : bool</code></dt>
 <dd>
 <div class="desc"><p>True if the native (system) byte order matches the file byte order.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def native(self) -&gt; bool:
+    &#39;&#39;&#39; True if the native (system) byte order matches the file byte order.
+    &#39;&#39;&#39;
+    return self._native</code></pre>
+</details>
 </dd>
 <dt id="c3d.dtypes.DataTypes.proc_type"><code class="name">var <span class="ident">proc_type</span> : str</code></dt>
 <dd>
 <div class="desc"><p>Get the processory type associated with the data format in the file.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def proc_type(self) -&gt; str:
+    &#39;&#39;&#39; Get the processory type associated with the data format in the file.
+    &#39;&#39;&#39;
+    processor_type = [&#39;INTEL&#39;, &#39;DEC&#39;, &#39;MIPS&#39;]
+    return processor_type[self._proc_type - PROCESSOR_INTEL]</code></pre>
+</details>
 </dd>
 <dt id="c3d.dtypes.DataTypes.processor"><code class="name">var <span class="ident">processor</span> : int</code></dt>
 <dd>
 <div class="desc"><p>Get the processor number encoded in the .c3d file.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def processor(self) -&gt; int:
+    &#39;&#39;&#39; Get the processor number encoded in the .c3d file.
+    &#39;&#39;&#39;
+    return self._proc_type</code></pre>
+</details>
 </dd>
 </dl>
 <h3>Methods</h3>
@@ -82,6 +381,23 @@ Data types depend on the processor format the file is stored in.</p></div>
 </code></dt>
 <dd>
 <div class="desc"><p>Decode a byte array to a string.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def decode_string(self, bytes) -&gt; str:
+    &#39;&#39;&#39; Decode a byte array to a string.
+    &#39;&#39;&#39;
+    # Attempt to decode using different decoders
+    decoders = [&#39;utf-8&#39;, &#39;latin-1&#39;]
+    for dec in decoders:
+        try:
+            return codecs.decode(bytes, dec)
+        except UnicodeDecodeError:
+            continue
+    # Revert to using default decoder but replace characters
+    return codecs.decode(bytes, decoders[0], &#39;replace&#39;)</code></pre>
+</details>
 </dd>
 </dl>
 </dd>

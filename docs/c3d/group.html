@@ -23,6 +23,473 @@
 </header>
 <section id="section-intro">
 <p>Classes used to represent the concept of parameter groups in a .c3d file.</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#39;&#39;&#39; Classes used to represent the concept of parameter groups in a .c3d file.
+&#39;&#39;&#39;
+import struct
+import numpy as np
+from .parameter import ParamData, Param
+from .utils import Decorator
+
+class GroupData(object):
+    &#39;&#39;&#39;A group of parameters stored in a C3D file.
+
+    In C3D files, parameters are organized in groups. Each group has a name (key), a
+    description, and a set of named parameters. Each group is also internally associated
+    with a numeric key.
+
+    Attributes
+    ----------
+    dtypes : `c3d.dtypes.DataTypes`
+        Data types object used for parsing.
+    name : str
+        Name of this parameter group.
+    desc : str
+        Description for this parameter group.
+    &#39;&#39;&#39;
+
+    def __init__(self, dtypes, name=None, desc=None):
+        self._params = {}
+        self._dtypes = dtypes
+        # Assign through property setters
+        self.set_name(name)
+        self.set_desc(desc)
+
+    def __repr__(self):
+        return &#39;&lt;Group: {}&gt;&#39;.format(self.desc)
+
+    def __contains__(self, key):
+        return key in self._params
+
+    def __getitem__(self, key):
+        return self._params[key]
+
+    @property
+    def binary_size(self) -&gt; int:
+        &#39;&#39;&#39;Return the number of bytes to store this group and its parameters.&#39;&#39;&#39;
+        return (
+            1 +  # group_id
+            1 + len(self.name.encode(&#39;utf-8&#39;)) +  # size of name and name bytes
+            2 +  # next offset marker
+            1 + len(self.desc.encode(&#39;utf-8&#39;)) +  # size of desc and desc bytes
+            sum(p.binary_size for p in self._params.values()))
+
+    def set_name(self, name):
+        &#39;&#39;&#39; Set the group name string. &#39;&#39;&#39;
+        if name is None or isinstance(name, str):
+            self.name = name
+        else:
+            raise TypeError(&#39;Expected group name to be string, was %s.&#39; % type(name))
+
+    def set_desc(self, desc):
+        &#39;&#39;&#39; Set the Group descriptor.
+        &#39;&#39;&#39;
+        if isinstance(desc, bytes):
+            self.desc = self._dtypes.decode_string(desc)
+        elif isinstance(desc, str) or desc is None:
+            self.desc = desc
+        else:
+            raise TypeError(&#39;Expected descriptor to be python string, bytes or None, was %s.&#39; % type(desc))
+
+    def add_param(self, name, **kwargs):
+        &#39;&#39;&#39;Add a parameter to this group.
+
+        Parameters
+        ----------
+        name : str
+            Name of the parameter to add to this group. The name will
+            automatically be case-normalized.
+
+        See constructor of `c3d.parameter.ParamData` for additional keyword arguments.
+
+        Raises
+        ------
+        TypeError
+            Input arguments are of the wrong type.
+        KeyError
+            Name or numerical key already exist (attempt to overwrite existing data).
+        &#39;&#39;&#39;
+        if not isinstance(name, str):
+            raise TypeError(&#34;Expected &#39;name&#39; argument to be a string, was of type {}&#34;.format(type(name)))
+        name = name.upper()
+        if name in self._params:
+            raise KeyError(&#39;Parameter already exists with key {}&#39;.format(name))
+        self._params[name] = Param(ParamData(name, self._dtypes, **kwargs))
+
+    def remove_param(self, name):
+        &#39;&#39;&#39;Remove the specified parameter.
+
+        Parameters
+        ----------
+        name : str
+            Name for the parameter to remove.
+        &#39;&#39;&#39;
+        del self._params[name]
+
+    def rename_param(self, name, new_name):
+        &#39;&#39;&#39; Rename a specified parameter group.
+
+        Parameters
+        ----------
+        name : str, or `c3d.group.GroupReadonly`
+            Parameter instance, or name.
+        new_name : str
+            New name for the parameter.
+        Raises
+        ------
+        KeyError
+            If no parameter with the original name exists.
+        ValueError
+            If the new name already exist (attempt to overwrite existing data).
+        &#39;&#39;&#39;
+        if new_name in self._params:
+            raise ValueError(&#34;Key {} already exist.&#34;.format(new_name))
+        if isinstance(name, Param):
+            param = name
+            name = param.name
+        else:
+            # Aquire instance using id
+            param = self._params[name]
+        del self._params[name]
+        self._params[new_name] = param
+
+    def write(self, group_id, handle):
+        &#39;&#39;&#39;Write this parameter group, with parameters, to a file handle.
+
+        Parameters
+        ----------
+        group_id : int
+            The numerical ID of the group.
+        handle : file handle
+            An open, writable, binary file handle.
+        &#39;&#39;&#39;
+        name = self.name.encode(&#39;utf-8&#39;)
+        desc = self.desc.encode(&#39;utf-8&#39;)
+        handle.write(struct.pack(&#39;bb&#39;, len(name), -group_id))
+        handle.write(name)
+        handle.write(struct.pack(&#39;&lt;h&#39;, 3 + len(desc)))
+        handle.write(struct.pack(&#39;B&#39;, len(desc)))
+        handle.write(desc)
+        for param in self._params.values():
+            param._data.write(group_id, handle)
+
+class GroupReadonly(object):
+    &#39;&#39;&#39; Wrapper exposing readonly attributes of a `c3d.group.GroupData` entry.
+    &#39;&#39;&#39;
+    def __init__(self, data):
+        self._data = data
+
+    def __contains__(self, key):
+        return key in self._data._params
+
+    def __eq__(self, other):
+        return self._data is other._data
+
+    @property
+    def name(self) -&gt; str:
+        &#39;&#39;&#39; Access group name. &#39;&#39;&#39;
+        return self._data.name
+
+    @property
+    def desc(self) -&gt; str:
+        &#39;&#39;&#39;Access group descriptor. &#39;&#39;&#39;
+        return self._data.desc
+
+    def items(self):
+        &#39;&#39;&#39; Get iterator for paramater key-entry pairs. &#39;&#39;&#39;
+        return ((k, v.readonly()) for k, v in self._data._params.items())
+
+    def values(self):
+        &#39;&#39;&#39; Get iterator for parameter entries. &#39;&#39;&#39;
+        return (v.readonly() for v in self._data._params.values())
+
+    def keys(self):
+        &#39;&#39;&#39; Get iterator for parameter entry keys. &#39;&#39;&#39;
+        return self._data._params.keys()
+
+    def get(self, key, default=None):
+        &#39;&#39;&#39;Get a readonly parameter by key.
+
+        Parameters
+        ----------
+        key : any
+            Parameter key to look up in this group.
+        default : any, optional
+            Value to return if the key is not found. Defaults to None.
+
+        Returns
+        -------
+        param : :class:`ParamReadable`
+            A parameter from the current group.
+        &#39;&#39;&#39;
+        val = self._data._params.get(key, default)
+        if val:
+            return val.readonly()
+        return default
+
+    def get_int8(self, key):
+        &#39;&#39;&#39;Get the value of the given parameter as an 8-bit signed integer.&#39;&#39;&#39;
+        return self._data[key.upper()].int8_value
+
+    def get_uint8(self, key):
+        &#39;&#39;&#39;Get the value of the given parameter as an 8-bit unsigned integer.&#39;&#39;&#39;
+        return self._data[key.upper()].uint8_value
+
+    def get_int16(self, key):
+        &#39;&#39;&#39;Get the value of the given parameter as a 16-bit signed integer.&#39;&#39;&#39;
+        return self._data[key.upper()].int16_value
+
+    def get_uint16(self, key):
+        &#39;&#39;&#39;Get the value of the given parameter as a 16-bit unsigned integer.&#39;&#39;&#39;
+        return self._data[key.upper()].uint16_value
+
+    def get_int32(self, key):
+        &#39;&#39;&#39;Get the value of the given parameter as a 32-bit signed integer.&#39;&#39;&#39;
+        return self._data[key.upper()].int32_value
+
+    def get_uint32(self, key):
+        &#39;&#39;&#39;Get the value of the given parameter as a 32-bit unsigned integer.&#39;&#39;&#39;
+        return self._data[key.upper()].uint32_value
+
+    def get_float(self, key):
+        &#39;&#39;&#39;Get the value of the given parameter as a 32-bit float.&#39;&#39;&#39;
+        return self._data[key.upper()].float_value
+
+    def get_bytes(self, key):
+        &#39;&#39;&#39;Get the value of the given parameter as a byte array.&#39;&#39;&#39;
+        return self._data[key.upper()].bytes_value
+
+    def get_string(self, key):
+        &#39;&#39;&#39;Get the value of the given parameter as a string.&#39;&#39;&#39;
+        return self._data[key.upper()].string_value
+
+class Group(GroupReadonly):
+    &#39;&#39;&#39; Wrapper exposing readable and writeable attributes of a `c3d.group.GroupData` entry.
+    &#39;&#39;&#39;
+    def __init__(self, data):
+        super(Group, self).__init__(data)
+
+    def readonly(self):
+        &#39;&#39;&#39; Returns a `c3d.group.GroupReadonly` instance with readonly access. &#39;&#39;&#39;
+        return GroupReadonly(self._data)
+
+    @property
+    def name(self) -&gt; str:
+        &#39;&#39;&#39; Get or set name. &#39;&#39;&#39;
+        return self._data.name
+
+    @name.setter
+    def name(self, value) -&gt; str:
+        self._data.set_name(value)
+
+    @property
+    def desc(self) -&gt; str:
+        &#39;&#39;&#39; Get or set descriptor. &#39;&#39;&#39;
+        return self._data.desc
+
+    @desc.setter
+    def desc(self, value) -&gt; str:
+        self._data.set_desc(value)
+
+    def items(self):
+        &#39;&#39;&#39; Iterator for paramater key-entry pairs. &#39;&#39;&#39;
+        return ((k, v) for k, v in self._data._params.items())
+
+    def values(self):
+        &#39;&#39;&#39; Iterator iterator for parameter entries. &#39;&#39;&#39;
+        return (v for v in self._data._params.values())
+
+    def get(self, key, default=None):
+        &#39;&#39;&#39;Get a parameter by key.
+
+        Parameters
+        ----------
+        key : any
+            Parameter key to look up in this group.
+        default : any, optional
+            Value to return if the key is not found. Defaults to None.
+
+        Returns
+        -------
+        param : :class:`ParamReadable`
+            A parameter from the current group.
+        &#39;&#39;&#39;
+        return self._data._params.get(key, default)
+    #
+    #  Forward param editing
+    #
+    def add_param(self, name, **kwargs):
+        &#39;&#39;&#39;Add a parameter to this group.
+
+        See constructor of `c3d.parameter.ParamData` for additional keyword arguments.
+        &#39;&#39;&#39;
+        self._data.add_param(name, **kwargs)
+
+    def remove_param(self, name):
+        &#39;&#39;&#39;Remove the specified parameter.
+
+        Parameters
+        ----------
+        name : str
+            Name for the parameter to remove.
+        &#39;&#39;&#39;
+        self._data.remove_param(name)
+
+    def rename_param(self, name, new_name):
+        &#39;&#39;&#39; Rename a specified parameter group.
+
+        Parameters
+        ----------
+        See arguments in `c3d.group.GroupData.rename_param`.
+        &#39;&#39;&#39;
+        self._data.rename_param(name, new_name)
+
+    #
+    #   Convenience functions for adding parameters.
+    #
+    def add(self, name, desc, bpe, format, data, *dimensions):
+        &#39;&#39;&#39; Add a parameter with `data` package formated in accordance with `format`.
+
+        Convenience function for `c3d.group.GroupData.add_param` calling struct.pack() on `data`.
+
+        Example:
+
+        &gt;&gt;&gt; group.set(&#39;RATE&#39;, &#39;Point data sample rate&#39;, 4, &#39;&lt;f&#39;, 100)
+
+        Parameters
+        ----------
+        name : str
+            Parameter name.
+        desc : str
+            Parameter descriptor.
+        bpe : int
+            Number of bytes for each atomic element.
+        format : str or None
+            `struct.format()` compatible format string see:
+            https://docs.python.org/3/library/struct.html#format-characters
+        *dimensions : int, optional
+            Shape associated with the data (if the data argument represents multiple elements).
+        &#39;&#39;&#39;
+        if isinstance(data, bytes):
+            pass
+        else:
+            data = struct.pack(format, data)
+
+        self.add_param(name,
+                       desc=desc,
+                       bytes_per_element=bpe,
+                       bytes=data,
+                       dimensions=list(dimensions))
+
+    def add_array(self, name, desc, data, dtype=None):
+        &#39;&#39;&#39;Add a parameter with the `data` package.
+
+        Parameters
+        ----------
+        name : str
+            Parameter name.
+        desc : str
+            Parameter descriptor.
+        data : np.ndarray, or iterable
+            Data array to encode in the parameter.
+        dtype : np.dtype, optional
+            Numpy data type used to encode the array (optional only if `data.dtype` returns a numpy type).
+        &#39;&#39;&#39;
+        if not isinstance(data, np.ndarray):
+            if dtype is None:
+                dtype = data.dtype
+            data = np.array(data, dtype=dtype)
+        elif dtype is None:
+            dtype = data.dtype
+
+        self.add_param(name,
+                       desc=desc,
+                       bytes_per_element=dtype.itemsize,
+                       bytes=data.tobytes(),
+                       dimensions=data.shape[::-1])
+
+    def add_str(self, name, desc, data, *dimensions):
+        &#39;&#39;&#39; Add a string parameter.
+
+        Parameters
+        ----------
+        name : str
+            Parameter name.
+        desc : str
+            Parameter descriptor.
+        data : str
+            String to encode in the parameter.
+        *dimensions : int, optional
+            Shape associated with the string (if the string represents multiple elements).
+        &#39;&#39;&#39;
+        shape = list(dimensions)
+        self.add_param(name,
+                       desc=desc,
+                       bytes_per_element=-1,
+                       bytes=data.encode(&#39;utf-8&#39;),
+                       dimensions=shape or [len(data)])
+
+    def add_empty_array(self, name, desc=&#39;&#39;, bpe=1):
+        &#39;&#39;&#39; Add an empty parameter block.
+
+        Parameters
+        ----------
+        name : str
+            Parameter name.
+        &#39;&#39;&#39;
+        self.add_param(name, desc=desc,
+                       bytes_per_element=bpe, dimensions=[0])
+
+    #
+    #   Convenience functions for adding or overwriting parameters.
+    #
+    def set(self, name, *args, **kwargs):
+        &#39;&#39;&#39; Add or overwrite a parameter with &#39;bytes&#39; package formated in accordance with &#39;format&#39;.
+
+        See arguments in `c3d.group.Group.add`.
+        &#39;&#39;&#39;
+        try:
+            self.remove_param(name)
+        except KeyError as e:
+            pass
+        self.add(name, *args, **kwargs)
+
+    def set_str(self, name, *args, **kwargs):
+        &#39;&#39;&#39; Add or overwrite a string parameter.
+
+        See arguments in `c3d.group.Group.add_str`.
+        &#39;&#39;&#39;
+        try:
+            self.remove_param(name)
+        except KeyError as e:
+            pass
+        self.add_str(name, *args, **kwargs)
+
+    def set_array(self, name, *args, **kwargs):
+        &#39;&#39;&#39; Add or overwrite a parameter with the `data` package.
+
+        See arguments in `c3d.group.Group.add_array`.
+        &#39;&#39;&#39;
+        try:
+            self.remove_param(name)
+        except KeyError as e:
+            pass
+        self.add_array(name, *args, **kwargs)
+
+    def set_empty_array(self, name, *args, **kwargs):
+        &#39;&#39;&#39; Add an empty parameter block.
+
+        See arguments in `c3d.group.Group.add_empty_array`.
+        &#39;&#39;&#39;
+        try:
+            self.remove_param(name)
+        except KeyError as e:
+            pass
+        self.add_empty_array(name, *args, **kwargs)</code></pre>
+</details>
 </section>
 <section>
 </section>
@@ -39,6 +506,234 @@
 </code></dt>
 <dd>
 <div class="desc"><p>Wrapper exposing readable and writeable attributes of a <code><a title="c3d.group.GroupData" href="#c3d.group.GroupData">GroupData</a></code> entry.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Group(GroupReadonly):
+    &#39;&#39;&#39; Wrapper exposing readable and writeable attributes of a `c3d.group.GroupData` entry.
+    &#39;&#39;&#39;
+    def __init__(self, data):
+        super(Group, self).__init__(data)
+
+    def readonly(self):
+        &#39;&#39;&#39; Returns a `c3d.group.GroupReadonly` instance with readonly access. &#39;&#39;&#39;
+        return GroupReadonly(self._data)
+
+    @property
+    def name(self) -&gt; str:
+        &#39;&#39;&#39; Get or set name. &#39;&#39;&#39;
+        return self._data.name
+
+    @name.setter
+    def name(self, value) -&gt; str:
+        self._data.set_name(value)
+
+    @property
+    def desc(self) -&gt; str:
+        &#39;&#39;&#39; Get or set descriptor. &#39;&#39;&#39;
+        return self._data.desc
+
+    @desc.setter
+    def desc(self, value) -&gt; str:
+        self._data.set_desc(value)
+
+    def items(self):
+        &#39;&#39;&#39; Iterator for paramater key-entry pairs. &#39;&#39;&#39;
+        return ((k, v) for k, v in self._data._params.items())
+
+    def values(self):
+        &#39;&#39;&#39; Iterator iterator for parameter entries. &#39;&#39;&#39;
+        return (v for v in self._data._params.values())
+
+    def get(self, key, default=None):
+        &#39;&#39;&#39;Get a parameter by key.
+
+        Parameters
+        ----------
+        key : any
+            Parameter key to look up in this group.
+        default : any, optional
+            Value to return if the key is not found. Defaults to None.
+
+        Returns
+        -------
+        param : :class:`ParamReadable`
+            A parameter from the current group.
+        &#39;&#39;&#39;
+        return self._data._params.get(key, default)
+    #
+    #  Forward param editing
+    #
+    def add_param(self, name, **kwargs):
+        &#39;&#39;&#39;Add a parameter to this group.
+
+        See constructor of `c3d.parameter.ParamData` for additional keyword arguments.
+        &#39;&#39;&#39;
+        self._data.add_param(name, **kwargs)
+
+    def remove_param(self, name):
+        &#39;&#39;&#39;Remove the specified parameter.
+
+        Parameters
+        ----------
+        name : str
+            Name for the parameter to remove.
+        &#39;&#39;&#39;
+        self._data.remove_param(name)
+
+    def rename_param(self, name, new_name):
+        &#39;&#39;&#39; Rename a specified parameter group.
+
+        Parameters
+        ----------
+        See arguments in `c3d.group.GroupData.rename_param`.
+        &#39;&#39;&#39;
+        self._data.rename_param(name, new_name)
+
+    #
+    #   Convenience functions for adding parameters.
+    #
+    def add(self, name, desc, bpe, format, data, *dimensions):
+        &#39;&#39;&#39; Add a parameter with `data` package formated in accordance with `format`.
+
+        Convenience function for `c3d.group.GroupData.add_param` calling struct.pack() on `data`.
+
+        Example:
+
+        &gt;&gt;&gt; group.set(&#39;RATE&#39;, &#39;Point data sample rate&#39;, 4, &#39;&lt;f&#39;, 100)
+
+        Parameters
+        ----------
+        name : str
+            Parameter name.
+        desc : str
+            Parameter descriptor.
+        bpe : int
+            Number of bytes for each atomic element.
+        format : str or None
+            `struct.format()` compatible format string see:
+            https://docs.python.org/3/library/struct.html#format-characters
+        *dimensions : int, optional
+            Shape associated with the data (if the data argument represents multiple elements).
+        &#39;&#39;&#39;
+        if isinstance(data, bytes):
+            pass
+        else:
+            data = struct.pack(format, data)
+
+        self.add_param(name,
+                       desc=desc,
+                       bytes_per_element=bpe,
+                       bytes=data,
+                       dimensions=list(dimensions))
+
+    def add_array(self, name, desc, data, dtype=None):
+        &#39;&#39;&#39;Add a parameter with the `data` package.
+
+        Parameters
+        ----------
+        name : str
+            Parameter name.
+        desc : str
+            Parameter descriptor.
+        data : np.ndarray, or iterable
+            Data array to encode in the parameter.
+        dtype : np.dtype, optional
+            Numpy data type used to encode the array (optional only if `data.dtype` returns a numpy type).
+        &#39;&#39;&#39;
+        if not isinstance(data, np.ndarray):
+            if dtype is None:
+                dtype = data.dtype
+            data = np.array(data, dtype=dtype)
+        elif dtype is None:
+            dtype = data.dtype
+
+        self.add_param(name,
+                       desc=desc,
+                       bytes_per_element=dtype.itemsize,
+                       bytes=data.tobytes(),
+                       dimensions=data.shape[::-1])
+
+    def add_str(self, name, desc, data, *dimensions):
+        &#39;&#39;&#39; Add a string parameter.
+
+        Parameters
+        ----------
+        name : str
+            Parameter name.
+        desc : str
+            Parameter descriptor.
+        data : str
+            String to encode in the parameter.
+        *dimensions : int, optional
+            Shape associated with the string (if the string represents multiple elements).
+        &#39;&#39;&#39;
+        shape = list(dimensions)
+        self.add_param(name,
+                       desc=desc,
+                       bytes_per_element=-1,
+                       bytes=data.encode(&#39;utf-8&#39;),
+                       dimensions=shape or [len(data)])
+
+    def add_empty_array(self, name, desc=&#39;&#39;, bpe=1):
+        &#39;&#39;&#39; Add an empty parameter block.
+
+        Parameters
+        ----------
+        name : str
+            Parameter name.
+        &#39;&#39;&#39;
+        self.add_param(name, desc=desc,
+                       bytes_per_element=bpe, dimensions=[0])
+
+    #
+    #   Convenience functions for adding or overwriting parameters.
+    #
+    def set(self, name, *args, **kwargs):
+        &#39;&#39;&#39; Add or overwrite a parameter with &#39;bytes&#39; package formated in accordance with &#39;format&#39;.
+
+        See arguments in `c3d.group.Group.add`.
+        &#39;&#39;&#39;
+        try:
+            self.remove_param(name)
+        except KeyError as e:
+            pass
+        self.add(name, *args, **kwargs)
+
+    def set_str(self, name, *args, **kwargs):
+        &#39;&#39;&#39; Add or overwrite a string parameter.
+
+        See arguments in `c3d.group.Group.add_str`.
+        &#39;&#39;&#39;
+        try:
+            self.remove_param(name)
+        except KeyError as e:
+            pass
+        self.add_str(name, *args, **kwargs)
+
+    def set_array(self, name, *args, **kwargs):
+        &#39;&#39;&#39; Add or overwrite a parameter with the `data` package.
+
+        See arguments in `c3d.group.Group.add_array`.
+        &#39;&#39;&#39;
+        try:
+            self.remove_param(name)
+        except KeyError as e:
+            pass
+        self.add_array(name, *args, **kwargs)
+
+    def set_empty_array(self, name, *args, **kwargs):
+        &#39;&#39;&#39; Add an empty parameter block.
+
+        See arguments in `c3d.group.Group.add_empty_array`.
+        &#39;&#39;&#39;
+        try:
+            self.remove_param(name)
+        except KeyError as e:
+            pass
+        self.add_empty_array(name, *args, **kwargs)</code></pre>
+</details>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li><a title="c3d.group.GroupReadonly" href="#c3d.group.GroupReadonly">GroupReadonly</a></li>
@@ -48,10 +743,28 @@
 <dt id="c3d.group.Group.desc"><code class="name">var <span class="ident">desc</span> : str</code></dt>
 <dd>
 <div class="desc"><p>Get or set descriptor.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def desc(self) -&gt; str:
+    &#39;&#39;&#39; Get or set descriptor. &#39;&#39;&#39;
+    return self._data.desc</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.Group.name"><code class="name">var <span class="ident">name</span> : str</code></dt>
 <dd>
 <div class="desc"><p>Get or set name.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def name(self) -&gt; str:
+    &#39;&#39;&#39; Get or set name. &#39;&#39;&#39;
+    return self._data.name</code></pre>
+</details>
 </dd>
 </dl>
 <h3>Methods</h3>
@@ -79,6 +792,44 @@
 <dt><strong><code>*dimensions</code></strong> :&ensp;<code>int</code>, optional</dt>
 <dd>Shape associated with the data (if the data argument represents multiple elements).</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add(self, name, desc, bpe, format, data, *dimensions):
+    &#39;&#39;&#39; Add a parameter with `data` package formated in accordance with `format`.
+
+    Convenience function for `c3d.group.GroupData.add_param` calling struct.pack() on `data`.
+
+    Example:
+
+    &gt;&gt;&gt; group.set(&#39;RATE&#39;, &#39;Point data sample rate&#39;, 4, &#39;&lt;f&#39;, 100)
+
+    Parameters
+    ----------
+    name : str
+        Parameter name.
+    desc : str
+        Parameter descriptor.
+    bpe : int
+        Number of bytes for each atomic element.
+    format : str or None
+        `struct.format()` compatible format string see:
+        https://docs.python.org/3/library/struct.html#format-characters
+    *dimensions : int, optional
+        Shape associated with the data (if the data argument represents multiple elements).
+    &#39;&#39;&#39;
+    if isinstance(data, bytes):
+        pass
+    else:
+        data = struct.pack(format, data)
+
+    self.add_param(name,
+                   desc=desc,
+                   bytes_per_element=bpe,
+                   bytes=data,
+                   dimensions=list(dimensions))</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.Group.add_array"><code class="name flex">
 <span>def <span class="ident">add_array</span></span>(<span>self, name, desc, data, dtype=None)</span>
@@ -96,6 +847,37 @@
 <dt><strong><code>dtype</code></strong> :&ensp;<code>np.dtype</code>, optional</dt>
 <dd>Numpy data type used to encode the array (optional only if <code>data.dtype</code> returns a numpy type).</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_array(self, name, desc, data, dtype=None):
+    &#39;&#39;&#39;Add a parameter with the `data` package.
+
+    Parameters
+    ----------
+    name : str
+        Parameter name.
+    desc : str
+        Parameter descriptor.
+    data : np.ndarray, or iterable
+        Data array to encode in the parameter.
+    dtype : np.dtype, optional
+        Numpy data type used to encode the array (optional only if `data.dtype` returns a numpy type).
+    &#39;&#39;&#39;
+    if not isinstance(data, np.ndarray):
+        if dtype is None:
+            dtype = data.dtype
+        data = np.array(data, dtype=dtype)
+    elif dtype is None:
+        dtype = data.dtype
+
+    self.add_param(name,
+                   desc=desc,
+                   bytes_per_element=dtype.itemsize,
+                   bytes=data.tobytes(),
+                   dimensions=data.shape[::-1])</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.Group.add_empty_array"><code class="name flex">
 <span>def <span class="ident">add_empty_array</span></span>(<span>self, name, desc='', bpe=1)</span>
@@ -107,6 +889,21 @@
 <dt><strong><code>name</code></strong> :&ensp;<code>str</code></dt>
 <dd>Parameter name.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_empty_array(self, name, desc=&#39;&#39;, bpe=1):
+    &#39;&#39;&#39; Add an empty parameter block.
+
+    Parameters
+    ----------
+    name : str
+        Parameter name.
+    &#39;&#39;&#39;
+    self.add_param(name, desc=desc,
+                   bytes_per_element=bpe, dimensions=[0])</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.Group.add_param"><code class="name flex">
 <span>def <span class="ident">add_param</span></span>(<span>self, name, **kwargs)</span>
@@ -114,6 +911,17 @@
 <dd>
 <div class="desc"><p>Add a parameter to this group.</p>
 <p>See constructor of <code><a title="c3d.parameter.ParamData" href="parameter.html#c3d.parameter.ParamData">ParamData</a></code> for additional keyword arguments.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_param(self, name, **kwargs):
+    &#39;&#39;&#39;Add a parameter to this group.
+
+    See constructor of `c3d.parameter.ParamData` for additional keyword arguments.
+    &#39;&#39;&#39;
+    self._data.add_param(name, **kwargs)</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.Group.add_str"><code class="name flex">
 <span>def <span class="ident">add_str</span></span>(<span>self, name, desc, data, *dimensions)</span>
@@ -131,6 +939,31 @@
 <dt><strong><code>*dimensions</code></strong> :&ensp;<code>int</code>, optional</dt>
 <dd>Shape associated with the string (if the string represents multiple elements).</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_str(self, name, desc, data, *dimensions):
+    &#39;&#39;&#39; Add a string parameter.
+
+    Parameters
+    ----------
+    name : str
+        Parameter name.
+    desc : str
+        Parameter descriptor.
+    data : str
+        String to encode in the parameter.
+    *dimensions : int, optional
+        Shape associated with the string (if the string represents multiple elements).
+    &#39;&#39;&#39;
+    shape = list(dimensions)
+    self.add_param(name,
+                   desc=desc,
+                   bytes_per_element=-1,
+                   bytes=data.encode(&#39;utf-8&#39;),
+                   dimensions=shape or [len(data)])</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.Group.get"><code class="name flex">
 <span>def <span class="ident">get</span></span>(<span>self, key, default=None)</span>
@@ -149,18 +982,55 @@
 <dt><strong><code>param</code></strong> :&ensp;<code>:class:</code>ParamReadable``</dt>
 <dd>A parameter from the current group.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get(self, key, default=None):
+    &#39;&#39;&#39;Get a parameter by key.
+
+    Parameters
+    ----------
+    key : any
+        Parameter key to look up in this group.
+    default : any, optional
+        Value to return if the key is not found. Defaults to None.
+
+    Returns
+    -------
+    param : :class:`ParamReadable`
+        A parameter from the current group.
+    &#39;&#39;&#39;
+    return self._data._params.get(key, default)</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.Group.items"><code class="name flex">
 <span>def <span class="ident">items</span></span>(<span>self)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Iterator for paramater key-entry pairs.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def items(self):
+    &#39;&#39;&#39; Iterator for paramater key-entry pairs. &#39;&#39;&#39;
+    return ((k, v) for k, v in self._data._params.items())</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.Group.readonly"><code class="name flex">
 <span>def <span class="ident">readonly</span></span>(<span>self)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns a <code><a title="c3d.group.GroupReadonly" href="#c3d.group.GroupReadonly">GroupReadonly</a></code> instance with readonly access.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def readonly(self):
+    &#39;&#39;&#39; Returns a `c3d.group.GroupReadonly` instance with readonly access. &#39;&#39;&#39;
+    return GroupReadonly(self._data)</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.Group.remove_param"><code class="name flex">
 <span>def <span class="ident">remove_param</span></span>(<span>self, name)</span>
@@ -172,6 +1042,20 @@
 <dt><strong><code>name</code></strong> :&ensp;<code>str</code></dt>
 <dd>Name for the parameter to remove.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def remove_param(self, name):
+    &#39;&#39;&#39;Remove the specified parameter.
+
+    Parameters
+    ----------
+    name : str
+        Name for the parameter to remove.
+    &#39;&#39;&#39;
+    self._data.remove_param(name)</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.Group.rename_param"><code class="name flex">
 <span>def <span class="ident">rename_param</span></span>(<span>self, name, new_name)</span>
@@ -180,6 +1064,19 @@
 <div class="desc"><p>Rename a specified parameter group.</p>
 <h2 id="parameters">Parameters</h2>
 <p>See arguments in <code><a title="c3d.group.GroupData.rename_param" href="#c3d.group.GroupData.rename_param">GroupData.rename_param()</a></code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def rename_param(self, name, new_name):
+    &#39;&#39;&#39; Rename a specified parameter group.
+
+    Parameters
+    ----------
+    See arguments in `c3d.group.GroupData.rename_param`.
+    &#39;&#39;&#39;
+    self._data.rename_param(name, new_name)</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.Group.set"><code class="name flex">
 <span>def <span class="ident">set</span></span>(<span>self, name, *args, **kwargs)</span>
@@ -187,6 +1084,21 @@
 <dd>
 <div class="desc"><p>Add or overwrite a parameter with 'bytes' package formated in accordance with 'format'.</p>
 <p>See arguments in <code><a title="c3d.group.Group.add" href="#c3d.group.Group.add">Group.add()</a></code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set(self, name, *args, **kwargs):
+    &#39;&#39;&#39; Add or overwrite a parameter with &#39;bytes&#39; package formated in accordance with &#39;format&#39;.
+
+    See arguments in `c3d.group.Group.add`.
+    &#39;&#39;&#39;
+    try:
+        self.remove_param(name)
+    except KeyError as e:
+        pass
+    self.add(name, *args, **kwargs)</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.Group.set_array"><code class="name flex">
 <span>def <span class="ident">set_array</span></span>(<span>self, name, *args, **kwargs)</span>
@@ -194,6 +1106,21 @@
 <dd>
 <div class="desc"><p>Add or overwrite a parameter with the <code>data</code> package.</p>
 <p>See arguments in <code><a title="c3d.group.Group.add_array" href="#c3d.group.Group.add_array">Group.add_array()</a></code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_array(self, name, *args, **kwargs):
+    &#39;&#39;&#39; Add or overwrite a parameter with the `data` package.
+
+    See arguments in `c3d.group.Group.add_array`.
+    &#39;&#39;&#39;
+    try:
+        self.remove_param(name)
+    except KeyError as e:
+        pass
+    self.add_array(name, *args, **kwargs)</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.Group.set_empty_array"><code class="name flex">
 <span>def <span class="ident">set_empty_array</span></span>(<span>self, name, *args, **kwargs)</span>
@@ -201,6 +1128,21 @@
 <dd>
 <div class="desc"><p>Add an empty parameter block.</p>
 <p>See arguments in <code><a title="c3d.group.Group.add_empty_array" href="#c3d.group.Group.add_empty_array">Group.add_empty_array()</a></code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_empty_array(self, name, *args, **kwargs):
+    &#39;&#39;&#39; Add an empty parameter block.
+
+    See arguments in `c3d.group.Group.add_empty_array`.
+    &#39;&#39;&#39;
+    try:
+        self.remove_param(name)
+    except KeyError as e:
+        pass
+    self.add_empty_array(name, *args, **kwargs)</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.Group.set_str"><code class="name flex">
 <span>def <span class="ident">set_str</span></span>(<span>self, name, *args, **kwargs)</span>
@@ -208,12 +1150,35 @@
 <dd>
 <div class="desc"><p>Add or overwrite a string parameter.</p>
 <p>See arguments in <code><a title="c3d.group.Group.add_str" href="#c3d.group.Group.add_str">Group.add_str()</a></code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_str(self, name, *args, **kwargs):
+    &#39;&#39;&#39; Add or overwrite a string parameter.
+
+    See arguments in `c3d.group.Group.add_str`.
+    &#39;&#39;&#39;
+    try:
+        self.remove_param(name)
+    except KeyError as e:
+        pass
+    self.add_str(name, *args, **kwargs)</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.Group.values"><code class="name flex">
 <span>def <span class="ident">values</span></span>(<span>self)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Iterator iterator for parameter entries.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def values(self):
+    &#39;&#39;&#39; Iterator iterator for parameter entries. &#39;&#39;&#39;
+    return (v for v in self._data._params.values())</code></pre>
+</details>
 </dd>
 </dl>
 <h3>Inherited members</h3>
@@ -252,11 +1217,171 @@ with a numeric key.</p>
 <dt><strong><code>desc</code></strong> :&ensp;<code>str</code></dt>
 <dd>Description for this parameter group.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class GroupData(object):
+    &#39;&#39;&#39;A group of parameters stored in a C3D file.
+
+    In C3D files, parameters are organized in groups. Each group has a name (key), a
+    description, and a set of named parameters. Each group is also internally associated
+    with a numeric key.
+
+    Attributes
+    ----------
+    dtypes : `c3d.dtypes.DataTypes`
+        Data types object used for parsing.
+    name : str
+        Name of this parameter group.
+    desc : str
+        Description for this parameter group.
+    &#39;&#39;&#39;
+
+    def __init__(self, dtypes, name=None, desc=None):
+        self._params = {}
+        self._dtypes = dtypes
+        # Assign through property setters
+        self.set_name(name)
+        self.set_desc(desc)
+
+    def __repr__(self):
+        return &#39;&lt;Group: {}&gt;&#39;.format(self.desc)
+
+    def __contains__(self, key):
+        return key in self._params
+
+    def __getitem__(self, key):
+        return self._params[key]
+
+    @property
+    def binary_size(self) -&gt; int:
+        &#39;&#39;&#39;Return the number of bytes to store this group and its parameters.&#39;&#39;&#39;
+        return (
+            1 +  # group_id
+            1 + len(self.name.encode(&#39;utf-8&#39;)) +  # size of name and name bytes
+            2 +  # next offset marker
+            1 + len(self.desc.encode(&#39;utf-8&#39;)) +  # size of desc and desc bytes
+            sum(p.binary_size for p in self._params.values()))
+
+    def set_name(self, name):
+        &#39;&#39;&#39; Set the group name string. &#39;&#39;&#39;
+        if name is None or isinstance(name, str):
+            self.name = name
+        else:
+            raise TypeError(&#39;Expected group name to be string, was %s.&#39; % type(name))
+
+    def set_desc(self, desc):
+        &#39;&#39;&#39; Set the Group descriptor.
+        &#39;&#39;&#39;
+        if isinstance(desc, bytes):
+            self.desc = self._dtypes.decode_string(desc)
+        elif isinstance(desc, str) or desc is None:
+            self.desc = desc
+        else:
+            raise TypeError(&#39;Expected descriptor to be python string, bytes or None, was %s.&#39; % type(desc))
+
+    def add_param(self, name, **kwargs):
+        &#39;&#39;&#39;Add a parameter to this group.
+
+        Parameters
+        ----------
+        name : str
+            Name of the parameter to add to this group. The name will
+            automatically be case-normalized.
+
+        See constructor of `c3d.parameter.ParamData` for additional keyword arguments.
+
+        Raises
+        ------
+        TypeError
+            Input arguments are of the wrong type.
+        KeyError
+            Name or numerical key already exist (attempt to overwrite existing data).
+        &#39;&#39;&#39;
+        if not isinstance(name, str):
+            raise TypeError(&#34;Expected &#39;name&#39; argument to be a string, was of type {}&#34;.format(type(name)))
+        name = name.upper()
+        if name in self._params:
+            raise KeyError(&#39;Parameter already exists with key {}&#39;.format(name))
+        self._params[name] = Param(ParamData(name, self._dtypes, **kwargs))
+
+    def remove_param(self, name):
+        &#39;&#39;&#39;Remove the specified parameter.
+
+        Parameters
+        ----------
+        name : str
+            Name for the parameter to remove.
+        &#39;&#39;&#39;
+        del self._params[name]
+
+    def rename_param(self, name, new_name):
+        &#39;&#39;&#39; Rename a specified parameter group.
+
+        Parameters
+        ----------
+        name : str, or `c3d.group.GroupReadonly`
+            Parameter instance, or name.
+        new_name : str
+            New name for the parameter.
+        Raises
+        ------
+        KeyError
+            If no parameter with the original name exists.
+        ValueError
+            If the new name already exist (attempt to overwrite existing data).
+        &#39;&#39;&#39;
+        if new_name in self._params:
+            raise ValueError(&#34;Key {} already exist.&#34;.format(new_name))
+        if isinstance(name, Param):
+            param = name
+            name = param.name
+        else:
+            # Aquire instance using id
+            param = self._params[name]
+        del self._params[name]
+        self._params[new_name] = param
+
+    def write(self, group_id, handle):
+        &#39;&#39;&#39;Write this parameter group, with parameters, to a file handle.
+
+        Parameters
+        ----------
+        group_id : int
+            The numerical ID of the group.
+        handle : file handle
+            An open, writable, binary file handle.
+        &#39;&#39;&#39;
+        name = self.name.encode(&#39;utf-8&#39;)
+        desc = self.desc.encode(&#39;utf-8&#39;)
+        handle.write(struct.pack(&#39;bb&#39;, len(name), -group_id))
+        handle.write(name)
+        handle.write(struct.pack(&#39;&lt;h&#39;, 3 + len(desc)))
+        handle.write(struct.pack(&#39;B&#39;, len(desc)))
+        handle.write(desc)
+        for param in self._params.values():
+            param._data.write(group_id, handle)</code></pre>
+</details>
 <h3>Instance variables</h3>
 <dl>
 <dt id="c3d.group.GroupData.binary_size"><code class="name">var <span class="ident">binary_size</span> : int</code></dt>
 <dd>
 <div class="desc"><p>Return the number of bytes to store this group and its parameters.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def binary_size(self) -&gt; int:
+    &#39;&#39;&#39;Return the number of bytes to store this group and its parameters.&#39;&#39;&#39;
+    return (
+        1 +  # group_id
+        1 + len(self.name.encode(&#39;utf-8&#39;)) +  # size of name and name bytes
+        2 +  # next offset marker
+        1 + len(self.desc.encode(&#39;utf-8&#39;)) +  # size of desc and desc bytes
+        sum(p.binary_size for p in self._params.values()))</code></pre>
+</details>
 </dd>
 </dl>
 <h3>Methods</h3>
@@ -280,6 +1405,35 @@ automatically be case-normalized.</dd>
 <dt><code>KeyError</code></dt>
 <dd>Name or numerical key already exist (attempt to overwrite existing data).</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_param(self, name, **kwargs):
+    &#39;&#39;&#39;Add a parameter to this group.
+
+    Parameters
+    ----------
+    name : str
+        Name of the parameter to add to this group. The name will
+        automatically be case-normalized.
+
+    See constructor of `c3d.parameter.ParamData` for additional keyword arguments.
+
+    Raises
+    ------
+    TypeError
+        Input arguments are of the wrong type.
+    KeyError
+        Name or numerical key already exist (attempt to overwrite existing data).
+    &#39;&#39;&#39;
+    if not isinstance(name, str):
+        raise TypeError(&#34;Expected &#39;name&#39; argument to be a string, was of type {}&#34;.format(type(name)))
+    name = name.upper()
+    if name in self._params:
+        raise KeyError(&#39;Parameter already exists with key {}&#39;.format(name))
+    self._params[name] = Param(ParamData(name, self._dtypes, **kwargs))</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.GroupData.remove_param"><code class="name flex">
 <span>def <span class="ident">remove_param</span></span>(<span>self, name)</span>
@@ -291,6 +1445,20 @@ automatically be case-normalized.</dd>
 <dt><strong><code>name</code></strong> :&ensp;<code>str</code></dt>
 <dd>Name for the parameter to remove.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def remove_param(self, name):
+    &#39;&#39;&#39;Remove the specified parameter.
+
+    Parameters
+    ----------
+    name : str
+        Name for the parameter to remove.
+    &#39;&#39;&#39;
+    del self._params[name]</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.GroupData.rename_param"><code class="name flex">
 <span>def <span class="ident">rename_param</span></span>(<span>self, name, new_name)</span>
@@ -311,18 +1479,74 @@ automatically be case-normalized.</dd>
 <dt><code>ValueError</code></dt>
 <dd>If the new name already exist (attempt to overwrite existing data).</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def rename_param(self, name, new_name):
+    &#39;&#39;&#39; Rename a specified parameter group.
+
+    Parameters
+    ----------
+    name : str, or `c3d.group.GroupReadonly`
+        Parameter instance, or name.
+    new_name : str
+        New name for the parameter.
+    Raises
+    ------
+    KeyError
+        If no parameter with the original name exists.
+    ValueError
+        If the new name already exist (attempt to overwrite existing data).
+    &#39;&#39;&#39;
+    if new_name in self._params:
+        raise ValueError(&#34;Key {} already exist.&#34;.format(new_name))
+    if isinstance(name, Param):
+        param = name
+        name = param.name
+    else:
+        # Aquire instance using id
+        param = self._params[name]
+    del self._params[name]
+    self._params[new_name] = param</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.GroupData.set_desc"><code class="name flex">
 <span>def <span class="ident">set_desc</span></span>(<span>self, desc)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Set the Group descriptor.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_desc(self, desc):
+    &#39;&#39;&#39; Set the Group descriptor.
+    &#39;&#39;&#39;
+    if isinstance(desc, bytes):
+        self.desc = self._dtypes.decode_string(desc)
+    elif isinstance(desc, str) or desc is None:
+        self.desc = desc
+    else:
+        raise TypeError(&#39;Expected descriptor to be python string, bytes or None, was %s.&#39; % type(desc))</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.GroupData.set_name"><code class="name flex">
 <span>def <span class="ident">set_name</span></span>(<span>self, name)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Set the group name string.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_name(self, name):
+    &#39;&#39;&#39; Set the group name string. &#39;&#39;&#39;
+    if name is None or isinstance(name, str):
+        self.name = name
+    else:
+        raise TypeError(&#39;Expected group name to be string, was %s.&#39; % type(name))</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.GroupData.write"><code class="name flex">
 <span>def <span class="ident">write</span></span>(<span>self, group_id, handle)</span>
@@ -336,6 +1560,30 @@ automatically be case-normalized.</dd>
 <dt><strong><code>handle</code></strong> :&ensp;<code>file handle</code></dt>
 <dd>An open, writable, binary file handle.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def write(self, group_id, handle):
+    &#39;&#39;&#39;Write this parameter group, with parameters, to a file handle.
+
+    Parameters
+    ----------
+    group_id : int
+        The numerical ID of the group.
+    handle : file handle
+        An open, writable, binary file handle.
+    &#39;&#39;&#39;
+    name = self.name.encode(&#39;utf-8&#39;)
+    desc = self.desc.encode(&#39;utf-8&#39;)
+    handle.write(struct.pack(&#39;bb&#39;, len(name), -group_id))
+    handle.write(name)
+    handle.write(struct.pack(&#39;&lt;h&#39;, 3 + len(desc)))
+    handle.write(struct.pack(&#39;B&#39;, len(desc)))
+    handle.write(desc)
+    for param in self._params.values():
+        param._data.write(group_id, handle)</code></pre>
+</details>
 </dd>
 </dl>
 </dd>
@@ -345,6 +1593,100 @@ automatically be case-normalized.</dd>
 </code></dt>
 <dd>
 <div class="desc"><p>Wrapper exposing readonly attributes of a <code><a title="c3d.group.GroupData" href="#c3d.group.GroupData">GroupData</a></code> entry.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class GroupReadonly(object):
+    &#39;&#39;&#39; Wrapper exposing readonly attributes of a `c3d.group.GroupData` entry.
+    &#39;&#39;&#39;
+    def __init__(self, data):
+        self._data = data
+
+    def __contains__(self, key):
+        return key in self._data._params
+
+    def __eq__(self, other):
+        return self._data is other._data
+
+    @property
+    def name(self) -&gt; str:
+        &#39;&#39;&#39; Access group name. &#39;&#39;&#39;
+        return self._data.name
+
+    @property
+    def desc(self) -&gt; str:
+        &#39;&#39;&#39;Access group descriptor. &#39;&#39;&#39;
+        return self._data.desc
+
+    def items(self):
+        &#39;&#39;&#39; Get iterator for paramater key-entry pairs. &#39;&#39;&#39;
+        return ((k, v.readonly()) for k, v in self._data._params.items())
+
+    def values(self):
+        &#39;&#39;&#39; Get iterator for parameter entries. &#39;&#39;&#39;
+        return (v.readonly() for v in self._data._params.values())
+
+    def keys(self):
+        &#39;&#39;&#39; Get iterator for parameter entry keys. &#39;&#39;&#39;
+        return self._data._params.keys()
+
+    def get(self, key, default=None):
+        &#39;&#39;&#39;Get a readonly parameter by key.
+
+        Parameters
+        ----------
+        key : any
+            Parameter key to look up in this group.
+        default : any, optional
+            Value to return if the key is not found. Defaults to None.
+
+        Returns
+        -------
+        param : :class:`ParamReadable`
+            A parameter from the current group.
+        &#39;&#39;&#39;
+        val = self._data._params.get(key, default)
+        if val:
+            return val.readonly()
+        return default
+
+    def get_int8(self, key):
+        &#39;&#39;&#39;Get the value of the given parameter as an 8-bit signed integer.&#39;&#39;&#39;
+        return self._data[key.upper()].int8_value
+
+    def get_uint8(self, key):
+        &#39;&#39;&#39;Get the value of the given parameter as an 8-bit unsigned integer.&#39;&#39;&#39;
+        return self._data[key.upper()].uint8_value
+
+    def get_int16(self, key):
+        &#39;&#39;&#39;Get the value of the given parameter as a 16-bit signed integer.&#39;&#39;&#39;
+        return self._data[key.upper()].int16_value
+
+    def get_uint16(self, key):
+        &#39;&#39;&#39;Get the value of the given parameter as a 16-bit unsigned integer.&#39;&#39;&#39;
+        return self._data[key.upper()].uint16_value
+
+    def get_int32(self, key):
+        &#39;&#39;&#39;Get the value of the given parameter as a 32-bit signed integer.&#39;&#39;&#39;
+        return self._data[key.upper()].int32_value
+
+    def get_uint32(self, key):
+        &#39;&#39;&#39;Get the value of the given parameter as a 32-bit unsigned integer.&#39;&#39;&#39;
+        return self._data[key.upper()].uint32_value
+
+    def get_float(self, key):
+        &#39;&#39;&#39;Get the value of the given parameter as a 32-bit float.&#39;&#39;&#39;
+        return self._data[key.upper()].float_value
+
+    def get_bytes(self, key):
+        &#39;&#39;&#39;Get the value of the given parameter as a byte array.&#39;&#39;&#39;
+        return self._data[key.upper()].bytes_value
+
+    def get_string(self, key):
+        &#39;&#39;&#39;Get the value of the given parameter as a string.&#39;&#39;&#39;
+        return self._data[key.upper()].string_value</code></pre>
+</details>
 <h3>Subclasses</h3>
 <ul class="hlist">
 <li><a title="c3d.group.Group" href="#c3d.group.Group">Group</a></li>
@@ -354,10 +1696,28 @@ automatically be case-normalized.</dd>
 <dt id="c3d.group.GroupReadonly.desc"><code class="name">var <span class="ident">desc</span> : str</code></dt>
 <dd>
 <div class="desc"><p>Access group descriptor.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def desc(self) -&gt; str:
+    &#39;&#39;&#39;Access group descriptor. &#39;&#39;&#39;
+    return self._data.desc</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.GroupReadonly.name"><code class="name">var <span class="ident">name</span> : str</code></dt>
 <dd>
 <div class="desc"><p>Access group name.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def name(self) -&gt; str:
+    &#39;&#39;&#39; Access group name. &#39;&#39;&#39;
+    return self._data.name</code></pre>
+</details>
 </dd>
 </dl>
 <h3>Methods</h3>
@@ -379,78 +1739,198 @@ automatically be case-normalized.</dd>
 <dt><strong><code>param</code></strong> :&ensp;<code>:class:</code>ParamReadable``</dt>
 <dd>A parameter from the current group.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get(self, key, default=None):
+    &#39;&#39;&#39;Get a readonly parameter by key.
+
+    Parameters
+    ----------
+    key : any
+        Parameter key to look up in this group.
+    default : any, optional
+        Value to return if the key is not found. Defaults to None.
+
+    Returns
+    -------
+    param : :class:`ParamReadable`
+        A parameter from the current group.
+    &#39;&#39;&#39;
+    val = self._data._params.get(key, default)
+    if val:
+        return val.readonly()
+    return default</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.GroupReadonly.get_bytes"><code class="name flex">
 <span>def <span class="ident">get_bytes</span></span>(<span>self, key)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Get the value of the given parameter as a byte array.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_bytes(self, key):
+    &#39;&#39;&#39;Get the value of the given parameter as a byte array.&#39;&#39;&#39;
+    return self._data[key.upper()].bytes_value</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.GroupReadonly.get_float"><code class="name flex">
 <span>def <span class="ident">get_float</span></span>(<span>self, key)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Get the value of the given parameter as a 32-bit float.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_float(self, key):
+    &#39;&#39;&#39;Get the value of the given parameter as a 32-bit float.&#39;&#39;&#39;
+    return self._data[key.upper()].float_value</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.GroupReadonly.get_int16"><code class="name flex">
 <span>def <span class="ident">get_int16</span></span>(<span>self, key)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Get the value of the given parameter as a 16-bit signed integer.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_int16(self, key):
+    &#39;&#39;&#39;Get the value of the given parameter as a 16-bit signed integer.&#39;&#39;&#39;
+    return self._data[key.upper()].int16_value</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.GroupReadonly.get_int32"><code class="name flex">
 <span>def <span class="ident">get_int32</span></span>(<span>self, key)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Get the value of the given parameter as a 32-bit signed integer.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_int32(self, key):
+    &#39;&#39;&#39;Get the value of the given parameter as a 32-bit signed integer.&#39;&#39;&#39;
+    return self._data[key.upper()].int32_value</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.GroupReadonly.get_int8"><code class="name flex">
 <span>def <span class="ident">get_int8</span></span>(<span>self, key)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Get the value of the given parameter as an 8-bit signed integer.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_int8(self, key):
+    &#39;&#39;&#39;Get the value of the given parameter as an 8-bit signed integer.&#39;&#39;&#39;
+    return self._data[key.upper()].int8_value</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.GroupReadonly.get_string"><code class="name flex">
 <span>def <span class="ident">get_string</span></span>(<span>self, key)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Get the value of the given parameter as a string.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_string(self, key):
+    &#39;&#39;&#39;Get the value of the given parameter as a string.&#39;&#39;&#39;
+    return self._data[key.upper()].string_value</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.GroupReadonly.get_uint16"><code class="name flex">
 <span>def <span class="ident">get_uint16</span></span>(<span>self, key)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Get the value of the given parameter as a 16-bit unsigned integer.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_uint16(self, key):
+    &#39;&#39;&#39;Get the value of the given parameter as a 16-bit unsigned integer.&#39;&#39;&#39;
+    return self._data[key.upper()].uint16_value</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.GroupReadonly.get_uint32"><code class="name flex">
 <span>def <span class="ident">get_uint32</span></span>(<span>self, key)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Get the value of the given parameter as a 32-bit unsigned integer.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_uint32(self, key):
+    &#39;&#39;&#39;Get the value of the given parameter as a 32-bit unsigned integer.&#39;&#39;&#39;
+    return self._data[key.upper()].uint32_value</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.GroupReadonly.get_uint8"><code class="name flex">
 <span>def <span class="ident">get_uint8</span></span>(<span>self, key)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Get the value of the given parameter as an 8-bit unsigned integer.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_uint8(self, key):
+    &#39;&#39;&#39;Get the value of the given parameter as an 8-bit unsigned integer.&#39;&#39;&#39;
+    return self._data[key.upper()].uint8_value</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.GroupReadonly.items"><code class="name flex">
 <span>def <span class="ident">items</span></span>(<span>self)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Get iterator for paramater key-entry pairs.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def items(self):
+    &#39;&#39;&#39; Get iterator for paramater key-entry pairs. &#39;&#39;&#39;
+    return ((k, v.readonly()) for k, v in self._data._params.items())</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.GroupReadonly.keys"><code class="name flex">
 <span>def <span class="ident">keys</span></span>(<span>self)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Get iterator for parameter entry keys.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def keys(self):
+    &#39;&#39;&#39; Get iterator for parameter entry keys. &#39;&#39;&#39;
+    return self._data._params.keys()</code></pre>
+</details>
 </dd>
 <dt id="c3d.group.GroupReadonly.values"><code class="name flex">
 <span>def <span class="ident">values</span></span>(<span>self)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Get iterator for parameter entries.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def values(self):
+    &#39;&#39;&#39; Get iterator for parameter entries. &#39;&#39;&#39;
+    return (v.readonly() for v in self._data._params.values())</code></pre>
+</details>
 </dd>
 </dl>
 </dd>

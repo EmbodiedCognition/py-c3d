@@ -2,7 +2,7 @@ Examples
 ========
 
 Access to data blocks in a .c3d file is provided through the `c3d.reader.Reader` and `c3d.writer.Writer` classes.
-Runnable implementation of the examples are provided in the [examples/] directory in the github repository.
+Implementation of the examples below are provided in the [examples/] directory in the github repository.
 
 [examples/]: https://github.com/EmbodiedCognition/py-c3d/tree/master/examples
 
@@ -61,10 +61,11 @@ Editing
 -------
 
 Editing c3d files is possible by combining the use of `c3d.reader.Reader` and `c3d.writer.Writer`
-instances through the use of `c3d.reader.Reader.to_writer`. Opening a .c3d file stream through
-a reader instance, `c3d.reader.Reader.to_writer` can be used to create an independent Writer instance
-containing a heap copy of the file contents. Rereading the data frames from the file
-and inserting into the writer in reverse, a looped version of the .c3d file can be created!
+instances through the `c3d.reader.Reader.to_writer` method. To edit a file, open a file stream and pass
+it to a `c3d.reader.Reader` instance. Convert it using the `c3d.reader.Reader.to_writer` method to create
+an independent `c3d.writer.Writer` instance containing a heap copy of the file contents.
+Rereading the data frames from the reader and inserting them in reverse into
+the writer will then create a looped version of the .c3d file!
 
     import c3d
 
@@ -76,3 +77,48 @@ and inserting into the writer in reverse, a looped version of the .c3d file can 
 
     with open('my-looped-motion.c3d', 'wb') as h:
         writer.write(h)
+
+
+Accessing metadata
+----------------
+
+Metadata in a .c3d file exists in two forms, a `c3d.header.Header` and `c3d.parameter.ParamData`.
+Reading metadata fields can be done though the `c3d.reader.Reader` but editing requires a
+`c3d.writer.Writer` instance.
+
+`c3d.header.Header` fields can be accessed from the common `c3d.manager.Manager.header` attribute.
+Parameters are available through a parameter `c3d.group.Group`, and can be accessed
+through the `c3d.manager.Manager.get` method:
+
+    group = reader.get('POINT')
+    param = group.get('LABELS')
+
+or use the simpler method
+
+    param = reader.get('POINT:LABELS')
+
+Note that for accessing parameters in the `c3d.reader.Reader`, `c3d.reader.Reader.get`
+returns a `c3d.group.GroupReadonly` instance. Convenience functions are provided
+for some of the common metadata fields
+such as `c3d.manager.Manager.frame_count`. In the case you require specific
+metadata fields, consider visiting the documentation for the [C3D format] and/or inspect
+the file using the c3d-metadata script.
+
+[C3D format]: https://c3d.org/docs/C3D_User_Guide.pdf
+
+Writing metadata
+----------------
+
+Once a `c3d.writer.Writer` instance is created, to edit
+parameter data `c3d.writer.Writer.get_create` a group:
+
+    group = writer.get_create('ANALOG')
+
+and to write a float32 entry, use the `c3d.group.Group.add` or `c3d.group.Group.set` functions
+
+    group.set('GEN_SCALE', 'Analog general scale factor', 4, '<f', value)
+
+In this case, one can use the `c3d.writer.Writer.set_analog_general_scale` method instead.
+For serializing other types, see the source code for some of the convenience functions such as
+`c3d.writer.Writer.set_point_labels` (2D string array) or
+`c3d.writer.Writer.set_analog_scales` (1D float array).
