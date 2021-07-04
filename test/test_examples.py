@@ -14,6 +14,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..\\examples'))
 class Examples(Base):
     ''' Test basic writer functionality
     '''
+    def test_read(self):
+        import read
+
     def test_write(self):
         import write
         path = 'random-points.c3d'

@@ -8,12 +8,12 @@ Reading
 
 To read the frames from a C3D file, use a `c3d.reader.Reader` instance:
 
->>> import c3d
->>>
->>> reader = c3d.Reader(open('my-motion.c3d', 'rb'))
->>> for i, points, analog in reader.read_frames():
->>>     print('frame {}: point {}, analog {}'.format(
->>>           i, points.shape, analog.shape)
+    import c3d
+
+    reader = c3d.Reader(open('my-motion.c3d', 'rb'))
+    for i, points, analog in reader.read_frames():
+        print('frame {}: point {}, analog {}'.format(
+              i, points.shape, analog.shape)
 
 The method `c3d.reader.Reader.read_frames` generates tuples
 containing the trial frame index, a ``numpy`` array of point data,
