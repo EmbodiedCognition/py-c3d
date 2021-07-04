@@ -10,14 +10,15 @@ To read the frames from a C3D file, use a `c3d.reader.Reader` instance:
 
     import c3d
 
-    reader = c3d.Reader(open('my-motion.c3d', 'rb'))
-    for i, points, analog in reader.read_frames():
-        print('frame {}: point {}, analog {}'.format(
-              i, points.shape, analog.shape)
+    with open(file_path, 'rb') as file:
+        reader = c3d.Reader(file)
+        for i, points, analog in reader.read_frames():
+            print('frame {}: point {}, analog {}'.format(
+                  i, points.shape, analog.shape))
 
 The method `c3d.reader.Reader.read_frames` generates tuples
-containing the trial frame index, a ``numpy`` array of point data,
-and a ``numpy`` array of analog data.
+containing the trial frame number, a ``numpy`` array of point
+data, and a ``numpy`` array of analog data.
 
 Writing
 -------
@@ -46,11 +47,12 @@ instance:
     with open('random-points.c3d', 'wb') as h:
         writer.write(h)
 
-The function `c3d.writer.Writer.add_frames` take pairs of ``numpy``
-or python arrays. First array in each frame tuple contains the point
-data and the second analog data for the frame. References of the data
-are tracked until `c3d.writer.Writer.write` is called, serializing all
-data frames to a C3D binary file.
+The function `c3d.writer.Writer.add_frames` take pairs of ``numpy`` or python
+arrays. First array in each frame tuple contains the point data and the second
+contains analog data for the frame, leaving one of the arrays empty indicates
+no analog --- or point data--- should be included in the file. References of the
+data arrays are tracked until `c3d.writer.Writer.write` is called, serializing
+metadata and data frames to a C3D binary file.
 
 Editing
 -------

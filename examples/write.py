@@ -2,6 +2,7 @@ import numpy as np
 try:
     import c3d
 except ModuleNotFoundError:
+    # Force load package with no instalation
     import sys
     import os
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..\\'))
