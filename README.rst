@@ -8,7 +8,7 @@ data recorded by a 3D motion tracking apparatus.
 Installing
 ----------
 
-Install with pip::
+Install with pip (currently outdated, download package from github instead)::
 
     pip install c3d
 
@@ -34,7 +34,7 @@ described by a C3D file (``c3d-viewer``).
 Library
 ~~~~~~~
 
-To use the C3D library, just import the package and create a ``Reader`` or
+To use the C3D library, just import the package and create a ``Reader`` and/or
 ``Writer`` depending on your intended usage
 
 .. code-block:: python

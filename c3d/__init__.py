@@ -11,9 +11,9 @@ motion-capture files in the [C3D file format].
 Installing
 ----------
 
-See the [main page] https://mattiasfredriksson.github.io/py-c3d/
+See the [main page].
 
-[C3D file format]: https://www.c3d.org/HTML/default.htm
+[main page]: https://mattiasfredriksson.github.io/py-c3d/
 
 .. include:: ../docs/examples.md
 
