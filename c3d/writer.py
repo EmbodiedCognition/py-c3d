@@ -54,12 +54,12 @@ class Writer(Manager):
 
     @staticmethod
     def from_reader(reader, conversion=None):
-        '''
+        ''' Convert a `c3d.reader.Reader` to a persistent `c3d.writer.Writer` instance.
 
         Parameters
         ----------
-        source : `c3d.manager.Manager`
-            Source to copy.
+        source : `c3d.reader.Reader`
+            Source to copy data from.
         conversion : str
             Conversion mode, None is equivalent to the default mode. Supported modes are:
 
@@ -79,8 +79,8 @@ class Writer(Manager):
 
         Returns
         -------
-        param : :class:`Writer`
-            A writeable and persistent representation of the 'Reader' object.
+        param : `c3d.writer.Writer`
+            A writeable and persistent representation of the `c3d.reader.Reader` object.
 
         Raises
         ------
