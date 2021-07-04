@@ -78,10 +78,10 @@ is called, which serializes the metadata and data frames into a C3D binary file 
 <h2 id="editing">Editing</h2>
 <p>Editing c3d files is possible by combining the use of <code><a title="c3d.reader.Reader" href="reader.html#c3d.reader.Reader">Reader</a></code> and <code><a title="c3d.writer.Writer" href="writer.html#c3d.writer.Writer">Writer</a></code>
 instances through the <code><a title="c3d.reader.Reader.to_writer" href="reader.html#c3d.reader.Reader.to_writer">Reader.to_writer()</a></code> method. To edit a file, open a file stream and pass
-it to a <code><a title="c3d.reader.Reader" href="reader.html#c3d.reader.Reader">Reader</a></code> instance. Convert it using the <code><a title="c3d.reader.Reader.to_writer" href="reader.html#c3d.reader.Reader.to_writer">Reader.to_writer()</a></code> method to create
-an independent <code><a title="c3d.writer.Writer" href="writer.html#c3d.writer.Writer">Writer</a></code> instance containing a heap copy of the file contents.
-Rereading the data frames from the reader and inserting them in reverse into
-the writer will then create a looped version of the .c3d file!</p>
+it to the <code><a title="c3d.reader.Reader" href="reader.html#c3d.reader.Reader">Reader</a></code> constructor. Use the <code><a title="c3d.reader.Reader.to_writer" href="reader.html#c3d.reader.Reader.to_writer">Reader.to_writer()</a></code> method to create
+an independent <code><a title="c3d.writer.Writer" href="writer.html#c3d.writer.Writer">Writer</a></code> instance containing a heap copy of its file contents.
+Rereading data frames from the reader and inserting them in reverse will then create a
+looped version of the original motion sequence!</p>
 <pre><code>import c3d
 
 with open('my-motion.c3d', 'rb') as file:
@@ -99,19 +99,18 @@ Reading metadata fields can be done though the <code><a title="c3d.reader.Reader
 <code><a title="c3d.writer.Writer" href="writer.html#c3d.writer.Writer">Writer</a></code> instance.</p>
 <p><code><a title="c3d.header.Header" href="header.html#c3d.header.Header">Header</a></code> fields can be accessed from the common <code><a title="c3d.manager.Manager.header" href="manager.html#c3d.manager.Manager.header">Manager.header</a></code> attribute.
 Parameters are available through a parameter <code><a title="c3d.group.Group" href="group.html#c3d.group.Group">Group</a></code>, and can be accessed
-through the <code><a title="c3d.manager.Manager.get" href="manager.html#c3d.manager.Manager.get">Manager.get()</a></code> method:</p>
+through the <code><a title="c3d.manager.Manager.get" href="manager.html#c3d.manager.Manager.get">Manager.get()</a></code> and <code><a title="c3d.group.Group.get" href="group.html#c3d.group.Group.get">Group.get()</a></code> methods:</p>
 <pre><code>group = reader.get('POINT')
 param = group.get('LABELS')
 </code></pre>
-<p>or use the simpler method</p>
+<p>or simply use</p>
 <pre><code>param = reader.get('POINT:LABELS')
 </code></pre>
 <p>Note that for accessing parameters in the <code><a title="c3d.reader.Reader" href="reader.html#c3d.reader.Reader">Reader</a></code>, <code><a title="c3d.reader.Reader.get" href="reader.html#c3d.reader.Reader.get">Reader.get()</a></code>
 returns a <code><a title="c3d.group.GroupReadonly" href="group.html#c3d.group.GroupReadonly">GroupReadonly</a></code> instance. Convenience functions are provided
-for some of the common metadata fields
-such as <code><a title="c3d.manager.Manager.frame_count" href="manager.html#c3d.manager.Manager.frame_count">Manager.frame_count</a></code>. In the case you require specific
-metadata fields, consider exploring the <a href="https://c3d.org/docs/C3D_User_Guide.pdf">C3D format manual</a> and/or inspect
-the file using the c3d-metadata script.</p>
+for some of the common metadata fields such as <code><a title="c3d.manager.Manager.frame_count" href="manager.html#c3d.manager.Manager.frame_count">Manager.frame_count</a></code>.
+In the case you require specific metadata fields, consider exploring
+the <a href="https://c3d.org/docs/C3D_User_Guide.pdf">C3D format manual</a> and/or inspect the file using the c3d-metadata script.</p>
 <h2 id="writing-metadata">Writing Metadata</h2>
 <p>Once a <code><a title="c3d.writer.Writer" href="writer.html#c3d.writer.Writer">Writer</a></code> instance is created, to edit
 parameter data <code><a title="c3d.writer.Writer.get_create" href="writer.html#c3d.writer.Writer.get_create">Writer.get_create()</a></code> a group:</p>
@@ -121,7 +120,7 @@ parameter data <code><a title="c3d.writer.Writer.get_create" href="writer.html#c
 <pre><code>group.set('GEN_SCALE', 'Analog general scale factor', 4, '&lt;f', value)
 </code></pre>
 <p>In this case, one can use the <code><a title="c3d.writer.Writer.set_analog_general_scale" href="writer.html#c3d.writer.Writer.set_analog_general_scale">Writer.set_analog_general_scale()</a></code> method instead.
-For serializing other types, see the source code for some of the convenience functions such as
+For serializing other types, see the source code for some of the convenience functions. For example:
 <code><a title="c3d.writer.Writer.set_point_labels" href="writer.html#c3d.writer.Writer.set_point_labels">Writer.set_point_labels()</a></code> (2D string array) or
 <code><a title="c3d.writer.Writer.set_analog_scales" href="writer.html#c3d.writer.Writer.set_analog_scales">Writer.set_analog_scales()</a></code> (1D float array).</p>
 <details class="source">
