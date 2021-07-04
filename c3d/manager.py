@@ -104,11 +104,20 @@ class Manager(object):
         if self.point_used > 0:
             check_parameters(('POINT:LABELS', 'POINT:DESCRIPTIONS'))
         else:
-            warnings.warn('No point data found in file.')
+            lab = self.get('POINT:LABELS')
+            if lab is None:
+                warnings.warn('No point data found in file.')
+            elif lab.num_elements > 0:
+                warnings.warn('No point data found in file, but file contains POINT:LABELS entries')
         if self.analog_used > 0:
             check_parameters(('ANALOG:LABELS', 'ANALOG:DESCRIPTIONS'))
         else:
-            warnings.warn('No analog data found in file.')
+            lab = self.get('ANALOG:LABELS')
+            if lab is None:
+                warnings.warn('No analog data found in file.')
+            elif lab.num_elements > 0:
+                warnings.warn('No analog data found in file, but file contains ANALOG:LABELS entries')
+
 
     def _add_group(self, group_id, name=None, desc=None):
         '''Add a new parameter group.
