@@ -49,7 +49,7 @@ To use the C3D library, just import the package and create a ``Reader`` and/or
             print('frame {}: point {}, analog {}'.format(
                   i, points.shape, analog.shape))
 
-You can also get and set metadata fields using the library; see the `package
+You can also edit metadata fields using the library; see the `package
 documentation`_ for more details.
 
 .. _package documentation: https://mattiasfredriksson.github.io/py-c3d/c3d/
@@ -58,17 +58,16 @@ Caveats
 -------
 
 The package is tested against the `software examples`_ but may still not support
-every possible format. For example, parameters serialized in multiple parameters 
-are not handled automatically (such as a LABELS field stored in both POINT:LABELS and 
-POINT:LABELS2). Reading and writing files from a big-endian system is also not supported. 
+every possible format. For example, parameters serialized in multiple parameters
+are not handled automatically (LABELS field stored in both POINT:LABELS and
+POINT:LABELS2). Reading and writing files from a big-endian system is also not supported.
 
-Tests are currently only run on Windows, which means that Linux and Mac users may 
-experience some issues. If you experience issues with a file or feature, feel free 
-to post an issue (preferably by including example file/code/python exception) 
+Tests are currently only run on Windows, which means that Linux and Mac users may
+experience some issues. If you experience issues with a file or feature, feel free
+to post an issue (preferably by including example file/code/python exception)
 or make a pull request!
 
-The package is also Python only, for other languages there are other packages such as `ezc3d`_.
+The package is also Python only, for other languages there are other packages for example `ezc3d`_.
 
 .. _software examples: https://www.c3d.org/sampledata.html
 .. _ezc3d: https://github.com/pyomeca/ezc3d
-
