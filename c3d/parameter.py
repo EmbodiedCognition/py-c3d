@@ -176,7 +176,7 @@ class ParamReadonly(object):
 
     @property
     def dimensions(self) -> (int, ...):
-        ''' Shape of the parameter data (Fortran shape). '''
+        ''' Shape of the parameter data (Fortran format). '''
         return self._data.dimensions
 
     @property
@@ -201,63 +201,86 @@ class ParamReadonly(object):
 
     @property
     def int8_value(self):
-        '''Get the param as an 8-bit signed integer.'''
+        '''Get the parameter data as an 8-bit signed integer.'''
         return self._data._as(self.dtypes.int8)
 
     @property
     def uint8_value(self):
-        '''Get the param as an 8-bit unsigned integer.'''
+        '''Get the parameter data as an 8-bit unsigned integer.'''
         return self._data._as(self.dtypes.uint8)
 
     @property
     def int16_value(self):
-        '''Get the param as a 16-bit signed integer.'''
+        '''Get the parameter data as a 16-bit signed integer.'''
         return self._data._as(self.dtypes.int16)
 
     @property
     def uint16_value(self):
-        '''Get the param as a 16-bit unsigned integer.'''
+        '''Get the parameter data as a 16-bit unsigned integer.'''
         return self._data._as(self.dtypes.uint16)
 
     @property
     def int32_value(self):
-        '''Get the param as a 32-bit signed integer.'''
+        '''Get the parameter data as a 32-bit signed integer.'''
         return self._data._as(self.dtypes.int32)
 
     @property
     def uint32_value(self):
-        '''Get the param as a 32-bit unsigned integer.'''
+        '''Get the parameter data as a 32-bit unsigned integer.'''
         return self._data._as(self.dtypes.uint32)
 
     @property
+    def any_value(self):
+        ''' Get the parameter data as a value of 'traditional type'.
+
+        Traditional types are defined in the Parameter section in the [user manual].
+
+        Returns
+        -------
+        value : int, float, or str
+            Depending on the `bytes_per_element` field, a traditional type can
+            be a either a signed byte, signed short, 32-bit float, or a string.
+
+        [user manual]: https://www.c3d.org/docs/C3D_User_Guide.pdf
+        '''
+        if self.bytes_per_element >= 4:
+            return self.float_value
+        elif self.bytes_per_element >= 2:
+            return self.int16_value
+        elif self.bytes_per_element == -1:
+            return self.string_value
+        else:
+            return self.int8_value
+
+    @property
     def uint_value(self):
-        ''' Get the param as a unsigned integer of appropriate type. '''
-        if self.total_bytes >= 4:
+        ''' Get the parameter data as a unsigned integer of appropriate type. '''
+        if self.bytes_per_element >= 4:
             return self.uint32_value
-        elif self.total_bytes >= 2:
+        elif self.bytes_per_element >= 2:
             return self.uint16_value
         else:
             return self.uint8_value
 
     @property
     def int_value(self):
-        ''' Get the param as a signed integer of appropriate type. '''
-        if self.total_bytes >= 4:
+        ''' Get the parameter data as a signed integer of appropriate type. '''
+        if self.bytes_per_element >= 4:
             return self.int32_value
-        elif self.total_bytes >= 2:
+        elif self.bytes_per_element >= 2:
             return self.int16_value
         else:
             return self.int8_value
 
     @property
     def float_value(self):
-        '''Get the param as a floating point value of appropriate type.'''
-        if self.total_bytes > 4:
+        '''Get the parameter data as a floating point value of appropriate type.'''
+        if self.bytes_per_element > 4:
             if self.dtypes.is_dec:
                 raise AttributeError("64 bit DEC floating point is not supported.")
             # 64-bit floating point is not a standard
             return self._data._as(self.dtypes.float64)
-        elif self.total_bytes == 4:
+        elif self.bytes_per_element == 4:
             if self.dtypes.is_dec:
                 return DEC_to_IEEE(self._data._as(np.uint32))
             else:  # is_mips or is_ieee
@@ -266,58 +289,58 @@ class ParamReadonly(object):
             raise AttributeError("Only 32 and 64 bit floating point is supported.")
 
     @property
-    def bytes_value(self):
-        '''Get the param as a raw byte string.'''
+    def bytes_value(self) -> bytes:
+        '''Get the raw byte string.'''
         return self._data.bytes
 
     @property
     def string_value(self):
-        '''Get the param as a unicode string.'''
+        '''Get the parameter data as a unicode string.'''
         return self.dtypes.decode_string(self._data.bytes)
 
     @property
     def int8_array(self):
-        '''Get the param as an array of 8-bit signed integers.'''
+        '''Get the parameter data as an array of 8-bit signed integers.'''
         return self._data._as_array(self.dtypes.int8)
 
     @property
     def uint8_array(self):
-        '''Get the param as an array of 8-bit unsigned integers.'''
+        '''Get the parameter data as an array of 8-bit unsigned integers.'''
         return self._data._as_array(self.dtypes.uint8)
 
     @property
     def int16_array(self):
-        '''Get the param as an array of 16-bit signed integers.'''
+        '''Get the parameter data as an array of 16-bit signed integers.'''
         return self._data._as_array(self.dtypes.int16)
 
     @property
     def uint16_array(self):
-        '''Get the param as an array of 16-bit unsigned integers.'''
+        '''Get the parameter data as an array of 16-bit unsigned integers.'''
         return self._data._as_array(self.dtypes.uint16)
 
     @property
     def int32_array(self):
-        '''Get the param as an array of 32-bit signed integers.'''
+        '''Get the parameter data as an array of 32-bit signed integers.'''
         return self._data._as_array(self.dtypes.int32)
 
     @property
     def uint32_array(self):
-        '''Get the param as an array of 32-bit unsigned integers.'''
+        '''Get the parameter data as an array of 32-bit unsigned integers.'''
         return self._data._as_array(self.dtypes.uint32)
 
     @property
     def int64_array(self):
-        '''Get the param as an array of 32-bit signed integers.'''
+        '''Get the parameter data as an array of 32-bit signed integers.'''
         return self._data._as_array(self.dtypes.int64)
 
     @property
     def uint64_array(self):
-        '''Get the param as an array of 32-bit unsigned integers.'''
+        '''Get the parameter data as an array of 32-bit unsigned integers.'''
         return self._data._as_array(self.dtypes.uint64)
 
     @property
     def float32_array(self):
-        '''Get the param as an array of 32-bit floats.'''
+        '''Get the parameter data as an array of 32-bit floats.'''
         # Convert float data if not IEEE processor
         if self.dtypes.is_dec:
             # _as_array but for DEC
@@ -329,7 +352,7 @@ class ParamReadonly(object):
 
     @property
     def float64_array(self):
-        '''Get the param as an array of 64-bit floats.'''
+        '''Get the parameter data as an array of 64-bit floats.'''
         # Convert float data if not IEEE processor
         if self.dtypes.is_dec:
             raise ValueError('Unable to convert bytes encoded in a 64 bit floating point DEC format.')
@@ -338,7 +361,7 @@ class ParamReadonly(object):
 
     @property
     def float_array(self):
-        '''Get the param as an array of 32 or 64 bit floats.'''
+        '''Get the parameter data as an array of 32 or 64 bit floats.'''
         # Convert float data if not IEEE processor
         if self.bytes_per_element == 4:
             return self.float32_array
@@ -350,7 +373,7 @@ class ParamReadonly(object):
 
     @property
     def int_array(self):
-        '''Get the param as an array of integer values.'''
+        '''Get the parameter data as an array of integer values.'''
         # Convert float data if not IEEE processor
         if self.bytes_per_element == 1:
             return self.int8_array
@@ -366,7 +389,7 @@ class ParamReadonly(object):
 
     @property
     def uint_array(self):
-        '''Get the param as an array of integer values.'''
+        '''Get the parameter data as an array of integer values.'''
         # Convert float data if not IEEE processor
         if self.bytes_per_element == 1:
             return self.uint8_array
@@ -382,7 +405,7 @@ class ParamReadonly(object):
 
     @property
     def bytes_array(self):
-        '''Get the param as an array of raw byte strings.'''
+        '''Get the parameter data as an array of raw byte strings.'''
         # Decode different dimensions
         if len(self.dimensions) == 0:
             return np.array([])
@@ -403,7 +426,7 @@ class ParamReadonly(object):
 
     @property
     def string_array(self):
-        '''Get the param as a python array of unicode strings.'''
+        '''Get the parameter data as a python array of unicode strings.'''
         # Decode different dimensions
         if len(self.dimensions) == 0:
             return np.array([])
@@ -418,17 +441,17 @@ class ParamReadonly(object):
             return byte_arr
 
     @property
-    def _as_integer_or_float_value(self):
-        ''' Get the param as either 32 bit float or unsigned integer.
-            Evaluates if an integer is stored as a floating point representation.
+    def _as_any_uint(self):
+        ''' Attempt to parse the parameter data as any unsigned integer format.
+            Checks if the integer is stored as a floating point value.
         '''
-        if self.total_bytes >= 4:
+        if self.bytes_per_element >= 4:
             # Check if float value representation is an integer
             value = self.float_value
-            if int(value) == value:
-                return value
+            if float(value).is_integer():
+                return int(value)
             return self.uint32_value
-        elif self.total_bytes >= 2:
+        elif self.bytes_per_element >= 2:
             return self.uint16_value
         else:
             return self.uint8_value

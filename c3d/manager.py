@@ -1,4 +1,4 @@
-''' Manager base class defining common attributes for both the Reader and Writer instances.
+''' Manager base class defining common attributes for both Reader and Writer instances.
 '''
 import numpy as np
 import warnings
@@ -337,8 +337,7 @@ class Manager(object):
         param = self.get('TRIAL:ACTUAL_START_FIELD')
         if param is not None:
             # ACTUAL_START_FIELD is encoded in two 16 byte words...
-            words = param.uint16_array
-            return words[0] + words[1] * 65535
+            return param.uint32_value
         return self.header.first_frame
 
     @property
@@ -353,36 +352,82 @@ class Manager(object):
         param = self.get('TRIAL:ACTUAL_END_FIELD')
         if param is not None:
             # Encoded as 2 16 bit words (rather then 1 32 bit word)
-            words = param.uint16_array
-            end_frame[1] = words[0] + words[1] * 65536
-            # end_frame[1] = param.uint32_value
+            #words = param.uint16_array
+            #end_frame[1] = words[0] + words[1] * 65536
+            end_frame[1] = param.uint32_value
         param = self.get('POINT:LONG_FRAMES')
         if param is not None:
-            # Encoded as float
-            end_frame[2] = int(param.float_value)
+            # 'Should be' encoded as float
+            if param.bytes_per_element >= 4:
+                end_frame[2] = int(param.float_value)
+            else:
+                end_frame[2] = param.uint16_value
         param = self.get('POINT:FRAMES')
         if param is not None:
             # Can be encoded either as 32 bit float or 16 bit uint
-            if param.bytes_per_element == 2:
-                end_frame[3] = param.uint16_value
-            else:
+            if param.bytes_per_element == 4:
                 end_frame[3] = int(param.float_value)
+            else:
+                end_frame[3] = param.uint16_value
         # Return the largest of the all (queue bad reading...)
         return int(np.max(end_frame))
 
-    def get_screen_axis(self):
-        ''' Get the X_SCREEN and Y_SCREEN parameters in the POINT group.
+    def get_screen_xy_strings(self):
+        ''' Get the POINT:X_SCREEN and POINT:Y_SCREEN parameters as strings.
+
+        See `Manager.get_screen_xy_axis` to get numpy vectors instead.
 
         Returns
         -------
         value : (str, str) or None
-            Touple containing X_SCREEN and Y_SCREEN strings, or None if no parameters could be found.
+            Touple containing X_SCREEN and Y_SCREEN strings, or None (if no parameters could be found).
         '''
         X = self.get('POINT:X_SCREEN')
         Y = self.get('POINT:Y_SCREEN')
         if X and Y:
             return (X.string_value, Y.string_value)
         return None
+
+    def get_screen_xy_axis(self):
+        ''' Get the POINT:X_SCREEN and POINT:Y_SCREEN parameters as unit row vectors.
+
+        Z axis can be computed using the cross product:
+
+        \[ z = x \\times y \]
+
+        To move a point coordinate $p_s$ as read from `c3d.reader.Reader.read_frames` out of the system basis do:
+
+        \[ p = | x^T y^T z^T |^T p_s  \]
+
+
+        See `Manager.get_screen_xy_strings` to get the parameter as string values instead.
+
+        Returns
+        -------
+        value : ([3,], [3,]) or None
+            Touple $(x, y)$ containing X_SCREEN and Y_SCREEN as row vectors, or None.
+        '''
+        # Axis conversion dictionary.
+        AXIS_DICT = {
+            'X': np.array([1.0, 0, 0]),
+            '+X': np.array([1.0, 0, 0]),
+            '-X': np.array([-1.0, 0, 0]),
+            'Y': np.array([0, 1.0, 0]),
+            '+Y': np.array([0, 1.0, 0]),
+            '-Y': np.array([0, -1.0, 0]),
+            'Z': np.array([0, 0, 1.0]),
+            '+Z': np.array([0, 0, 1.0]),
+            '-Z': np.array([0, 0, -1.0]),
+        }
+
+        val = self.get_screen_xy()
+        if val is None:
+            return None
+        axis_x, axis_y  = val
+
+        # Interpret using both X/Y_SCREEN
+        return AXIS_DICT[axis_x], AXIS_DICT[axis_y]
+
 
     def get_analog_transform_parameters(self):
         ''' Parse analog data transform parameters. '''

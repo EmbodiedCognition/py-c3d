@@ -124,7 +124,7 @@ class WriterTest(Base):
         X, Y = '-Y', '+Z'
         w.set_screen_axis()
         w.set_screen_axis(X, Y)
-        X_v, Y_v = w.get_screen_axis()
+        X_v, Y_v = w.get_screen_xy_strings()
         assert X_v == X and Y == Y_v, 'Mismatch between set & get screen axis.'
         assert np.all(np.equal(r.point_labels, w.point_labels)), 'Expected labels to be equal.'
 
