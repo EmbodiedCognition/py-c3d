@@ -13,7 +13,7 @@ Building the docs requires the pdoc3 package::
 
 Once installed, documentation can be updated from the root directory with the command::
 
-    pdoc --html c3d --force --config show_source_code=True  --output-dir docs
+    pdoc --html c3d --force --config show_source_code=True  --output-dir docs  -c latex_math=True
 
 Once updated you can access the documentation in the `docs/c3d/`_ folder.
 

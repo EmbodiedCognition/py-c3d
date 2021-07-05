@@ -294,7 +294,7 @@ class Writer(Manager):
         &#39;&#39;&#39;
         grp = self.point_group
         if labels is None:
-            grp.add_empty_array(&#39;LABELS&#39;, &#39;Point labels.&#39;, -1)
+            grp.add_empty_array(&#39;LABELS&#39;, &#39;Point labels.&#39;)
         else:
             label_str, label_max_size = utils.pack_labels(labels)
             grp.add_str(&#39;LABELS&#39;, &#39;Point labels.&#39;, label_str, label_max_size, len(labels))
@@ -309,7 +309,7 @@ class Writer(Manager):
         &#39;&#39;&#39;
         grp = self.analog_group
         if labels is None:
-            grp.add_empty_array(&#39;LABELS&#39;, &#39;Analog labels.&#39;, -1)
+            grp.add_empty_array(&#39;LABELS&#39;, &#39;Analog labels.&#39;)
         else:
             label_str, label_max_size = utils.pack_labels(labels)
             grp.add_str(&#39;LABELS&#39;, &#39;Analog labels.&#39;, label_str, label_max_size, len(labels))
@@ -331,7 +331,7 @@ class Writer(Manager):
             data = np.array([v for v in values], dtype=np.float32)
             self.analog_group.set_array(&#39;SCALE&#39;, &#39;Analog channel scale factors&#39;, data)
         elif values is None:
-            self.analog_group.set_empty_array(&#39;SCALE&#39;, &#39;Analog channel scale factors&#39;, 4)
+            self.analog_group.set_empty_array(&#39;SCALE&#39;, &#39;Analog channel scale factors&#39;)
         else:
             raise ValueError(&#39;Expected iterable containing analog scale factors.&#39;)
 
@@ -347,7 +347,7 @@ class Writer(Manager):
             data = np.array([v for v in values], dtype=np.int16)
             self.analog_group.set_array(&#39;OFFSET&#39;, &#39;Analog channel offsets&#39;, data)
         elif values is None:
-            self.analog_group.set_empty_array(&#39;OFFSET&#39;, &#39;Analog channel offsets&#39;, 2)
+            self.analog_group.set_empty_array(&#39;OFFSET&#39;, &#39;Analog channel offsets&#39;)
         else:
             raise ValueError(&#39;Expected iterable containing analog data offsets.&#39;)
 
@@ -836,7 +836,7 @@ POINT:SCALE parameter").</dd>
         &#39;&#39;&#39;
         grp = self.point_group
         if labels is None:
-            grp.add_empty_array(&#39;LABELS&#39;, &#39;Point labels.&#39;, -1)
+            grp.add_empty_array(&#39;LABELS&#39;, &#39;Point labels.&#39;)
         else:
             label_str, label_max_size = utils.pack_labels(labels)
             grp.add_str(&#39;LABELS&#39;, &#39;Point labels.&#39;, label_str, label_max_size, len(labels))
@@ -851,7 +851,7 @@ POINT:SCALE parameter").</dd>
         &#39;&#39;&#39;
         grp = self.analog_group
         if labels is None:
-            grp.add_empty_array(&#39;LABELS&#39;, &#39;Analog labels.&#39;, -1)
+            grp.add_empty_array(&#39;LABELS&#39;, &#39;Analog labels.&#39;)
         else:
             label_str, label_max_size = utils.pack_labels(labels)
             grp.add_str(&#39;LABELS&#39;, &#39;Analog labels.&#39;, label_str, label_max_size, len(labels))
@@ -873,7 +873,7 @@ POINT:SCALE parameter").</dd>
             data = np.array([v for v in values], dtype=np.float32)
             self.analog_group.set_array(&#39;SCALE&#39;, &#39;Analog channel scale factors&#39;, data)
         elif values is None:
-            self.analog_group.set_empty_array(&#39;SCALE&#39;, &#39;Analog channel scale factors&#39;, 4)
+            self.analog_group.set_empty_array(&#39;SCALE&#39;, &#39;Analog channel scale factors&#39;)
         else:
             raise ValueError(&#39;Expected iterable containing analog scale factors.&#39;)
 
@@ -889,7 +889,7 @@ POINT:SCALE parameter").</dd>
             data = np.array([v for v in values], dtype=np.int16)
             self.analog_group.set_array(&#39;OFFSET&#39;, &#39;Analog channel offsets&#39;, data)
         elif values is None:
-            self.analog_group.set_empty_array(&#39;OFFSET&#39;, &#39;Analog channel offsets&#39;, 2)
+            self.analog_group.set_empty_array(&#39;OFFSET&#39;, &#39;Analog channel offsets&#39;)
         else:
             raise ValueError(&#39;Expected iterable containing analog data offsets.&#39;)
 
@@ -1467,7 +1467,7 @@ Note that the index should be relative to 0 rather then the frame number provide
     &#39;&#39;&#39;
     grp = self.analog_group
     if labels is None:
-        grp.add_empty_array(&#39;LABELS&#39;, &#39;Analog labels.&#39;, -1)
+        grp.add_empty_array(&#39;LABELS&#39;, &#39;Analog labels.&#39;)
     else:
         label_str, label_max_size = utils.pack_labels(labels)
         grp.add_str(&#39;LABELS&#39;, &#39;Analog labels.&#39;, label_str, label_max_size, len(labels))</code></pre>
@@ -1499,7 +1499,7 @@ Note that the index should be relative to 0 rather then the frame number provide
         data = np.array([v for v in values], dtype=np.int16)
         self.analog_group.set_array(&#39;OFFSET&#39;, &#39;Analog channel offsets&#39;, data)
     elif values is None:
-        self.analog_group.set_empty_array(&#39;OFFSET&#39;, &#39;Analog channel offsets&#39;, 2)
+        self.analog_group.set_empty_array(&#39;OFFSET&#39;, &#39;Analog channel offsets&#39;)
     else:
         raise ValueError(&#39;Expected iterable containing analog data offsets.&#39;)</code></pre>
 </details>
@@ -1530,7 +1530,7 @@ Note that the index should be relative to 0 rather then the frame number provide
         data = np.array([v for v in values], dtype=np.float32)
         self.analog_group.set_array(&#39;SCALE&#39;, &#39;Analog channel scale factors&#39;, data)
     elif values is None:
-        self.analog_group.set_empty_array(&#39;SCALE&#39;, &#39;Analog channel scale factors&#39;, 4)
+        self.analog_group.set_empty_array(&#39;SCALE&#39;, &#39;Analog channel scale factors&#39;)
     else:
         raise ValueError(&#39;Expected iterable containing analog scale factors.&#39;)</code></pre>
 </details>
@@ -1559,7 +1559,7 @@ Note that the index should be relative to 0 rather then the frame number provide
     &#39;&#39;&#39;
     grp = self.point_group
     if labels is None:
-        grp.add_empty_array(&#39;LABELS&#39;, &#39;Point labels.&#39;, -1)
+        grp.add_empty_array(&#39;LABELS&#39;, &#39;Point labels.&#39;)
     else:
         label_str, label_max_size = utils.pack_labels(labels)
         grp.add_str(&#39;LABELS&#39;, &#39;Point labels.&#39;, label_str, label_max_size, len(labels))</code></pre>
@@ -1740,8 +1740,8 @@ writer does not close the handle.</dd>
 <li><code><a title="c3d.manager.Manager.get_int16" href="manager.html#c3d.manager.Manager.get_int16">get_int16</a></code></li>
 <li><code><a title="c3d.manager.Manager.get_int32" href="manager.html#c3d.manager.Manager.get_int32">get_int32</a></code></li>
 <li><code><a title="c3d.manager.Manager.get_int8" href="manager.html#c3d.manager.Manager.get_int8">get_int8</a></code></li>
-<li><code><a title="c3d.manager.Manager.get_screen_axis" href="manager.html#c3d.manager.Manager.get_screen_axis">get_screen_axis</a></code></li>
-<li><code><a title="c3d.manager.Manager.get_screen_xy" href="manager.html#c3d.manager.Manager.get_screen_xy">get_screen_xy</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_screen_xy_axis" href="manager.html#c3d.manager.Manager.get_screen_xy_axis">get_screen_xy_axis</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_screen_xy_strings" href="manager.html#c3d.manager.Manager.get_screen_xy_strings">get_screen_xy_strings</a></code></li>
 <li><code><a title="c3d.manager.Manager.get_string" href="manager.html#c3d.manager.Manager.get_string">get_string</a></code></li>
 <li><code><a title="c3d.manager.Manager.get_uint16" href="manager.html#c3d.manager.Manager.get_uint16">get_uint16</a></code></li>
 <li><code><a title="c3d.manager.Manager.get_uint32" href="manager.html#c3d.manager.Manager.get_uint32">get_uint32</a></code></li>

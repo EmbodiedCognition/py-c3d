@@ -437,7 +437,7 @@ class Group(GroupReadonly):
                        bytes=data.encode(&#39;utf-8&#39;),
                        dimensions=shape or [len(data)])
 
-    def add_empty_array(self, name, desc=&#39;&#39;, bpe=1):
+    def add_empty_array(self, name, desc=&#39;&#39;):
         &#39;&#39;&#39; Add an empty parameter block.
 
         Parameters
@@ -446,7 +446,7 @@ class Group(GroupReadonly):
             Parameter name.
         &#39;&#39;&#39;
         self.add_param(name, desc=desc,
-                       bytes_per_element=bpe, dimensions=[0])
+                       bytes_per_element=0, dimensions=[0])
 
     #
     #   Convenience functions for adding or overwriting parameters.
@@ -682,7 +682,7 @@ class Group(GroupReadonly):
                        bytes=data.encode(&#39;utf-8&#39;),
                        dimensions=shape or [len(data)])
 
-    def add_empty_array(self, name, desc=&#39;&#39;, bpe=1):
+    def add_empty_array(self, name, desc=&#39;&#39;):
         &#39;&#39;&#39; Add an empty parameter block.
 
         Parameters
@@ -691,7 +691,7 @@ class Group(GroupReadonly):
             Parameter name.
         &#39;&#39;&#39;
         self.add_param(name, desc=desc,
-                       bytes_per_element=bpe, dimensions=[0])
+                       bytes_per_element=0, dimensions=[0])
 
     #
     #   Convenience functions for adding or overwriting parameters.
@@ -886,7 +886,7 @@ def name(self) -&gt; str:
 </details>
 </dd>
 <dt id="c3d.group.Group.add_empty_array"><code class="name flex">
-<span>def <span class="ident">add_empty_array</span></span>(<span>self, name, desc='', bpe=1)</span>
+<span>def <span class="ident">add_empty_array</span></span>(<span>self, name, desc='')</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Add an empty parameter block.</p>
@@ -899,7 +899,7 @@ def name(self) -&gt; str:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def add_empty_array(self, name, desc=&#39;&#39;, bpe=1):
+<pre><code class="python">def add_empty_array(self, name, desc=&#39;&#39;):
     &#39;&#39;&#39; Add an empty parameter block.
 
     Parameters
@@ -908,7 +908,7 @@ def name(self) -&gt; str:
         Parameter name.
     &#39;&#39;&#39;
     self.add_param(name, desc=desc,
-                   bytes_per_element=bpe, dimensions=[0])</code></pre>
+                   bytes_per_element=0, dimensions=[0])</code></pre>
 </details>
 </dd>
 <dt id="c3d.group.Group.add_param"><code class="name flex">

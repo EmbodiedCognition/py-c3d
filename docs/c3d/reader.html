@@ -271,7 +271,7 @@ class Reader(Manager):
             if check_nan:
                 is_nan = ~np.all(np.isfinite(points[:, :4]), axis=1)
                 points[is_nan, :3] = 0.0
-                invalid &amp;= is_nan
+                invalid |= is_nan
             # Update discarded - sign
             points[invalid, 3] = -1
 
@@ -637,7 +637,7 @@ not <code>close</code> the handle.</dd>
             if check_nan:
                 is_nan = ~np.all(np.isfinite(points[:, :4]), axis=1)
                 points[is_nan, :3] = 0.0
-                invalid &amp;= is_nan
+                invalid |= is_nan
             # Update discarded - sign
             points[invalid, 3] = -1
 
@@ -1019,7 +1019,7 @@ to be invalid.</p>
         if check_nan:
             is_nan = ~np.all(np.isfinite(points[:, :4]), axis=1)
             points[is_nan, :3] = 0.0
-            invalid &amp;= is_nan
+            invalid |= is_nan
         # Update discarded - sign
         points[invalid, 3] = -1
 
@@ -1113,8 +1113,8 @@ to be invalid.</p>
 <li><code><a title="c3d.manager.Manager.get_int16" href="manager.html#c3d.manager.Manager.get_int16">get_int16</a></code></li>
 <li><code><a title="c3d.manager.Manager.get_int32" href="manager.html#c3d.manager.Manager.get_int32">get_int32</a></code></li>
 <li><code><a title="c3d.manager.Manager.get_int8" href="manager.html#c3d.manager.Manager.get_int8">get_int8</a></code></li>
-<li><code><a title="c3d.manager.Manager.get_screen_axis" href="manager.html#c3d.manager.Manager.get_screen_axis">get_screen_axis</a></code></li>
-<li><code><a title="c3d.manager.Manager.get_screen_xy" href="manager.html#c3d.manager.Manager.get_screen_xy">get_screen_xy</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_screen_xy_axis" href="manager.html#c3d.manager.Manager.get_screen_xy_axis">get_screen_xy_axis</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_screen_xy_strings" href="manager.html#c3d.manager.Manager.get_screen_xy_strings">get_screen_xy_strings</a></code></li>
 <li><code><a title="c3d.manager.Manager.get_string" href="manager.html#c3d.manager.Manager.get_string">get_string</a></code></li>
 <li><code><a title="c3d.manager.Manager.get_uint16" href="manager.html#c3d.manager.Manager.get_uint16">get_uint16</a></code></li>
 <li><code><a title="c3d.manager.Manager.get_uint32" href="manager.html#c3d.manager.Manager.get_uint32">get_uint32</a></code></li>

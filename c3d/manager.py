@@ -352,8 +352,8 @@ class Manager(object):
         param = self.get('TRIAL:ACTUAL_END_FIELD')
         if param is not None:
             # Encoded as 2 16 bit words (rather then 1 32 bit word)
-            #words = param.uint16_array
-            #end_frame[1] = words[0] + words[1] * 65536
+            # words = param.uint16_array
+            # end_frame[1] = words[0] + words[1] * 65536
             end_frame[1] = param.uint32_value
         param = self.get('POINT:LONG_FRAMES')
         if param is not None:
@@ -393,11 +393,11 @@ class Manager(object):
 
         Z axis can be computed using the cross product:
 
-        \[ z = x \\times y \]
+        $$ z = x \\times y $$
 
         To move a point coordinate $p_s$ as read from `c3d.reader.Reader.read_frames` out of the system basis do:
 
-        \[ p = | x^T y^T z^T |^T p_s  \]
+        $$ p = | x^T y^T z^T |^T p_s  $$
 
 
         See `Manager.get_screen_xy_strings` to get the parameter as string values instead.
@@ -423,11 +423,10 @@ class Manager(object):
         val = self.get_screen_xy_strings()
         if val is None:
             return None
-        axis_x, axis_y  = val
+        axis_x, axis_y = val
 
         # Interpret using both X/Y_SCREEN
         return AXIS_DICT[axis_x], AXIS_DICT[axis_y]
-
 
     def get_analog_transform_parameters(self):
         ''' Parse analog data transform parameters. '''

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.2" />
 <title>c3d.manager API documentation</title>
-<meta name="description" content="Manager base class defining common attributes for both the Reader and Writer instances." />
+<meta name="description" content="Manager base class defining common attributes for both Reader and Writer instances." />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -23,12 +23,12 @@
 <h1 class="title">Module <code>c3d.manager</code></h1>
 </header>
 <section id="section-intro">
-<p>Manager base class defining common attributes for both the Reader and Writer instances.</p>
+<p>Manager base class defining common attributes for both Reader and Writer instances.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">&#39;&#39;&#39; Manager base class defining common attributes for both the Reader and Writer instances.
+<pre><code class="python">&#39;&#39;&#39; Manager base class defining common attributes for both Reader and Writer instances.
 &#39;&#39;&#39;
 import numpy as np
 import warnings
@@ -367,8 +367,7 @@ class Manager(object):
         param = self.get(&#39;TRIAL:ACTUAL_START_FIELD&#39;)
         if param is not None:
             # ACTUAL_START_FIELD is encoded in two 16 byte words...
-            words = param.uint16_array
-            return words[0] + words[1] * 65535
+            return param.uint32_value
         return self.header.first_frame
 
     @property
@@ -383,27 +382,30 @@ class Manager(object):
         param = self.get(&#39;TRIAL:ACTUAL_END_FIELD&#39;)
         if param is not None:
             # Encoded as 2 16 bit words (rather then 1 32 bit word)
-            words = param.uint16_array
-            end_frame[1] = words[0] + words[1] * 65536
-            # end_frame[1] = param.uint32_value
+            # words = param.uint16_array
+            # end_frame[1] = words[0] + words[1] * 65536
+            end_frame[1] = param.uint32_value
         param = self.get(&#39;POINT:LONG_FRAMES&#39;)
         if param is not None:
-            # Encoded as float
-            end_frame[2] = int(param.float_value)
+            # &#39;Should be&#39; encoded as float
+            if param.bytes_per_element &gt;= 4:
+                end_frame[2] = int(param.float_value)
+            else:
+                end_frame[2] = param.uint16_value
         param = self.get(&#39;POINT:FRAMES&#39;)
         if param is not None:
             # Can be encoded either as 32 bit float or 16 bit uint
-            if param.bytes_per_element == 2:
-                end_frame[3] = param.uint16_value
-            else:
+            if param.bytes_per_element == 4:
                 end_frame[3] = int(param.float_value)
+            else:
+                end_frame[3] = param.uint16_value
         # Return the largest of the all (queue bad reading...)
         return int(np.max(end_frame))
 
-    def get_screen_xy(self):
+    def get_screen_xy_strings(self):
         &#39;&#39;&#39; Get the POINT:X_SCREEN and POINT:Y_SCREEN parameters as strings.
 
-        See `Manager.get_screen_axis` to get numpy vectors instead.
+        See `Manager.get_screen_xy_axis` to get numpy vectors instead.
 
         Returns
         -------
@@ -416,19 +418,19 @@ class Manager(object):
             return (X.string_value, Y.string_value)
         return None
 
-    def get_screen_axis(self):
+    def get_screen_xy_axis(self):
         &#39;&#39;&#39; Get the POINT:X_SCREEN and POINT:Y_SCREEN parameters as unit row vectors.
 
         Z axis can be computed using the cross product:
 
-        \[ z = x \\times y \]
+        $$ z = x \\times y $$
 
         To move a point coordinate $p_s$ as read from `c3d.reader.Reader.read_frames` out of the system basis do:
 
-        \[ p = | x^T y^T z^T |^T p_s  \]
+        $$ p = | x^T y^T z^T |^T p_s  $$
 
 
-        See `Manager.get_screen_xy` to get the parameter as string values instead.
+        See `Manager.get_screen_xy_strings` to get the parameter as string values instead.
 
         Returns
         -------
@@ -448,14 +450,13 @@ class Manager(object):
             &#39;-Z&#39;: np.array([0, 0, -1.0]),
         }
 
-        val = self.get_screen_xy()
+        val = self.get_screen_xy_strings()
         if val is None:
             return None
-        axis_x, axis_y  = val
+        axis_x, axis_y = val
 
         # Interpret using both X/Y_SCREEN
         return AXIS_DICT[axis_x], AXIS_DICT[axis_y]
-
 
     def get_analog_transform_parameters(self):
         &#39;&#39;&#39; Parse analog data transform parameters. &#39;&#39;&#39;
@@ -881,8 +882,7 @@ name.</p>
         param = self.get(&#39;TRIAL:ACTUAL_START_FIELD&#39;)
         if param is not None:
             # ACTUAL_START_FIELD is encoded in two 16 byte words...
-            words = param.uint16_array
-            return words[0] + words[1] * 65535
+            return param.uint32_value
         return self.header.first_frame
 
     @property
@@ -897,27 +897,30 @@ name.</p>
         param = self.get(&#39;TRIAL:ACTUAL_END_FIELD&#39;)
         if param is not None:
             # Encoded as 2 16 bit words (rather then 1 32 bit word)
-            words = param.uint16_array
-            end_frame[1] = words[0] + words[1] * 65536
-            # end_frame[1] = param.uint32_value
+            # words = param.uint16_array
+            # end_frame[1] = words[0] + words[1] * 65536
+            end_frame[1] = param.uint32_value
         param = self.get(&#39;POINT:LONG_FRAMES&#39;)
         if param is not None:
-            # Encoded as float
-            end_frame[2] = int(param.float_value)
+            # &#39;Should be&#39; encoded as float
+            if param.bytes_per_element &gt;= 4:
+                end_frame[2] = int(param.float_value)
+            else:
+                end_frame[2] = param.uint16_value
         param = self.get(&#39;POINT:FRAMES&#39;)
         if param is not None:
             # Can be encoded either as 32 bit float or 16 bit uint
-            if param.bytes_per_element == 2:
-                end_frame[3] = param.uint16_value
-            else:
+            if param.bytes_per_element == 4:
                 end_frame[3] = int(param.float_value)
+            else:
+                end_frame[3] = param.uint16_value
         # Return the largest of the all (queue bad reading...)
         return int(np.max(end_frame))
 
-    def get_screen_xy(self):
+    def get_screen_xy_strings(self):
         &#39;&#39;&#39; Get the POINT:X_SCREEN and POINT:Y_SCREEN parameters as strings.
 
-        See `Manager.get_screen_axis` to get numpy vectors instead.
+        See `Manager.get_screen_xy_axis` to get numpy vectors instead.
 
         Returns
         -------
@@ -930,19 +933,19 @@ name.</p>
             return (X.string_value, Y.string_value)
         return None
 
-    def get_screen_axis(self):
+    def get_screen_xy_axis(self):
         &#39;&#39;&#39; Get the POINT:X_SCREEN and POINT:Y_SCREEN parameters as unit row vectors.
 
         Z axis can be computed using the cross product:
 
-        \[ z = x \\times y \]
+        $$ z = x \\times y $$
 
         To move a point coordinate $p_s$ as read from `c3d.reader.Reader.read_frames` out of the system basis do:
 
-        \[ p = | x^T y^T z^T |^T p_s  \]
+        $$ p = | x^T y^T z^T |^T p_s  $$
 
 
-        See `Manager.get_screen_xy` to get the parameter as string values instead.
+        See `Manager.get_screen_xy_strings` to get the parameter as string values instead.
 
         Returns
         -------
@@ -962,14 +965,13 @@ name.</p>
             &#39;-Z&#39;: np.array([0, 0, -1.0]),
         }
 
-        val = self.get_screen_xy()
+        val = self.get_screen_xy_strings()
         if val is None:
             return None
-        axis_x, axis_y  = val
+        axis_x, axis_y = val
 
         # Interpret using both X/Y_SCREEN
         return AXIS_DICT[axis_x], AXIS_DICT[axis_y]
-
 
     def get_analog_transform_parameters(self):
         &#39;&#39;&#39; Parse analog data transform parameters. &#39;&#39;&#39;
@@ -1133,8 +1135,7 @@ def first_frame(self) -&gt; int:
     param = self.get(&#39;TRIAL:ACTUAL_START_FIELD&#39;)
     if param is not None:
         # ACTUAL_START_FIELD is encoded in two 16 byte words...
-        words = param.uint16_array
-        return words[0] + words[1] * 65535
+        return param.uint32_value
     return self.header.first_frame</code></pre>
 </details>
 </dd>
@@ -1183,20 +1184,23 @@ def last_frame(self) -&gt; int:
     param = self.get(&#39;TRIAL:ACTUAL_END_FIELD&#39;)
     if param is not None:
         # Encoded as 2 16 bit words (rather then 1 32 bit word)
-        words = param.uint16_array
-        end_frame[1] = words[0] + words[1] * 65536
-        # end_frame[1] = param.uint32_value
+        # words = param.uint16_array
+        # end_frame[1] = words[0] + words[1] * 65536
+        end_frame[1] = param.uint32_value
     param = self.get(&#39;POINT:LONG_FRAMES&#39;)
     if param is not None:
-        # Encoded as float
-        end_frame[2] = int(param.float_value)
+        # &#39;Should be&#39; encoded as float
+        if param.bytes_per_element &gt;= 4:
+            end_frame[2] = int(param.float_value)
+        else:
+            end_frame[2] = param.uint16_value
     param = self.get(&#39;POINT:FRAMES&#39;)
     if param is not None:
         # Can be encoded either as 32 bit float or 16 bit uint
-        if param.bytes_per_element == 2:
-            end_frame[3] = param.uint16_value
-        else:
+        if param.bytes_per_element == 4:
             end_frame[3] = int(param.float_value)
+        else:
+            end_frame[3] = param.uint16_value
     # Return the largest of the all (queue bad reading...)
     return int(np.max(end_frame))</code></pre>
 </details>
@@ -1449,8 +1453,8 @@ is found, returns the default value.</dd>
     return self.get(key).int8_value</code></pre>
 </details>
 </dd>
-<dt id="c3d.manager.Manager.get_screen_axis"><code class="name flex">
-<span>def <span class="ident">get_screen_axis</span></span>(<span>self)</span>
+<dt id="c3d.manager.Manager.get_screen_xy_axis"><code class="name flex">
+<span>def <span class="ident">get_screen_xy_axis</span></span>(<span>self)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Get the POINT:X_SCREEN and POINT:Y_SCREEN parameters as unit row vectors.</p>
@@ -1460,7 +1464,7 @@ is found, returns the default value.</dd>
 <p><span><span class="MathJax_Preview"> p = | x^T y^T z^T |^T p_s
 </span><script type="math/tex; mode=display"> p = | x^T y^T z^T |^T p_s
 </script></span></p>
-<p>See <code><a title="c3d.manager.Manager.get_screen_xy" href="#c3d.manager.Manager.get_screen_xy">Manager.get_screen_xy()</a></code> to get the parameter as string values instead.</p>
+<p>See <code><a title="c3d.manager.Manager.get_screen_xy_strings" href="#c3d.manager.Manager.get_screen_xy_strings">Manager.get_screen_xy_strings()</a></code> to get the parameter as string values instead.</p>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><strong><code>value</code></strong> :&ensp;<code>([3,], [3,])</code> or <code>None</code></dt>
@@ -1470,19 +1474,19 @@ is found, returns the default value.</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_screen_axis(self):
+<pre><code class="python">def get_screen_xy_axis(self):
     &#39;&#39;&#39; Get the POINT:X_SCREEN and POINT:Y_SCREEN parameters as unit row vectors.
 
     Z axis can be computed using the cross product:
 
-    \[ z = x \\times y \]
+    $$ z = x \\times y $$
 
     To move a point coordinate $p_s$ as read from `c3d.reader.Reader.read_frames` out of the system basis do:
 
-    \[ p = | x^T y^T z^T |^T p_s  \]
+    $$ p = | x^T y^T z^T |^T p_s  $$
 
 
-    See `Manager.get_screen_xy` to get the parameter as string values instead.
+    See `Manager.get_screen_xy_strings` to get the parameter as string values instead.
 
     Returns
     -------
@@ -1502,21 +1506,21 @@ is found, returns the default value.</dd>
         &#39;-Z&#39;: np.array([0, 0, -1.0]),
     }
 
-    val = self.get_screen_xy()
+    val = self.get_screen_xy_strings()
     if val is None:
         return None
-    axis_x, axis_y  = val
+    axis_x, axis_y = val
 
     # Interpret using both X/Y_SCREEN
     return AXIS_DICT[axis_x], AXIS_DICT[axis_y]</code></pre>
 </details>
 </dd>
-<dt id="c3d.manager.Manager.get_screen_xy"><code class="name flex">
-<span>def <span class="ident">get_screen_xy</span></span>(<span>self)</span>
+<dt id="c3d.manager.Manager.get_screen_xy_strings"><code class="name flex">
+<span>def <span class="ident">get_screen_xy_strings</span></span>(<span>self)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Get the POINT:X_SCREEN and POINT:Y_SCREEN parameters as strings.</p>
-<p>See <code><a title="c3d.manager.Manager.get_screen_axis" href="#c3d.manager.Manager.get_screen_axis">Manager.get_screen_axis()</a></code> to get numpy vectors instead.</p>
+<p>See <code><a title="c3d.manager.Manager.get_screen_xy_axis" href="#c3d.manager.Manager.get_screen_xy_axis">Manager.get_screen_xy_axis()</a></code> to get numpy vectors instead.</p>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><strong><code>value</code></strong> :&ensp;<code>(str, str)</code> or <code>None</code></dt>
@@ -1526,10 +1530,10 @@ is found, returns the default value.</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_screen_xy(self):
+<pre><code class="python">def get_screen_xy_strings(self):
     &#39;&#39;&#39; Get the POINT:X_SCREEN and POINT:Y_SCREEN parameters as strings.
 
-    See `Manager.get_screen_axis` to get numpy vectors instead.
+    See `Manager.get_screen_xy_axis` to get numpy vectors instead.
 
     Returns
     -------
@@ -1710,8 +1714,8 @@ is found, returns the default value.</dd>
 <li><code><a title="c3d.manager.Manager.get_int16" href="#c3d.manager.Manager.get_int16">get_int16</a></code></li>
 <li><code><a title="c3d.manager.Manager.get_int32" href="#c3d.manager.Manager.get_int32">get_int32</a></code></li>
 <li><code><a title="c3d.manager.Manager.get_int8" href="#c3d.manager.Manager.get_int8">get_int8</a></code></li>
-<li><code><a title="c3d.manager.Manager.get_screen_axis" href="#c3d.manager.Manager.get_screen_axis">get_screen_axis</a></code></li>
-<li><code><a title="c3d.manager.Manager.get_screen_xy" href="#c3d.manager.Manager.get_screen_xy">get_screen_xy</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_screen_xy_axis" href="#c3d.manager.Manager.get_screen_xy_axis">get_screen_xy_axis</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_screen_xy_strings" href="#c3d.manager.Manager.get_screen_xy_strings">get_screen_xy_strings</a></code></li>
 <li><code><a title="c3d.manager.Manager.get_string" href="#c3d.manager.Manager.get_string">get_string</a></code></li>
 <li><code><a title="c3d.manager.Manager.get_uint16" href="#c3d.manager.Manager.get_uint16">get_uint16</a></code></li>
 <li><code><a title="c3d.manager.Manager.get_uint32" href="#c3d.manager.Manager.get_uint32">get_uint32</a></code></li>
