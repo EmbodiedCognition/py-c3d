@@ -241,7 +241,7 @@ class Reader(Manager):
             if check_nan:
                 is_nan = ~np.all(np.isfinite(points[:, :4]), axis=1)
                 points[is_nan, :3] = 0.0
-                invalid &= is_nan
+                invalid |= is_nan
             # Update discarded - sign
             points[invalid, 3] = -1
 
