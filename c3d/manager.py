@@ -420,7 +420,7 @@ class Manager(object):
             '-Z': np.array([0, 0, -1.0]),
         }
 
-        val = self.get_screen_xy()
+        val = self.get_screen_xy_strings()
         if val is None:
             return None
         axis_x, axis_y  = val

@@ -264,7 +264,7 @@ class Writer(Manager):
         '''
         grp = self.point_group
         if labels is None:
-            grp.add_empty_array('LABELS', 'Point labels.', -1)
+            grp.add_empty_array('LABELS', 'Point labels.')
         else:
             label_str, label_max_size = utils.pack_labels(labels)
             grp.add_str('LABELS', 'Point labels.', label_str, label_max_size, len(labels))
@@ -279,7 +279,7 @@ class Writer(Manager):
         '''
         grp = self.analog_group
         if labels is None:
-            grp.add_empty_array('LABELS', 'Analog labels.', -1)
+            grp.add_empty_array('LABELS', 'Analog labels.')
         else:
             label_str, label_max_size = utils.pack_labels(labels)
             grp.add_str('LABELS', 'Analog labels.', label_str, label_max_size, len(labels))
@@ -301,7 +301,7 @@ class Writer(Manager):
             data = np.array([v for v in values], dtype=np.float32)
             self.analog_group.set_array('SCALE', 'Analog channel scale factors', data)
         elif values is None:
-            self.analog_group.set_empty_array('SCALE', 'Analog channel scale factors', 4)
+            self.analog_group.set_empty_array('SCALE', 'Analog channel scale factors')
         else:
             raise ValueError('Expected iterable containing analog scale factors.')
 
@@ -317,7 +317,7 @@ class Writer(Manager):
             data = np.array([v for v in values], dtype=np.int16)
             self.analog_group.set_array('OFFSET', 'Analog channel offsets', data)
         elif values is None:
-            self.analog_group.set_empty_array('OFFSET', 'Analog channel offsets', 2)
+            self.analog_group.set_empty_array('OFFSET', 'Analog channel offsets')
         else:
             raise ValueError('Expected iterable containing analog data offsets.')
 

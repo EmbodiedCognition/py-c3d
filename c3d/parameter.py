@@ -121,32 +121,14 @@ class ParamData(object):
 
     def _as_array(self, dtype, copy=True):
         '''Unpack the raw bytes of this param using the given data format.'''
-        assert self.dimensions, \
-            '{}: cannot get value as {} array!'.format(self.name, dtype)
+        if not self.dimensions:
+            return [self._as(dtype)]
         elems = np.frombuffer(self.bytes, dtype=dtype)
         # Reverse shape as the shape is defined in fortran format
         view = elems.reshape(self.dimensions[::-1])
         if copy:
             return view.copy()
         return view
-
-    def _as_any(self, dtype):
-        '''Unpack the raw bytes of this param as either array or single value.'''
-        if 0 in self.dimensions[:]: 		# Check if any dimension is 0 (empty buffer)
-            return [] 						# Buffer is empty
-
-        if len(self.dimensions) == 0:		# Parse data as a single value
-            if dtype == np.float32:			# Floats need to be parsed separately!
-                return self.float_value
-            return self._data._as(dtype)
-        else:								# Parse data as array
-            if dtype == np.float32:
-                data = self.float_array
-            else:
-                data = self._data._as_array(dtype)
-            if len(self.dimensions) < 2:    # Check if data is contained in a single dimension
-                return data.flatten()
-            return data
 
 
 class ParamReadonly(object):
@@ -228,29 +210,6 @@ class ParamReadonly(object):
     def uint32_value(self):
         '''Get the parameter data as a 32-bit unsigned integer.'''
         return self._data._as(self.dtypes.uint32)
-
-    @property
-    def any_value(self):
-        ''' Get the parameter data as a value of 'traditional type'.
-
-        Traditional types are defined in the Parameter section in the [user manual].
-
-        Returns
-        -------
-        value : int, float, or str
-            Depending on the `bytes_per_element` field, a traditional type can
-            be a either a signed byte, signed short, 32-bit float, or a string.
-
-        [user manual]: https://www.c3d.org/docs/C3D_User_Guide.pdf
-        '''
-        if self.bytes_per_element >= 4:
-            return self.float_value
-        elif self.bytes_per_element >= 2:
-            return self.int16_value
-        elif self.bytes_per_element == -1:
-            return self.string_value
-        else:
-            return self.int8_value
 
     @property
     def uint_value(self):
@@ -344,8 +303,8 @@ class ParamReadonly(object):
         # Convert float data if not IEEE processor
         if self.dtypes.is_dec:
             # _as_array but for DEC
-            assert self.dimensions, \
-                '{}: cannot get value as {} array!'.format(self.name, self.dtypes.float32)
+            if not self.dimensions:
+                return [self.float_value]
             return DEC_to_IEEE_BYTES(self._data.bytes).reshape(self.dimensions[::-1])  # Reverse fortran format
         else:  # is_ieee or is_mips
             return self._data._as_array(self.dtypes.float32)
@@ -441,9 +400,58 @@ class ParamReadonly(object):
             return byte_arr
 
     @property
+    def any_value(self):
+        ''' Get the parameter data as a value of 'traditional type'.
+
+        Traditional types are defined in the Parameter section in the [user manual].
+
+        Returns
+        -------
+        value : int, float, or str
+            Depending on the `bytes_per_element` field, a traditional type can
+            be a either a signed byte, signed short, 32-bit float, or a string.
+
+        [user manual]: https://www.c3d.org/docs/C3D_User_Guide.pdf
+        '''
+        if self.bytes_per_element >= 4:
+            return self.float_value
+        elif self.bytes_per_element >= 2:
+            return self.int16_value
+        elif self.bytes_per_element == -1:
+            return self.string_value
+        else:
+            return self.int8_value
+
+    @property
+    def any_array(self):
+        ''' Get the parameter data as an array of 'traditional type'.
+
+        Traditional types are defined in the Parameter section in the [user manual].
+
+        Returns
+        -------
+        value : array
+            Depending on the `bytes_per_element` field, a traditional type can
+            be a either a signed byte, signed short, 32-bit float, or a string.
+
+        [user manual]: https://www.c3d.org/docs/C3D_User_Guide.pdf
+        '''
+        if self.bytes_per_element >= 4:
+            return self.float_array
+        elif self.bytes_per_element >= 2:
+            return self.int16_array
+        elif self.bytes_per_element == -1:
+            return self.string_array
+        else:
+            return self.int8_array
+
+    @property
     def _as_any_uint(self):
         ''' Attempt to parse the parameter data as any unsigned integer format.
             Checks if the integer is stored as a floating point value.
+
+            Can be used to read 'POINT:FRAMES' or 'POINT:LONG_FRAMES'
+            when not accessed through `c3d.manager.Manager.last_frame`.
         '''
         if self.bytes_per_element >= 4:
             # Check if float value representation is an integer

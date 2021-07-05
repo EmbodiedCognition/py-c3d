@@ -407,7 +407,7 @@ class Group(GroupReadonly):
                        bytes=data.encode('utf-8'),
                        dimensions=shape or [len(data)])
 
-    def add_empty_array(self, name, desc='', bpe=1):
+    def add_empty_array(self, name, desc=''):
         ''' Add an empty parameter block.
 
         Parameters
@@ -416,7 +416,7 @@ class Group(GroupReadonly):
             Parameter name.
         '''
         self.add_param(name, desc=desc,
-                       bytes_per_element=bpe, dimensions=[0])
+                       bytes_per_element=0, dimensions=[0])
 
     #
     #   Convenience functions for adding or overwriting parameters.
