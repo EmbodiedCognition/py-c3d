@@ -88,7 +88,7 @@ class Manager(object):
             ))
 
         try:
-            start = self.get_uint16('POINT:DATA_START')
+            start = self.get('POINT:DATA_START').uint16_value
             if self._header.data_block != start:
                 warnings.warn('inconsistent data block! {} header != {} POINT:DATA_START'.format(
                     self._header.data_block, start))
@@ -177,7 +177,7 @@ class Manager(object):
 
         Parameters
         ----------
-        group_id : int, str, or 'Group'
+        group_id : int, str, or `c3d.group.Group`
             Group instance, name, or numerical identifier for the group.
         new_group_id : str, or int
             If string, it is the new name for the group. If integer, it will replace its numerical group id.
@@ -344,33 +344,39 @@ class Manager(object):
     def last_frame(self) -> int:
         ''' Trial frame corresponding to the last frame recorded in the data (inclusive). '''
         # Number of frames can be represented in many formats, first check if valid header values
-        if self.header.first_frame < self.header.last_frame and self.header.last_frame != 65535:
-            return self.header.last_frame
+        #if self.header.first_frame < self.header.last_frame and self.header.last_frame != 65535:
+        #    return self.header.last_frame
 
-        # Check different parameter options where the frame can be encoded
-        end_frame = [self.header.last_frame, 0.0, 0.0, 0.0]
+        # Try different parameters where the frame can be encoded
+        hlf = self.header.last_frame
         param = self.get('TRIAL:ACTUAL_END_FIELD')
         if param is not None:
             # Encoded as 2 16 bit words (rather then 1 32 bit word)
             # words = param.uint16_array
             # end_frame[1] = words[0] + words[1] * 65536
-            end_frame[1] = param.uint32_value
+            end_frame = param.uint32_value
+            if hlf <= end_frame:
+                return end_frame
         param = self.get('POINT:LONG_FRAMES')
         if param is not None:
             # 'Should be' encoded as float
             if param.bytes_per_element >= 4:
-                end_frame[2] = int(param.float_value)
+                end_frame = int(param.float_value)
             else:
-                end_frame[2] = param.uint16_value
+                end_frame = param.uint16_value
+            if hlf <= end_frame:
+                return end_frame
         param = self.get('POINT:FRAMES')
         if param is not None:
             # Can be encoded either as 32 bit float or 16 bit uint
             if param.bytes_per_element == 4:
-                end_frame[3] = int(param.float_value)
+                end_frame = int(param.float_value)
             else:
-                end_frame[3] = param.uint16_value
-        # Return the largest of the all (queue bad reading...)
-        return int(np.max(end_frame))
+                end_frame = param.uint16_value
+            if hlf <= end_frame:
+                return end_frame
+        # Return header value by default
+        return hlf
 
     def get_screen_xy_strings(self):
         ''' Get the POINT:X_SCREEN and POINT:Y_SCREEN parameters as strings.
@@ -456,39 +462,3 @@ class Manager(object):
         analog_scales = np.broadcast_to(analog_scales[:, np.newaxis], (self.analog_used, self.analog_per_frame))
         analog_offsets = np.broadcast_to(analog_offsets[:, np.newaxis], (self.analog_used, self.analog_per_frame))
         return analog_scales, analog_offsets
-
-    def get_int8(self, key):
-        '''Get a parameter value as an 8-bit signed integer.'''
-        return self.get(key).int8_value
-
-    def get_uint8(self, key):
-        '''Get a parameter value as an 8-bit unsigned integer.'''
-        return self.get(key).uint8_value
-
-    def get_int16(self, key):
-        '''Get a parameter value as a 16-bit signed integer.'''
-        return self.get(key).int16_value
-
-    def get_uint16(self, key):
-        '''Get a parameter value as a 16-bit unsigned integer.'''
-        return self.get(key).uint16_value
-
-    def get_int32(self, key):
-        '''Get a parameter value as a 32-bit signed integer.'''
-        return self.get(key).int32_value
-
-    def get_uint32(self, key):
-        '''Get a parameter value as a 32-bit unsigned integer.'''
-        return self.get(key).uint32_value
-
-    def get_float(self, key):
-        '''Get a parameter value as a 32-bit float.'''
-        return self.get(key).float_value
-
-    def get_bytes(self, key):
-        '''Get a parameter value as a byte string.'''
-        return self.get(key).bytes_value
-
-    def get_string(self, key):
-        '''Get a parameter value as a string.'''
-        return self.get(key).string_value

@@ -56,8 +56,8 @@ class ReaderTest(Base):
         assert r.point_used == 26
         assert r.point_rate == 50
         assert r.analog_used == 16
-        assert r.get_float('POINT:RATE') == 50
-        assert r.get_float('ANALOG:RATE') == 200
+        assert r.get('POINT:RATE').float_value == 50
+        assert r.get('ANALOG:RATE').float_value == 200
 
     def test_paramsc(self):
         r = c3d.Reader(Zipload._get('sample08.zip', 'TESTCPI.c3d'))
@@ -102,7 +102,7 @@ class WriterTest(Base):
         h = io.BytesIO()
         w.set_point_labels(r.point_labels)
         w.set_analog_labels(r.analog_labels)
-        w.set_analog_general_scale(r.get_float('ANALOG:GEN_SCALE'))
+        w.set_analog_general_scale(r.get('ANALOG:GEN_SCALE').float_value)
         w.write(h)
 
     def test_set_params(self):
@@ -118,7 +118,7 @@ class WriterTest(Base):
         w.set_start_frame(255)
         w.set_point_labels(r.point_labels)
         w.set_analog_labels(r.analog_labels)
-        w.set_analog_general_scale(r.get_float('ANALOG:GEN_SCALE'))
+        w.set_analog_general_scale(r.get('ANALOG:GEN_SCALE').float_value)
 
         # Screen axis
         X, Y = '-Y', '+Z'
