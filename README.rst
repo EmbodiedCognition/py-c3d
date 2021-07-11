@@ -67,7 +67,7 @@ experience some issues. If you experience issues with a file or feature, feel fr
 to post an issue (preferably by including example file/code/python exception)
 or make a pull request!
 
-The package is also Python only, for other languages there are other packages for example `ezc3d`_.
+The package is Python only, support for other languages is available in other packages, for example see `ezc3d`_.
 
 .. _software examples: https://www.c3d.org/sampledata.html
 .. _ezc3d: https://github.com/pyomeca/ezc3d
