@@ -49,15 +49,15 @@ To use the C3D library, just import the package and create a ``Reader`` and/or
             print('frame {}: point {}, analog {}'.format(
                   i, points.shape, analog.shape))
 
-You can also edit metadata fields using the library; see the `package
-documentation`_ for more details.
+The librart also provide functionality for editing both frame and metadata fields; 
+see the `package documentation`_ for more details.
 
 .. _package documentation: https://mattiasfredriksson.github.io/py-c3d/c3d/
 
 Caveats
 -------
 
-The package is tested against the `software examples`_ but may still not support
+The package is tested against the available `software examples`_ but may still not support
 every possible format. For example, parameters serialized in multiple parameters
 are not handled automatically (such as a LABELS field stored in both POINT:LABELS and
 POINT:LABELS2). Reading and writing files from a big-endian system is also not supported.
