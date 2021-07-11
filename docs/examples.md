@@ -64,8 +64,8 @@ Editing c3d files is possible by combining the use of `c3d.reader.Reader` and `c
 instances through the `c3d.reader.Reader.to_writer` method. To edit a file, open a file stream and pass
 it to the `c3d.reader.Reader` constructor. Use the `c3d.reader.Reader.to_writer` method to create
 an independent `c3d.writer.Writer` instance containing a heap copy of its file contents.
-Rereading data frames from the reader and inserting them in reverse will then create a
-looped version of the original motion sequence!
+To edit the sequence, one can now reread the data frames from the reader and through inserting the
+frames in reverse to create a looped version of the original motion sequence!
 
     import c3d
 

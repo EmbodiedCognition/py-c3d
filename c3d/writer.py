@@ -63,8 +63,8 @@ class Writer(Manager):
         conversion : str
             Conversion mode, None is equivalent to the default mode. Supported modes are:
 
-                'consume'       - (Default) Reader object will be
-                                  consumed and explicitly deleted.
+                'convert'       - (Default) Convert the Reader to a Writer
+                                  instance and explicitly delete the Reader.
 
                 'copy'          - Reader objects will be deep copied.
 
@@ -93,7 +93,7 @@ class Writer(Manager):
         is_header_only = conversion == 'copy_header'
         is_meta_copy = conversion == 'copy_metadata'
         is_meta_only = is_header_only or is_meta_copy
-        is_consume = conversion == 'consume' or conversion is None
+        is_consume = conversion == 'convert' or conversion is None
         is_shallow_copy = conversion == 'shallow_copy' or is_header_only
         is_deep_copy = conversion == 'copy' or is_meta_copy
         # Verify mode

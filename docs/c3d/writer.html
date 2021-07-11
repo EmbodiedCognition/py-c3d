@@ -93,8 +93,8 @@ class Writer(Manager):
         conversion : str
             Conversion mode, None is equivalent to the default mode. Supported modes are:
 
-                &#39;consume&#39;       - (Default) Reader object will be
-                                  consumed and explicitly deleted.
+                &#39;convert&#39;       - (Default) Convert the Reader to a Writer
+                                  instance and explicitly delete the Reader.
 
                 &#39;copy&#39;          - Reader objects will be deep copied.
 
@@ -123,7 +123,7 @@ class Writer(Manager):
         is_header_only = conversion == &#39;copy_header&#39;
         is_meta_copy = conversion == &#39;copy_metadata&#39;
         is_meta_only = is_header_only or is_meta_copy
-        is_consume = conversion == &#39;consume&#39; or conversion is None
+        is_consume = conversion == &#39;convert&#39; or conversion is None
         is_shallow_copy = conversion == &#39;shallow_copy&#39; or is_header_only
         is_deep_copy = conversion == &#39;copy&#39; or is_meta_copy
         # Verify mode
@@ -635,8 +635,8 @@ POINT:SCALE parameter").</dd>
         conversion : str
             Conversion mode, None is equivalent to the default mode. Supported modes are:
 
-                &#39;consume&#39;       - (Default) Reader object will be
-                                  consumed and explicitly deleted.
+                &#39;convert&#39;       - (Default) Convert the Reader to a Writer
+                                  instance and explicitly delete the Reader.
 
                 &#39;copy&#39;          - Reader objects will be deep copied.
 
@@ -665,7 +665,7 @@ POINT:SCALE parameter").</dd>
         is_header_only = conversion == &#39;copy_header&#39;
         is_meta_copy = conversion == &#39;copy_metadata&#39;
         is_meta_only = is_header_only or is_meta_copy
-        is_consume = conversion == &#39;consume&#39; or conversion is None
+        is_consume = conversion == &#39;convert&#39; or conversion is None
         is_shallow_copy = conversion == &#39;shallow_copy&#39; or is_header_only
         is_deep_copy = conversion == &#39;copy&#39; or is_meta_copy
         # Verify mode
@@ -1095,8 +1095,8 @@ POINT:SCALE parameter").</dd>
 <dt><strong><code>source</code></strong> :&ensp;<code><a title="c3d.reader.Reader" href="reader.html#c3d.reader.Reader">Reader</a></code></dt>
 <dd>Source to copy data from.</dd>
 <dt><strong><code>conversion</code></strong> :&ensp;<code>str</code></dt>
-<dd>Conversion mode, None is equivalent to the default mode. Supported modes are:<pre><code>'consume'       - (Default) Reader object will be
-                  consumed and explicitly deleted.
+<dd>Conversion mode, None is equivalent to the default mode. Supported modes are:<pre><code>'convert'       - (Default) Convert the Reader to a Writer
+                  instance and explicitly delete the Reader.
 
 'copy'          - Reader objects will be deep copied.
 
@@ -1137,8 +1137,8 @@ def from_reader(reader, conversion=None):
     conversion : str
         Conversion mode, None is equivalent to the default mode. Supported modes are:
 
-            &#39;consume&#39;       - (Default) Reader object will be
-                              consumed and explicitly deleted.
+            &#39;convert&#39;       - (Default) Convert the Reader to a Writer
+                              instance and explicitly delete the Reader.
 
             &#39;copy&#39;          - Reader objects will be deep copied.
 
@@ -1167,7 +1167,7 @@ def from_reader(reader, conversion=None):
     is_header_only = conversion == &#39;copy_header&#39;
     is_meta_copy = conversion == &#39;copy_metadata&#39;
     is_meta_only = is_header_only or is_meta_copy
-    is_consume = conversion == &#39;consume&#39; or conversion is None
+    is_consume = conversion == &#39;convert&#39; or conversion is None
     is_shallow_copy = conversion == &#39;shallow_copy&#39; or is_header_only
     is_deep_copy = conversion == &#39;copy&#39; or is_meta_copy
     # Verify mode

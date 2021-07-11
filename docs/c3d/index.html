@@ -81,8 +81,8 @@ is called, which serializes the metadata and data frames into a C3D binary file 
 instances through the <code><a title="c3d.reader.Reader.to_writer" href="reader.html#c3d.reader.Reader.to_writer">Reader.to_writer()</a></code> method. To edit a file, open a file stream and pass
 it to the <code><a title="c3d.reader.Reader" href="reader.html#c3d.reader.Reader">Reader</a></code> constructor. Use the <code><a title="c3d.reader.Reader.to_writer" href="reader.html#c3d.reader.Reader.to_writer">Reader.to_writer()</a></code> method to create
 an independent <code><a title="c3d.writer.Writer" href="writer.html#c3d.writer.Writer">Writer</a></code> instance containing a heap copy of its file contents.
-Rereading data frames from the reader and inserting them in reverse will then create a
-looped version of the original motion sequence!</p>
+To edit the sequence, one can now reread the data frames from the reader and through inserting the
+frames in reverse to create a looped version of the original motion sequence!</p>
 <pre><code>import c3d
 
 with open('my-motion.c3d', 'rb') as file:
