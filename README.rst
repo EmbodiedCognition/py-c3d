@@ -59,7 +59,7 @@ Caveats
 
 The package is tested against the `software examples`_ but may still not support
 every possible format. For example, parameters serialized in multiple parameters
-are not handled automatically (LABELS field stored in both POINT:LABELS and
+are not handled automatically (such as a LABELS field stored in both POINT:LABELS and
 POINT:LABELS2). Reading and writing files from a big-endian system is also not supported.
 
 Tests are currently only run on Windows, which means that Linux and Mac users may
