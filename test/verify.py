@@ -110,13 +110,13 @@ class WithinRangeTest():
                     analog_min = np.min(analog)
                     analog_max = np.max(analog)
 
-            assert np.all(npoint == reader.frame_count), '\n' + \
+            assert np.all(npoint == reader.frame_count), '\n' +\
                 'Failed verifying POINT data in range ({}, {}).\n'.format(min_range, max_range) +\
                 'Found a total of {} values outside plausible range.\n'.format(
                  np.sum(np.abs(npoint - reader.frame_count), axis=0)) +\
                 'Range for data was ({}, {})'.format(point_min, point_max)
 
-            assert np.all(nanalog == reader.analog_sample_count),'\n' + \
+            assert np.all(nanalog == reader.analog_sample_count), '\n' +\
                 'Failed verifying ANALOG data in range ({}, {}).\n'.format(min_range, max_range) +\
                 'Found a total of {} values outside plausible range.\n'.format(
                  np.abs(nanalog - reader.analog_sample_count)) +\
@@ -311,7 +311,7 @@ def data_is_equal(areader, breader, alabel, blabel):
         assert axis_notclose == 0, '\n' +\
             'Mismatched coordinates on {} axis between {} and {}.\n'.format(c[i], alabel, blabel) +\
             'Samples with absolute difference larger then {:0.4f}: {} of {}.\n'.format(
-            atol, axis_notclose, tot_points) +\
+                atol, axis_notclose, tot_points) +\
             'Maximum difference: {}'.format(np.max(np.abs(apoint[:, i] - bpoint[:, i])))
 
     # Word 4 (residual + camera bits)
@@ -321,8 +321,8 @@ def data_is_equal(areader, breader, alabel, blabel):
 
     # Camera bit errors (warn if non identical, allow 1 cam bit diff, might be bad DEC implementation, or bad data)
     if cam_diff_non_equal > 0:
-        #print(apoint[~cam_close, 4])
-        #print(bpoint[~cam_close, 4])
+        # print(apoint[~cam_close, 4])
+        # print(bpoint[~cam_close, 4])
         cam_close = np.isclose(apoint[:, 4], bpoint[:, 4], atol=1.001)
         cam_diff = tot_points - np.sum(cam_close)
         assert cam_diff == 0, '\n' + \

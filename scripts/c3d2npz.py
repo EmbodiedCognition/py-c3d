@@ -22,6 +22,7 @@ parser = argparse.ArgumentParser(description='Convert a C3D file to NPZ (numpy b
 parser.add_argument('input', default='-', metavar='FILE', nargs='+', help='process data from this input FILE')
 parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
 
+
 def convert(filename, args):
     input = sys.stdin
     outname = '-'
@@ -39,11 +40,12 @@ def convert(filename, args):
 
     np.savez(outname, points=points, analog=analog)
     print(outname + ': saved', len(points), "x", str(points[0].shape), "points,",
-        len(analog), analog[0].shape, 'analog' if len(analog) else ()
-    )
+          len(analog), analog[0].shape, 'analog' if len(analog) else ()
+          )
 
     if filename != '-':
         input.close()
+
 
 def main(args):
     if args.verbose:

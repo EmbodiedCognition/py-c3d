@@ -7,6 +7,7 @@ import test.verify as verify
 from test.zipload import Zipload
 from test.base import Base
 
+
 class GroupSample():
     ''' Helper object to verify group entries persist or terminate properly. '''
     def __init__(self, manager):
@@ -38,13 +39,13 @@ class GroupSample():
         '''Call before applying changes. '''
         self.s_grp_items, self.s_grp_list = self.fetch_groups
 
-
     def assert_entry_count(self, delta=0):
         '''Assert all values in group still exist.
 
         Arguments
         ---------
-        delta:  Number of entries added (+) or removed (-) since last sample.
+        delta : int
+            Number of entries added (+) or removed (-) since last sample.
         '''
         grp_items, grp_list = self.fetch_groups
 
@@ -193,7 +194,7 @@ class TestGroupAccessors(Base):
             writer.rename_group(new_names[0], new_names[1])
             raise RuntimeError('Overwriting existing numerical ID should raise a KeyError.')
         except ValueError as e:
-            pass # Correct
+            pass  # Correct
 
     def test_Manager_renumber_group(self):
         '''Test if renaming (renumbering) groups acts as intended.'''
@@ -221,10 +222,7 @@ class TestGroupAccessors(Base):
             writer.rename_group(max_key + 1, max_key + 2)
             raise RuntimeError('Overwriting existing numerical ID should raise a KeyError.')
         except ValueError as e:
-            pass # Correct
-
-
-
+            pass  # Correct
 
 
 if __name__ == '__main__':
