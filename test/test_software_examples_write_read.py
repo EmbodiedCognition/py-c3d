@@ -89,6 +89,5 @@ class Sample01(Base):
         print('Done.')
 
 
-
 if __name__ == '__main__':
     unittest.main()

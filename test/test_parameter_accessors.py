@@ -10,9 +10,11 @@ from test.base import Base
 
 rnd = np.random.default_rng()
 
+
 def add_dummy_param(group, name='TEST_NAME', shape=(10, 2), flt_range=(-1e6, 1e6)):
     arr = rnd.uniform(*flt_range, size=shape).astype(np.float32)
     group.add_param(name, bytes_per_element=4, dimensions=arr.shape, bytes=arr.T.tobytes())
+
 
 class ParamSample():
     ''' Helper object to verify parameter entries persist or terminate properly. '''
@@ -129,7 +131,7 @@ class TestParameterAccessors(Base):
             ref.verify_add_parameter(100)
 
     def test_Group_rename_param(self):
-        '''Test if renaming groups acts as intended.'''
+        ''' Test if renaming groups acts as intended.'''
         reader = c3d.Reader(Zipload._get(self.ZIP, self.INTEL_REAL))
 
         writer = reader.to_writer()
@@ -149,9 +151,7 @@ class TestParameterAccessors(Base):
                 g.rename_param(new_names[0], new_names[1])
                 raise RuntimeError('Overwriting existing numerical ID should raise a ValueError.')
             except ValueError as e:
-                pass # Correct
-
-
+                pass  # Correct
 
 
 if __name__ == '__main__':

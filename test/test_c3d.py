@@ -135,8 +135,8 @@ class WriterTest(Base):
         assert w.point_group.get(test_name).total_bytes == len(test_string), \
                "Mismatch in number of bytes encoded by 'Group.add_str'"
 
-
         w.write(h)
+
 
 if __name__ == '__main__':
     unittest.main()

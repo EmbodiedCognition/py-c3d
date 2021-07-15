@@ -112,7 +112,7 @@ class Viewer(pyglet.window.Window):
         self.ry = 30
         self.rz = 30
 
-        #self.fps = pyglet.clock.ClockDisplay()
+        # self.fps = pyglet.clock.ClockDisplay()
 
         self.on_resize(self.width, self.height)
 
@@ -158,7 +158,8 @@ class Viewer(pyglet.window.Window):
             len(vtx) // 3, idx, ('v3f/static', vtx), ('n3f/static', nrm))
 
     def on_mouse_scroll(self, x, y, dx, dy):
-        if dy == 0: return
+        if dy == 0:
+            return
         self.zoom *= 1.1 ** (-1 if dy < 0 else 1)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
@@ -170,7 +171,6 @@ class Viewer(pyglet.window.Window):
             # roll
             self.ry += 0.2 * -dy
             self.rz += 0.2 * dx
-        #print('z', self.zoom, 't', self.ty, self.tz, 'r', self.ry, self.rz)
 
     def on_resize(self, width, height):
         glViewport(0, 0, width, height)
