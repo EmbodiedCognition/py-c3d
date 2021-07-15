@@ -1,0 +1,1556 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.2" />
+<title>c3d.manager API documentation</title>
+<meta name="description" content="Manager base class defining common attributes for both Reader and Writer instances." />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS_CHTML" integrity="sha256-kZafAc6mZvK3W3v1pHOcUix30OHQN6pU/NO2oFkqZVw=" crossorigin></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>c3d.manager</code></h1>
+</header>
+<section id="section-intro">
+<p>Manager base class defining common attributes for both Reader and Writer instances.</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#39;&#39;&#39; Manager base class defining common attributes for both Reader and Writer instances.
+&#39;&#39;&#39;
+import numpy as np
+import warnings
+from .header import Header
+from .group import GroupData, GroupReadonly, Group
+from .utils import is_integer, is_iterable
+
+
+class Manager(object):
+    &#39;&#39;&#39;A base class for managing C3D file metadata.
+
+    This class manages a C3D header (which contains some stock metadata fields)
+    as well as a set of parameter groups. Each group is accessible using its
+    name.
+
+    Attributes
+    ----------
+    header : `c3d.header.Header`
+        Header information for the C3D file.
+    &#39;&#39;&#39;
+
+    def __init__(self, header=None):
+        &#39;&#39;&#39;Set up a new Manager with a Header.&#39;&#39;&#39;
+        self._header = header or Header()
+        self._groups = {}
+
+    def __contains__(self, key):
+        return key in self._groups
+
+    def items(self):
+        &#39;&#39;&#39; Get iterable over pairs of (str, `c3d.group.Group`) entries.
+        &#39;&#39;&#39;
+        return ((k, v) for k, v in self._groups.items() if isinstance(k, str))
+
+    def values(self):
+        &#39;&#39;&#39; Get iterable over `c3d.group.Group` entries.
+        &#39;&#39;&#39;
+        return (v for k, v in self._groups.items() if isinstance(k, str))
+
+    def keys(self):
+        &#39;&#39;&#39; Get iterable over parameter name keys.
+        &#39;&#39;&#39;
+        return (k for k in self._groups.keys() if isinstance(k, str))
+
+    def listed(self):
+        &#39;&#39;&#39; Get iterable over pairs of (int, `c3d.group.Group`) entries.
+        &#39;&#39;&#39;
+        return sorted((i, g) for i, g in self._groups.items() if isinstance(i, int))
+
+    def _check_metadata(self):
+        &#39;&#39;&#39; Ensure that the metadata in our file is self-consistent. &#39;&#39;&#39;
+        assert self._header.point_count == self.point_used, (
+            &#39;inconsistent point count! {} header != {} POINT:USED&#39;.format(
+                self._header.point_count,
+                self.point_used,
+            ))
+
+        assert self._header.scale_factor == self.point_scale, (
+            &#39;inconsistent scale factor! {} header != {} POINT:SCALE&#39;.format(
+                self._header.scale_factor,
+                self.point_scale,
+            ))
+
+        assert self._header.frame_rate == self.point_rate, (
+            &#39;inconsistent frame rate! {} header != {} POINT:RATE&#39;.format(
+                self._header.frame_rate,
+                self.point_rate,
+            ))
+
+        if self.point_rate:
+            ratio = self.analog_rate / self.point_rate
+        else:
+            ratio = 0
+        assert self._header.analog_per_frame == ratio, (
+            &#39;inconsistent analog rate! {} header != {} analog-fps / {} point-fps&#39;.format(
+                self._header.analog_per_frame,
+                self.analog_rate,
+                self.point_rate,
+            ))
+
+        count = self.analog_used * self._header.analog_per_frame
+        assert self._header.analog_count == count, (
+            &#39;inconsistent analog count! {} header != {} analog used * {} per-frame&#39;.format(
+                self._header.analog_count,
+                self.analog_used,
+                self._header.analog_per_frame,
+            ))
+
+        try:
+            start = self.get(&#39;POINT:DATA_START&#39;).uint16_value
+            if self._header.data_block != start:
+                warnings.warn(&#39;inconsistent data block! {} header != {} POINT:DATA_START&#39;.format(
+                    self._header.data_block, start))
+        except AttributeError:
+            warnings.warn(&#39;&#39;&#39;no pointer available in POINT:DATA_START indicating the start of the data block, using
+                             header pointer as fallback&#39;&#39;&#39;)
+
+        def check_parameters(params):
+            for name in params:
+                if self.get(name) is None:
+                    warnings.warn(&#39;missing parameter {}&#39;.format(name))
+
+        if self.point_used &gt; 0:
+            check_parameters((&#39;POINT:LABELS&#39;, &#39;POINT:DESCRIPTIONS&#39;))
+        else:
+            lab = self.get(&#39;POINT:LABELS&#39;)
+            if lab is None:
+                warnings.warn(&#39;No point data found in file.&#39;)
+            elif lab.num_elements &gt; 0:
+                warnings.warn(&#39;No point data found in file, but file contains POINT:LABELS entries&#39;)
+        if self.analog_used &gt; 0:
+            check_parameters((&#39;ANALOG:LABELS&#39;, &#39;ANALOG:DESCRIPTIONS&#39;))
+        else:
+            lab = self.get(&#39;ANALOG:LABELS&#39;)
+            if lab is None:
+                warnings.warn(&#39;No analog data found in file.&#39;)
+            elif lab.num_elements &gt; 0:
+                warnings.warn(&#39;No analog data found in file, but file contains ANALOG:LABELS entries&#39;)
+
+    def _add_group(self, group_id, name=None, desc=None):
+        &#39;&#39;&#39;Add a new parameter group.
+
+        Parameters
+        ----------
+        group_id : int
+            The numeric ID for a group to check or create.
+        name : str, optional
+            If a group is created, assign this name to the group.
+        desc : str, optional
+            If a group is created, assign this description to the group.
+
+        Returns
+        -------
+        group : :class:`Group`
+            A group with the given ID, name, and description.
+
+        Raises
+        ------
+        TypeError
+            Input arguments are of the wrong type.
+        KeyError
+            Name or numerical key already exist (attempt to overwrite existing data).
+        &#39;&#39;&#39;
+        if not is_integer(group_id):
+            raise TypeError(&#39;Expected Group numerical key to be integer, was %s.&#39; % type(group_id))
+        if not isinstance(name, str):
+            if name is not None:
+                raise TypeError(&#39;Expected Group name key to be string, was %s.&#39; % type(name))
+        else:
+            name = name.upper()
+        group_id = int(group_id)  # Asserts python int
+        if group_id in self._groups:
+            raise KeyError(&#39;Group with numerical key {} already exists&#39;.format(group_id))
+        if name in self._groups:
+            raise KeyError(&#39;No group matched name key {}&#39;.format(name))
+        group = self._groups[name] = self._groups[group_id] = Group(GroupData(self._dtypes, name, desc))
+        return group
+
+    def _remove_group(self, group_id):
+        &#39;&#39;&#39;Remove the parameter group.
+
+        Parameters
+        ----------
+        group_id : int, or str
+            The numeric or name ID key for a group to remove all entries for.
+        &#39;&#39;&#39;
+        grp = self._groups.get(group_id, None)
+        if grp is None:
+            return
+        gkeys = [k for (k, v) in self._groups.items() if v == grp]
+        for k in gkeys:
+            del self._groups[k]
+
+    def _rename_group(self, group_id, new_group_id):
+        &#39;&#39;&#39; Rename a specified parameter group.
+
+        Parameters
+        ----------
+        group_id : int, str, or `c3d.group.Group`
+            Group instance, name, or numerical identifier for the group.
+        new_group_id : str, or int
+            If string, it is the new name for the group. If integer, it will replace its numerical group id.
+
+        Raises
+        ------
+        KeyError
+            If a group with a duplicate ID or name already exists.
+        &#39;&#39;&#39;
+        if isinstance(group_id, GroupReadonly):
+            grp = group_id._data
+        else:
+            # Aquire instance using id
+            grp = self._groups.get(group_id, None)
+            if grp is None:
+                raise KeyError(&#39;No group found matching the identifier: %s&#39; % str(group_id))
+        if new_group_id in self._groups:
+            if new_group_id == group_id:
+                return
+            raise ValueError(&#39;Key %s for group %s already exist.&#39; % (str(new_group_id), grp.name))
+
+        # Clear old id
+        if isinstance(new_group_id, (str, bytes)):
+            if grp.name in self._groups:
+                del self._groups[grp.name]
+            grp.name = new_group_id
+        elif is_integer(new_group_id):
+            new_group_id = int(new_group_id)  # Ensure python int
+            del self._groups[group_id]
+        else:
+            raise KeyError(&#39;Invalid group identifier of type: %s&#39; % str(type(new_group_id)))
+        # Update
+        self._groups[new_group_id] = grp
+
+    def get(self, group, default=None):
+        &#39;&#39;&#39;Get a group or parameter.
+
+        Parameters
+        ----------
+        group : str
+            If this string contains a period (.), then the part before the
+            period will be used to retrieve a group, and the part after the
+            period will be used to retrieve a parameter from that group. If this
+            string does not contain a period, then just a group will be
+            returned.
+        default : any
+            Return this value if the named group and parameter are not found.
+
+        Returns
+        -------
+        value : `c3d.group.Group` or `c3d.parameter.Param`
+            Either a group or parameter with the specified name(s). If neither
+            is found, returns the default value.
+        &#39;&#39;&#39;
+        if is_integer(group):
+            group = self._groups.get(int(group))
+            if group is None:
+                return default
+            return group
+        group = group.upper()
+        param = None
+        if &#39;.&#39; in group:
+            group, param = group.split(&#39;.&#39;, 1)
+        if &#39;:&#39; in group:
+            group, param = group.split(&#39;:&#39;, 1)
+        if group not in self._groups:
+            return default
+        group = self._groups[group]
+        if param is not None:
+            return group.get(param, default)
+        return group
+
+    @property
+    def header(self) -&gt; &#39;`c3d.header.Header`&#39;:
+        &#39;&#39;&#39; Access to .c3d header data. &#39;&#39;&#39;
+        return self._header
+
+    def parameter_blocks(self) -&gt; int:
+        &#39;&#39;&#39;Compute the size (in 512B blocks) of the parameter section.&#39;&#39;&#39;
+        bytes = 4. + sum(g._data.binary_size for g in self._groups.values())
+        return int(np.ceil(bytes / 512))
+
+    @property
+    def point_rate(self) -&gt; float:
+        &#39;&#39;&#39; Number of sampled 3D coordinates per second. &#39;&#39;&#39;
+        try:
+            return self.get_float(&#39;POINT:RATE&#39;)
+        except AttributeError:
+            return self.header.frame_rate
+
+    @property
+    def point_scale(self) -&gt; float:
+        &#39;&#39;&#39; Scaling applied to non-float data. &#39;&#39;&#39;
+        try:
+            return self.get_float(&#39;POINT:SCALE&#39;)
+        except AttributeError:
+            return self.header.scale_factor
+
+    @property
+    def point_used(self) -&gt; int:
+        &#39;&#39;&#39; Number of sampled 3D point coordinates per frame. &#39;&#39;&#39;
+        try:
+            return self.get_uint16(&#39;POINT:USED&#39;)
+        except AttributeError:
+            return self.header.point_count
+
+    @property
+    def analog_used(self) -&gt; int:
+        &#39;&#39;&#39; Number of analog measurements, or channels, for each analog data sample. &#39;&#39;&#39;
+        try:
+            return self.get_uint16(&#39;ANALOG:USED&#39;)
+        except AttributeError:
+            per_frame = self.header.analog_per_frame
+            if per_frame &gt; 0:
+                return int(self.header.analog_count / per_frame)
+            return 0
+
+    @property
+    def analog_rate(self) -&gt; float:
+        &#39;&#39;&#39;  Number of analog data samples per second. &#39;&#39;&#39;
+        try:
+            return self.get_float(&#39;ANALOG:RATE&#39;)
+        except AttributeError:
+            return self.header.analog_per_frame * self.point_rate
+
+    @property
+    def analog_per_frame(self) -&gt; int:
+        &#39;&#39;&#39;  Number of analog frames per 3D frame (point sample). &#39;&#39;&#39;
+        return int(self.analog_rate / self.point_rate)
+
+    @property
+    def analog_sample_count(self) -&gt; int:
+        &#39;&#39;&#39; Number of analog samples per channel. &#39;&#39;&#39;
+        has_analog = self.analog_used &gt; 0
+        return int(self.frame_count * self.analog_per_frame) * has_analog
+
+    @property
+    def point_labels(self) -&gt; list:
+        &#39;&#39;&#39; Labels for each POINT data channel. &#39;&#39;&#39;
+        return self.get(&#39;POINT:LABELS&#39;).string_array
+
+    @property
+    def analog_labels(self) -&gt; list:
+        &#39;&#39;&#39; Labels for each ANALOG data channel. &#39;&#39;&#39;
+        return self.get(&#39;ANALOG:LABELS&#39;).string_array
+
+    @property
+    def frame_count(self) -&gt; int:
+        &#39;&#39;&#39; Number of frames recorded in the data. &#39;&#39;&#39;
+        return self.last_frame - self.first_frame + 1  # Add 1 since range is inclusive [first, last]
+
+    @property
+    def first_frame(self) -&gt; int:
+        &#39;&#39;&#39; Trial frame corresponding to the first frame recorded in the data. &#39;&#39;&#39;
+        # Start frame seems to be less of an issue to determine.
+        # this is a hack for phasespace files ... should put it in a subclass.
+        param = self.get(&#39;TRIAL:ACTUAL_START_FIELD&#39;)
+        if param is not None:
+            # ACTUAL_START_FIELD is encoded in two 16 byte words...
+            return param.uint32_value
+        return self.header.first_frame
+
+    @property
+    def last_frame(self) -&gt; int:
+        &#39;&#39;&#39; Trial frame corresponding to the last frame recorded in the data (inclusive). &#39;&#39;&#39;
+        # Number of frames can be represented in many formats, first check if valid header values
+        #if self.header.first_frame &lt; self.header.last_frame and self.header.last_frame != 65535:
+        #    return self.header.last_frame
+
+        # Try different parameters where the frame can be encoded
+        hlf = self.header.last_frame
+        param = self.get(&#39;TRIAL:ACTUAL_END_FIELD&#39;)
+        if param is not None:
+            # Encoded as 2 16 bit words (rather then 1 32 bit word)
+            # words = param.uint16_array
+            # end_frame[1] = words[0] + words[1] * 65536
+            end_frame = param.uint32_value
+            if hlf &lt;= end_frame:
+                return end_frame
+        param = self.get(&#39;POINT:LONG_FRAMES&#39;)
+        if param is not None:
+            # &#39;Should be&#39; encoded as float
+            if param.bytes_per_element &gt;= 4:
+                end_frame = int(param.float_value)
+            else:
+                end_frame = param.uint16_value
+            if hlf &lt;= end_frame:
+                return end_frame
+        param = self.get(&#39;POINT:FRAMES&#39;)
+        if param is not None:
+            # Can be encoded either as 32 bit float or 16 bit uint
+            if param.bytes_per_element == 4:
+                end_frame = int(param.float_value)
+            else:
+                end_frame = param.uint16_value
+            if hlf &lt;= end_frame:
+                return end_frame
+        # Return header value by default
+        return hlf
+
+    def get_screen_xy_strings(self):
+        &#39;&#39;&#39; Get the POINT:X_SCREEN and POINT:Y_SCREEN parameters as strings.
+
+        See `Manager.get_screen_xy_axis` to get numpy vectors instead.
+
+        Returns
+        -------
+        value : (str, str) or None
+            Touple containing X_SCREEN and Y_SCREEN strings, or None (if no parameters could be found).
+        &#39;&#39;&#39;
+        X = self.get(&#39;POINT:X_SCREEN&#39;)
+        Y = self.get(&#39;POINT:Y_SCREEN&#39;)
+        if X and Y:
+            return (X.string_value, Y.string_value)
+        return None
+
+    def get_screen_xy_axis(self):
+        &#39;&#39;&#39; Get the POINT:X_SCREEN and POINT:Y_SCREEN parameters as unit row vectors.
+
+        Z axis can be computed using the cross product:
+
+        $$ z = x \\times y $$
+
+        To move a point coordinate $p_s$ as read from `c3d.reader.Reader.read_frames` out of the system basis do:
+
+        $$ p = | x^T y^T z^T |^T p_s  $$
+
+
+        See `Manager.get_screen_xy_strings` to get the parameter as string values instead.
+
+        Returns
+        -------
+        value : ([3,], [3,]) or None
+            Touple $(x, y)$ containing X_SCREEN and Y_SCREEN as row vectors, or None.
+        &#39;&#39;&#39;
+        # Axis conversion dictionary.
+        AXIS_DICT = {
+            &#39;X&#39;: np.array([1.0, 0, 0]),
+            &#39;+X&#39;: np.array([1.0, 0, 0]),
+            &#39;-X&#39;: np.array([-1.0, 0, 0]),
+            &#39;Y&#39;: np.array([0, 1.0, 0]),
+            &#39;+Y&#39;: np.array([0, 1.0, 0]),
+            &#39;-Y&#39;: np.array([0, -1.0, 0]),
+            &#39;Z&#39;: np.array([0, 0, 1.0]),
+            &#39;+Z&#39;: np.array([0, 0, 1.0]),
+            &#39;-Z&#39;: np.array([0, 0, -1.0]),
+        }
+
+        val = self.get_screen_xy_strings()
+        if val is None:
+            return None
+        axis_x, axis_y = val
+
+        # Interpret using both X/Y_SCREEN
+        return AXIS_DICT[axis_x], AXIS_DICT[axis_y]
+
+    def get_analog_transform_parameters(self):
+        &#39;&#39;&#39; Parse analog data transform parameters. &#39;&#39;&#39;
+        # Offsets
+        analog_offsets = np.zeros((self.analog_used), int)
+        param = self.get(&#39;ANALOG:OFFSET&#39;)
+        if param is not None and param.num_elements &gt; 0:
+            analog_offsets[:] = param.int16_array[:self.analog_used]
+
+        # Scale factors
+        analog_scales = np.ones((self.analog_used), float)
+        gen_scale = 1.
+        param = self.get(&#39;ANALOG:GEN_SCALE&#39;)
+        if param is not None:
+            gen_scale = param.float_value
+        param = self.get(&#39;ANALOG:SCALE&#39;)
+        if param is not None and param.num_elements &gt; 0:
+            analog_scales[:] = param.float_array[:self.analog_used]
+
+        return gen_scale, analog_scales, analog_offsets
+
+    def get_analog_transform(self):
+        &#39;&#39;&#39; Get broadcastable analog transformation parameters.
+        &#39;&#39;&#39;
+        gen_scale, analog_scales, analog_offsets = self.get_analog_transform_parameters()
+        analog_scales *= gen_scale
+        analog_scales = np.broadcast_to(analog_scales[:, np.newaxis], (self.analog_used, self.analog_per_frame))
+        analog_offsets = np.broadcast_to(analog_offsets[:, np.newaxis], (self.analog_used, self.analog_per_frame))
+        return analog_scales, analog_offsets</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="c3d.manager.Manager"><code class="flex name class">
+<span>class <span class="ident">Manager</span></span>
+<span>(</span><span>header=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>A base class for managing C3D file metadata.</p>
+<p>This class manages a C3D header (which contains some stock metadata fields)
+as well as a set of parameter groups. Each group is accessible using its
+name.</p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>header</code></strong> :&ensp;<code><a title="c3d.header.Header" href="header.html#c3d.header.Header">Header</a></code></dt>
+<dd>Header information for the C3D file.</dd>
+</dl>
+<p>Set up a new Manager with a Header.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Manager(object):
+    &#39;&#39;&#39;A base class for managing C3D file metadata.
+
+    This class manages a C3D header (which contains some stock metadata fields)
+    as well as a set of parameter groups. Each group is accessible using its
+    name.
+
+    Attributes
+    ----------
+    header : `c3d.header.Header`
+        Header information for the C3D file.
+    &#39;&#39;&#39;
+
+    def __init__(self, header=None):
+        &#39;&#39;&#39;Set up a new Manager with a Header.&#39;&#39;&#39;
+        self._header = header or Header()
+        self._groups = {}
+
+    def __contains__(self, key):
+        return key in self._groups
+
+    def items(self):
+        &#39;&#39;&#39; Get iterable over pairs of (str, `c3d.group.Group`) entries.
+        &#39;&#39;&#39;
+        return ((k, v) for k, v in self._groups.items() if isinstance(k, str))
+
+    def values(self):
+        &#39;&#39;&#39; Get iterable over `c3d.group.Group` entries.
+        &#39;&#39;&#39;
+        return (v for k, v in self._groups.items() if isinstance(k, str))
+
+    def keys(self):
+        &#39;&#39;&#39; Get iterable over parameter name keys.
+        &#39;&#39;&#39;
+        return (k for k in self._groups.keys() if isinstance(k, str))
+
+    def listed(self):
+        &#39;&#39;&#39; Get iterable over pairs of (int, `c3d.group.Group`) entries.
+        &#39;&#39;&#39;
+        return sorted((i, g) for i, g in self._groups.items() if isinstance(i, int))
+
+    def _check_metadata(self):
+        &#39;&#39;&#39; Ensure that the metadata in our file is self-consistent. &#39;&#39;&#39;
+        assert self._header.point_count == self.point_used, (
+            &#39;inconsistent point count! {} header != {} POINT:USED&#39;.format(
+                self._header.point_count,
+                self.point_used,
+            ))
+
+        assert self._header.scale_factor == self.point_scale, (
+            &#39;inconsistent scale factor! {} header != {} POINT:SCALE&#39;.format(
+                self._header.scale_factor,
+                self.point_scale,
+            ))
+
+        assert self._header.frame_rate == self.point_rate, (
+            &#39;inconsistent frame rate! {} header != {} POINT:RATE&#39;.format(
+                self._header.frame_rate,
+                self.point_rate,
+            ))
+
+        if self.point_rate:
+            ratio = self.analog_rate / self.point_rate
+        else:
+            ratio = 0
+        assert self._header.analog_per_frame == ratio, (
+            &#39;inconsistent analog rate! {} header != {} analog-fps / {} point-fps&#39;.format(
+                self._header.analog_per_frame,
+                self.analog_rate,
+                self.point_rate,
+            ))
+
+        count = self.analog_used * self._header.analog_per_frame
+        assert self._header.analog_count == count, (
+            &#39;inconsistent analog count! {} header != {} analog used * {} per-frame&#39;.format(
+                self._header.analog_count,
+                self.analog_used,
+                self._header.analog_per_frame,
+            ))
+
+        try:
+            start = self.get(&#39;POINT:DATA_START&#39;).uint16_value
+            if self._header.data_block != start:
+                warnings.warn(&#39;inconsistent data block! {} header != {} POINT:DATA_START&#39;.format(
+                    self._header.data_block, start))
+        except AttributeError:
+            warnings.warn(&#39;&#39;&#39;no pointer available in POINT:DATA_START indicating the start of the data block, using
+                             header pointer as fallback&#39;&#39;&#39;)
+
+        def check_parameters(params):
+            for name in params:
+                if self.get(name) is None:
+                    warnings.warn(&#39;missing parameter {}&#39;.format(name))
+
+        if self.point_used &gt; 0:
+            check_parameters((&#39;POINT:LABELS&#39;, &#39;POINT:DESCRIPTIONS&#39;))
+        else:
+            lab = self.get(&#39;POINT:LABELS&#39;)
+            if lab is None:
+                warnings.warn(&#39;No point data found in file.&#39;)
+            elif lab.num_elements &gt; 0:
+                warnings.warn(&#39;No point data found in file, but file contains POINT:LABELS entries&#39;)
+        if self.analog_used &gt; 0:
+            check_parameters((&#39;ANALOG:LABELS&#39;, &#39;ANALOG:DESCRIPTIONS&#39;))
+        else:
+            lab = self.get(&#39;ANALOG:LABELS&#39;)
+            if lab is None:
+                warnings.warn(&#39;No analog data found in file.&#39;)
+            elif lab.num_elements &gt; 0:
+                warnings.warn(&#39;No analog data found in file, but file contains ANALOG:LABELS entries&#39;)
+
+    def _add_group(self, group_id, name=None, desc=None):
+        &#39;&#39;&#39;Add a new parameter group.
+
+        Parameters
+        ----------
+        group_id : int
+            The numeric ID for a group to check or create.
+        name : str, optional
+            If a group is created, assign this name to the group.
+        desc : str, optional
+            If a group is created, assign this description to the group.
+
+        Returns
+        -------
+        group : :class:`Group`
+            A group with the given ID, name, and description.
+
+        Raises
+        ------
+        TypeError
+            Input arguments are of the wrong type.
+        KeyError
+            Name or numerical key already exist (attempt to overwrite existing data).
+        &#39;&#39;&#39;
+        if not is_integer(group_id):
+            raise TypeError(&#39;Expected Group numerical key to be integer, was %s.&#39; % type(group_id))
+        if not isinstance(name, str):
+            if name is not None:
+                raise TypeError(&#39;Expected Group name key to be string, was %s.&#39; % type(name))
+        else:
+            name = name.upper()
+        group_id = int(group_id)  # Asserts python int
+        if group_id in self._groups:
+            raise KeyError(&#39;Group with numerical key {} already exists&#39;.format(group_id))
+        if name in self._groups:
+            raise KeyError(&#39;No group matched name key {}&#39;.format(name))
+        group = self._groups[name] = self._groups[group_id] = Group(GroupData(self._dtypes, name, desc))
+        return group
+
+    def _remove_group(self, group_id):
+        &#39;&#39;&#39;Remove the parameter group.
+
+        Parameters
+        ----------
+        group_id : int, or str
+            The numeric or name ID key for a group to remove all entries for.
+        &#39;&#39;&#39;
+        grp = self._groups.get(group_id, None)
+        if grp is None:
+            return
+        gkeys = [k for (k, v) in self._groups.items() if v == grp]
+        for k in gkeys:
+            del self._groups[k]
+
+    def _rename_group(self, group_id, new_group_id):
+        &#39;&#39;&#39; Rename a specified parameter group.
+
+        Parameters
+        ----------
+        group_id : int, str, or `c3d.group.Group`
+            Group instance, name, or numerical identifier for the group.
+        new_group_id : str, or int
+            If string, it is the new name for the group. If integer, it will replace its numerical group id.
+
+        Raises
+        ------
+        KeyError
+            If a group with a duplicate ID or name already exists.
+        &#39;&#39;&#39;
+        if isinstance(group_id, GroupReadonly):
+            grp = group_id._data
+        else:
+            # Aquire instance using id
+            grp = self._groups.get(group_id, None)
+            if grp is None:
+                raise KeyError(&#39;No group found matching the identifier: %s&#39; % str(group_id))
+        if new_group_id in self._groups:
+            if new_group_id == group_id:
+                return
+            raise ValueError(&#39;Key %s for group %s already exist.&#39; % (str(new_group_id), grp.name))
+
+        # Clear old id
+        if isinstance(new_group_id, (str, bytes)):
+            if grp.name in self._groups:
+                del self._groups[grp.name]
+            grp.name = new_group_id
+        elif is_integer(new_group_id):
+            new_group_id = int(new_group_id)  # Ensure python int
+            del self._groups[group_id]
+        else:
+            raise KeyError(&#39;Invalid group identifier of type: %s&#39; % str(type(new_group_id)))
+        # Update
+        self._groups[new_group_id] = grp
+
+    def get(self, group, default=None):
+        &#39;&#39;&#39;Get a group or parameter.
+
+        Parameters
+        ----------
+        group : str
+            If this string contains a period (.), then the part before the
+            period will be used to retrieve a group, and the part after the
+            period will be used to retrieve a parameter from that group. If this
+            string does not contain a period, then just a group will be
+            returned.
+        default : any
+            Return this value if the named group and parameter are not found.
+
+        Returns
+        -------
+        value : `c3d.group.Group` or `c3d.parameter.Param`
+            Either a group or parameter with the specified name(s). If neither
+            is found, returns the default value.
+        &#39;&#39;&#39;
+        if is_integer(group):
+            group = self._groups.get(int(group))
+            if group is None:
+                return default
+            return group
+        group = group.upper()
+        param = None
+        if &#39;.&#39; in group:
+            group, param = group.split(&#39;.&#39;, 1)
+        if &#39;:&#39; in group:
+            group, param = group.split(&#39;:&#39;, 1)
+        if group not in self._groups:
+            return default
+        group = self._groups[group]
+        if param is not None:
+            return group.get(param, default)
+        return group
+
+    @property
+    def header(self) -&gt; &#39;`c3d.header.Header`&#39;:
+        &#39;&#39;&#39; Access to .c3d header data. &#39;&#39;&#39;
+        return self._header
+
+    def parameter_blocks(self) -&gt; int:
+        &#39;&#39;&#39;Compute the size (in 512B blocks) of the parameter section.&#39;&#39;&#39;
+        bytes = 4. + sum(g._data.binary_size for g in self._groups.values())
+        return int(np.ceil(bytes / 512))
+
+    @property
+    def point_rate(self) -&gt; float:
+        &#39;&#39;&#39; Number of sampled 3D coordinates per second. &#39;&#39;&#39;
+        try:
+            return self.get_float(&#39;POINT:RATE&#39;)
+        except AttributeError:
+            return self.header.frame_rate
+
+    @property
+    def point_scale(self) -&gt; float:
+        &#39;&#39;&#39; Scaling applied to non-float data. &#39;&#39;&#39;
+        try:
+            return self.get_float(&#39;POINT:SCALE&#39;)
+        except AttributeError:
+            return self.header.scale_factor
+
+    @property
+    def point_used(self) -&gt; int:
+        &#39;&#39;&#39; Number of sampled 3D point coordinates per frame. &#39;&#39;&#39;
+        try:
+            return self.get_uint16(&#39;POINT:USED&#39;)
+        except AttributeError:
+            return self.header.point_count
+
+    @property
+    def analog_used(self) -&gt; int:
+        &#39;&#39;&#39; Number of analog measurements, or channels, for each analog data sample. &#39;&#39;&#39;
+        try:
+            return self.get_uint16(&#39;ANALOG:USED&#39;)
+        except AttributeError:
+            per_frame = self.header.analog_per_frame
+            if per_frame &gt; 0:
+                return int(self.header.analog_count / per_frame)
+            return 0
+
+    @property
+    def analog_rate(self) -&gt; float:
+        &#39;&#39;&#39;  Number of analog data samples per second. &#39;&#39;&#39;
+        try:
+            return self.get_float(&#39;ANALOG:RATE&#39;)
+        except AttributeError:
+            return self.header.analog_per_frame * self.point_rate
+
+    @property
+    def analog_per_frame(self) -&gt; int:
+        &#39;&#39;&#39;  Number of analog frames per 3D frame (point sample). &#39;&#39;&#39;
+        return int(self.analog_rate / self.point_rate)
+
+    @property
+    def analog_sample_count(self) -&gt; int:
+        &#39;&#39;&#39; Number of analog samples per channel. &#39;&#39;&#39;
+        has_analog = self.analog_used &gt; 0
+        return int(self.frame_count * self.analog_per_frame) * has_analog
+
+    @property
+    def point_labels(self) -&gt; list:
+        &#39;&#39;&#39; Labels for each POINT data channel. &#39;&#39;&#39;
+        return self.get(&#39;POINT:LABELS&#39;).string_array
+
+    @property
+    def analog_labels(self) -&gt; list:
+        &#39;&#39;&#39; Labels for each ANALOG data channel. &#39;&#39;&#39;
+        return self.get(&#39;ANALOG:LABELS&#39;).string_array
+
+    @property
+    def frame_count(self) -&gt; int:
+        &#39;&#39;&#39; Number of frames recorded in the data. &#39;&#39;&#39;
+        return self.last_frame - self.first_frame + 1  # Add 1 since range is inclusive [first, last]
+
+    @property
+    def first_frame(self) -&gt; int:
+        &#39;&#39;&#39; Trial frame corresponding to the first frame recorded in the data. &#39;&#39;&#39;
+        # Start frame seems to be less of an issue to determine.
+        # this is a hack for phasespace files ... should put it in a subclass.
+        param = self.get(&#39;TRIAL:ACTUAL_START_FIELD&#39;)
+        if param is not None:
+            # ACTUAL_START_FIELD is encoded in two 16 byte words...
+            return param.uint32_value
+        return self.header.first_frame
+
+    @property
+    def last_frame(self) -&gt; int:
+        &#39;&#39;&#39; Trial frame corresponding to the last frame recorded in the data (inclusive). &#39;&#39;&#39;
+        # Number of frames can be represented in many formats, first check if valid header values
+        #if self.header.first_frame &lt; self.header.last_frame and self.header.last_frame != 65535:
+        #    return self.header.last_frame
+
+        # Try different parameters where the frame can be encoded
+        hlf = self.header.last_frame
+        param = self.get(&#39;TRIAL:ACTUAL_END_FIELD&#39;)
+        if param is not None:
+            # Encoded as 2 16 bit words (rather then 1 32 bit word)
+            # words = param.uint16_array
+            # end_frame[1] = words[0] + words[1] * 65536
+            end_frame = param.uint32_value
+            if hlf &lt;= end_frame:
+                return end_frame
+        param = self.get(&#39;POINT:LONG_FRAMES&#39;)
+        if param is not None:
+            # &#39;Should be&#39; encoded as float
+            if param.bytes_per_element &gt;= 4:
+                end_frame = int(param.float_value)
+            else:
+                end_frame = param.uint16_value
+            if hlf &lt;= end_frame:
+                return end_frame
+        param = self.get(&#39;POINT:FRAMES&#39;)
+        if param is not None:
+            # Can be encoded either as 32 bit float or 16 bit uint
+            if param.bytes_per_element == 4:
+                end_frame = int(param.float_value)
+            else:
+                end_frame = param.uint16_value
+            if hlf &lt;= end_frame:
+                return end_frame
+        # Return header value by default
+        return hlf
+
+    def get_screen_xy_strings(self):
+        &#39;&#39;&#39; Get the POINT:X_SCREEN and POINT:Y_SCREEN parameters as strings.
+
+        See `Manager.get_screen_xy_axis` to get numpy vectors instead.
+
+        Returns
+        -------
+        value : (str, str) or None
+            Touple containing X_SCREEN and Y_SCREEN strings, or None (if no parameters could be found).
+        &#39;&#39;&#39;
+        X = self.get(&#39;POINT:X_SCREEN&#39;)
+        Y = self.get(&#39;POINT:Y_SCREEN&#39;)
+        if X and Y:
+            return (X.string_value, Y.string_value)
+        return None
+
+    def get_screen_xy_axis(self):
+        &#39;&#39;&#39; Get the POINT:X_SCREEN and POINT:Y_SCREEN parameters as unit row vectors.
+
+        Z axis can be computed using the cross product:
+
+        $$ z = x \\times y $$
+
+        To move a point coordinate $p_s$ as read from `c3d.reader.Reader.read_frames` out of the system basis do:
+
+        $$ p = | x^T y^T z^T |^T p_s  $$
+
+
+        See `Manager.get_screen_xy_strings` to get the parameter as string values instead.
+
+        Returns
+        -------
+        value : ([3,], [3,]) or None
+            Touple $(x, y)$ containing X_SCREEN and Y_SCREEN as row vectors, or None.
+        &#39;&#39;&#39;
+        # Axis conversion dictionary.
+        AXIS_DICT = {
+            &#39;X&#39;: np.array([1.0, 0, 0]),
+            &#39;+X&#39;: np.array([1.0, 0, 0]),
+            &#39;-X&#39;: np.array([-1.0, 0, 0]),
+            &#39;Y&#39;: np.array([0, 1.0, 0]),
+            &#39;+Y&#39;: np.array([0, 1.0, 0]),
+            &#39;-Y&#39;: np.array([0, -1.0, 0]),
+            &#39;Z&#39;: np.array([0, 0, 1.0]),
+            &#39;+Z&#39;: np.array([0, 0, 1.0]),
+            &#39;-Z&#39;: np.array([0, 0, -1.0]),
+        }
+
+        val = self.get_screen_xy_strings()
+        if val is None:
+            return None
+        axis_x, axis_y = val
+
+        # Interpret using both X/Y_SCREEN
+        return AXIS_DICT[axis_x], AXIS_DICT[axis_y]
+
+    def get_analog_transform_parameters(self):
+        &#39;&#39;&#39; Parse analog data transform parameters. &#39;&#39;&#39;
+        # Offsets
+        analog_offsets = np.zeros((self.analog_used), int)
+        param = self.get(&#39;ANALOG:OFFSET&#39;)
+        if param is not None and param.num_elements &gt; 0:
+            analog_offsets[:] = param.int16_array[:self.analog_used]
+
+        # Scale factors
+        analog_scales = np.ones((self.analog_used), float)
+        gen_scale = 1.
+        param = self.get(&#39;ANALOG:GEN_SCALE&#39;)
+        if param is not None:
+            gen_scale = param.float_value
+        param = self.get(&#39;ANALOG:SCALE&#39;)
+        if param is not None and param.num_elements &gt; 0:
+            analog_scales[:] = param.float_array[:self.analog_used]
+
+        return gen_scale, analog_scales, analog_offsets
+
+    def get_analog_transform(self):
+        &#39;&#39;&#39; Get broadcastable analog transformation parameters.
+        &#39;&#39;&#39;
+        gen_scale, analog_scales, analog_offsets = self.get_analog_transform_parameters()
+        analog_scales *= gen_scale
+        analog_scales = np.broadcast_to(analog_scales[:, np.newaxis], (self.analog_used, self.analog_per_frame))
+        analog_offsets = np.broadcast_to(analog_offsets[:, np.newaxis], (self.analog_used, self.analog_per_frame))
+        return analog_scales, analog_offsets</code></pre>
+</details>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="c3d.reader.Reader" href="reader.html#c3d.reader.Reader">Reader</a></li>
+<li><a title="c3d.writer.Writer" href="writer.html#c3d.writer.Writer">Writer</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="c3d.manager.Manager.analog_labels"><code class="name">var <span class="ident">analog_labels</span> : list</code></dt>
+<dd>
+<div class="desc"><p>Labels for each ANALOG data channel.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def analog_labels(self) -&gt; list:
+    &#39;&#39;&#39; Labels for each ANALOG data channel. &#39;&#39;&#39;
+    return self.get(&#39;ANALOG:LABELS&#39;).string_array</code></pre>
+</details>
+</dd>
+<dt id="c3d.manager.Manager.analog_per_frame"><code class="name">var <span class="ident">analog_per_frame</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Number of analog frames per 3D frame (point sample).</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def analog_per_frame(self) -&gt; int:
+    &#39;&#39;&#39;  Number of analog frames per 3D frame (point sample). &#39;&#39;&#39;
+    return int(self.analog_rate / self.point_rate)</code></pre>
+</details>
+</dd>
+<dt id="c3d.manager.Manager.analog_rate"><code class="name">var <span class="ident">analog_rate</span> : float</code></dt>
+<dd>
+<div class="desc"><p>Number of analog data samples per second.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def analog_rate(self) -&gt; float:
+    &#39;&#39;&#39;  Number of analog data samples per second. &#39;&#39;&#39;
+    try:
+        return self.get_float(&#39;ANALOG:RATE&#39;)
+    except AttributeError:
+        return self.header.analog_per_frame * self.point_rate</code></pre>
+</details>
+</dd>
+<dt id="c3d.manager.Manager.analog_sample_count"><code class="name">var <span class="ident">analog_sample_count</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Number of analog samples per channel.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def analog_sample_count(self) -&gt; int:
+    &#39;&#39;&#39; Number of analog samples per channel. &#39;&#39;&#39;
+    has_analog = self.analog_used &gt; 0
+    return int(self.frame_count * self.analog_per_frame) * has_analog</code></pre>
+</details>
+</dd>
+<dt id="c3d.manager.Manager.analog_used"><code class="name">var <span class="ident">analog_used</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Number of analog measurements, or channels, for each analog data sample.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def analog_used(self) -&gt; int:
+    &#39;&#39;&#39; Number of analog measurements, or channels, for each analog data sample. &#39;&#39;&#39;
+    try:
+        return self.get_uint16(&#39;ANALOG:USED&#39;)
+    except AttributeError:
+        per_frame = self.header.analog_per_frame
+        if per_frame &gt; 0:
+            return int(self.header.analog_count / per_frame)
+        return 0</code></pre>
+</details>
+</dd>
+<dt id="c3d.manager.Manager.first_frame"><code class="name">var <span class="ident">first_frame</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Trial frame corresponding to the first frame recorded in the data.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def first_frame(self) -&gt; int:
+    &#39;&#39;&#39; Trial frame corresponding to the first frame recorded in the data. &#39;&#39;&#39;
+    # Start frame seems to be less of an issue to determine.
+    # this is a hack for phasespace files ... should put it in a subclass.
+    param = self.get(&#39;TRIAL:ACTUAL_START_FIELD&#39;)
+    if param is not None:
+        # ACTUAL_START_FIELD is encoded in two 16 byte words...
+        return param.uint32_value
+    return self.header.first_frame</code></pre>
+</details>
+</dd>
+<dt id="c3d.manager.Manager.frame_count"><code class="name">var <span class="ident">frame_count</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Number of frames recorded in the data.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def frame_count(self) -&gt; int:
+    &#39;&#39;&#39; Number of frames recorded in the data. &#39;&#39;&#39;
+    return self.last_frame - self.first_frame + 1  # Add 1 since range is inclusive [first, last]</code></pre>
+</details>
+</dd>
+<dt id="c3d.manager.Manager.header"><code class="name">var <span class="ident">header</span> : `<a title="c3d.header.Header" href="header.html#c3d.header.Header">Header</a>`</code></dt>
+<dd>
+<div class="desc"><p>Access to .c3d header data.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def header(self) -&gt; &#39;`c3d.header.Header`&#39;:
+    &#39;&#39;&#39; Access to .c3d header data. &#39;&#39;&#39;
+    return self._header</code></pre>
+</details>
+</dd>
+<dt id="c3d.manager.Manager.last_frame"><code class="name">var <span class="ident">last_frame</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Trial frame corresponding to the last frame recorded in the data (inclusive).</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def last_frame(self) -&gt; int:
+    &#39;&#39;&#39; Trial frame corresponding to the last frame recorded in the data (inclusive). &#39;&#39;&#39;
+    # Number of frames can be represented in many formats, first check if valid header values
+    #if self.header.first_frame &lt; self.header.last_frame and self.header.last_frame != 65535:
+    #    return self.header.last_frame
+
+    # Try different parameters where the frame can be encoded
+    hlf = self.header.last_frame
+    param = self.get(&#39;TRIAL:ACTUAL_END_FIELD&#39;)
+    if param is not None:
+        # Encoded as 2 16 bit words (rather then 1 32 bit word)
+        # words = param.uint16_array
+        # end_frame[1] = words[0] + words[1] * 65536
+        end_frame = param.uint32_value
+        if hlf &lt;= end_frame:
+            return end_frame
+    param = self.get(&#39;POINT:LONG_FRAMES&#39;)
+    if param is not None:
+        # &#39;Should be&#39; encoded as float
+        if param.bytes_per_element &gt;= 4:
+            end_frame = int(param.float_value)
+        else:
+            end_frame = param.uint16_value
+        if hlf &lt;= end_frame:
+            return end_frame
+    param = self.get(&#39;POINT:FRAMES&#39;)
+    if param is not None:
+        # Can be encoded either as 32 bit float or 16 bit uint
+        if param.bytes_per_element == 4:
+            end_frame = int(param.float_value)
+        else:
+            end_frame = param.uint16_value
+        if hlf &lt;= end_frame:
+            return end_frame
+    # Return header value by default
+    return hlf</code></pre>
+</details>
+</dd>
+<dt id="c3d.manager.Manager.point_labels"><code class="name">var <span class="ident">point_labels</span> : list</code></dt>
+<dd>
+<div class="desc"><p>Labels for each POINT data channel.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def point_labels(self) -&gt; list:
+    &#39;&#39;&#39; Labels for each POINT data channel. &#39;&#39;&#39;
+    return self.get(&#39;POINT:LABELS&#39;).string_array</code></pre>
+</details>
+</dd>
+<dt id="c3d.manager.Manager.point_rate"><code class="name">var <span class="ident">point_rate</span> : float</code></dt>
+<dd>
+<div class="desc"><p>Number of sampled 3D coordinates per second.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def point_rate(self) -&gt; float:
+    &#39;&#39;&#39; Number of sampled 3D coordinates per second. &#39;&#39;&#39;
+    try:
+        return self.get_float(&#39;POINT:RATE&#39;)
+    except AttributeError:
+        return self.header.frame_rate</code></pre>
+</details>
+</dd>
+<dt id="c3d.manager.Manager.point_scale"><code class="name">var <span class="ident">point_scale</span> : float</code></dt>
+<dd>
+<div class="desc"><p>Scaling applied to non-float data.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def point_scale(self) -&gt; float:
+    &#39;&#39;&#39; Scaling applied to non-float data. &#39;&#39;&#39;
+    try:
+        return self.get_float(&#39;POINT:SCALE&#39;)
+    except AttributeError:
+        return self.header.scale_factor</code></pre>
+</details>
+</dd>
+<dt id="c3d.manager.Manager.point_used"><code class="name">var <span class="ident">point_used</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Number of sampled 3D point coordinates per frame.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def point_used(self) -&gt; int:
+    &#39;&#39;&#39; Number of sampled 3D point coordinates per frame. &#39;&#39;&#39;
+    try:
+        return self.get_uint16(&#39;POINT:USED&#39;)
+    except AttributeError:
+        return self.header.point_count</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="c3d.manager.Manager.get"><code class="name flex">
+<span>def <span class="ident">get</span></span>(<span>self, group, default=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get a group or parameter.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>group</code></strong> :&ensp;<code>str</code></dt>
+<dd>If this string contains a period (.), then the part before the
+period will be used to retrieve a group, and the part after the
+period will be used to retrieve a parameter from that group. If this
+string does not contain a period, then just a group will be
+returned.</dd>
+<dt><strong><code>default</code></strong> :&ensp;<code>any</code></dt>
+<dd>Return this value if the named group and parameter are not found.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>value</code></strong> :&ensp;<code><a title="c3d.group.Group" href="group.html#c3d.group.Group">Group</a></code> or <code><a title="c3d.parameter.Param" href="parameter.html#c3d.parameter.Param">Param</a></code></dt>
+<dd>Either a group or parameter with the specified name(s). If neither
+is found, returns the default value.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get(self, group, default=None):
+    &#39;&#39;&#39;Get a group or parameter.
+
+    Parameters
+    ----------
+    group : str
+        If this string contains a period (.), then the part before the
+        period will be used to retrieve a group, and the part after the
+        period will be used to retrieve a parameter from that group. If this
+        string does not contain a period, then just a group will be
+        returned.
+    default : any
+        Return this value if the named group and parameter are not found.
+
+    Returns
+    -------
+    value : `c3d.group.Group` or `c3d.parameter.Param`
+        Either a group or parameter with the specified name(s). If neither
+        is found, returns the default value.
+    &#39;&#39;&#39;
+    if is_integer(group):
+        group = self._groups.get(int(group))
+        if group is None:
+            return default
+        return group
+    group = group.upper()
+    param = None
+    if &#39;.&#39; in group:
+        group, param = group.split(&#39;.&#39;, 1)
+    if &#39;:&#39; in group:
+        group, param = group.split(&#39;:&#39;, 1)
+    if group not in self._groups:
+        return default
+    group = self._groups[group]
+    if param is not None:
+        return group.get(param, default)
+    return group</code></pre>
+</details>
+</dd>
+<dt id="c3d.manager.Manager.get_analog_transform"><code class="name flex">
+<span>def <span class="ident">get_analog_transform</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get broadcastable analog transformation parameters.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_analog_transform(self):
+    &#39;&#39;&#39; Get broadcastable analog transformation parameters.
+    &#39;&#39;&#39;
+    gen_scale, analog_scales, analog_offsets = self.get_analog_transform_parameters()
+    analog_scales *= gen_scale
+    analog_scales = np.broadcast_to(analog_scales[:, np.newaxis], (self.analog_used, self.analog_per_frame))
+    analog_offsets = np.broadcast_to(analog_offsets[:, np.newaxis], (self.analog_used, self.analog_per_frame))
+    return analog_scales, analog_offsets</code></pre>
+</details>
+</dd>
+<dt id="c3d.manager.Manager.get_analog_transform_parameters"><code class="name flex">
+<span>def <span class="ident">get_analog_transform_parameters</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Parse analog data transform parameters.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_analog_transform_parameters(self):
+    &#39;&#39;&#39; Parse analog data transform parameters. &#39;&#39;&#39;
+    # Offsets
+    analog_offsets = np.zeros((self.analog_used), int)
+    param = self.get(&#39;ANALOG:OFFSET&#39;)
+    if param is not None and param.num_elements &gt; 0:
+        analog_offsets[:] = param.int16_array[:self.analog_used]
+
+    # Scale factors
+    analog_scales = np.ones((self.analog_used), float)
+    gen_scale = 1.
+    param = self.get(&#39;ANALOG:GEN_SCALE&#39;)
+    if param is not None:
+        gen_scale = param.float_value
+    param = self.get(&#39;ANALOG:SCALE&#39;)
+    if param is not None and param.num_elements &gt; 0:
+        analog_scales[:] = param.float_array[:self.analog_used]
+
+    return gen_scale, analog_scales, analog_offsets</code></pre>
+</details>
+</dd>
+<dt id="c3d.manager.Manager.get_screen_xy_axis"><code class="name flex">
+<span>def <span class="ident">get_screen_xy_axis</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get the POINT:X_SCREEN and POINT:Y_SCREEN parameters as unit row vectors.</p>
+<p>Z axis can be computed using the cross product:</p>
+<p><span><span class="MathJax_Preview"> z = x \times y </span><script type="math/tex; mode=display"> z = x \times y </script></span></p>
+<p>To move a point coordinate $p_s$ as read from <code><a title="c3d.reader.Reader.read_frames" href="reader.html#c3d.reader.Reader.read_frames">Reader.read_frames()</a></code> out of the system basis do:</p>
+<p><span><span class="MathJax_Preview"> p = | x^T y^T z^T |^T p_s
+</span><script type="math/tex; mode=display"> p = | x^T y^T z^T |^T p_s
+</script></span></p>
+<p>See <code><a title="c3d.manager.Manager.get_screen_xy_strings" href="#c3d.manager.Manager.get_screen_xy_strings">Manager.get_screen_xy_strings()</a></code> to get the parameter as string values instead.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>value</code></strong> :&ensp;<code>([3,], [3,])</code> or <code>None</code></dt>
+<dd>Touple $(x, y)$ containing X_SCREEN and Y_SCREEN as row vectors, or None.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_screen_xy_axis(self):
+    &#39;&#39;&#39; Get the POINT:X_SCREEN and POINT:Y_SCREEN parameters as unit row vectors.
+
+    Z axis can be computed using the cross product:
+
+    $$ z = x \\times y $$
+
+    To move a point coordinate $p_s$ as read from `c3d.reader.Reader.read_frames` out of the system basis do:
+
+    $$ p = | x^T y^T z^T |^T p_s  $$
+
+
+    See `Manager.get_screen_xy_strings` to get the parameter as string values instead.
+
+    Returns
+    -------
+    value : ([3,], [3,]) or None
+        Touple $(x, y)$ containing X_SCREEN and Y_SCREEN as row vectors, or None.
+    &#39;&#39;&#39;
+    # Axis conversion dictionary.
+    AXIS_DICT = {
+        &#39;X&#39;: np.array([1.0, 0, 0]),
+        &#39;+X&#39;: np.array([1.0, 0, 0]),
+        &#39;-X&#39;: np.array([-1.0, 0, 0]),
+        &#39;Y&#39;: np.array([0, 1.0, 0]),
+        &#39;+Y&#39;: np.array([0, 1.0, 0]),
+        &#39;-Y&#39;: np.array([0, -1.0, 0]),
+        &#39;Z&#39;: np.array([0, 0, 1.0]),
+        &#39;+Z&#39;: np.array([0, 0, 1.0]),
+        &#39;-Z&#39;: np.array([0, 0, -1.0]),
+    }
+
+    val = self.get_screen_xy_strings()
+    if val is None:
+        return None
+    axis_x, axis_y = val
+
+    # Interpret using both X/Y_SCREEN
+    return AXIS_DICT[axis_x], AXIS_DICT[axis_y]</code></pre>
+</details>
+</dd>
+<dt id="c3d.manager.Manager.get_screen_xy_strings"><code class="name flex">
+<span>def <span class="ident">get_screen_xy_strings</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get the POINT:X_SCREEN and POINT:Y_SCREEN parameters as strings.</p>
+<p>See <code><a title="c3d.manager.Manager.get_screen_xy_axis" href="#c3d.manager.Manager.get_screen_xy_axis">Manager.get_screen_xy_axis()</a></code> to get numpy vectors instead.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>value</code></strong> :&ensp;<code>(str, str)</code> or <code>None</code></dt>
+<dd>Touple containing X_SCREEN and Y_SCREEN strings, or None (if no parameters could be found).</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_screen_xy_strings(self):
+    &#39;&#39;&#39; Get the POINT:X_SCREEN and POINT:Y_SCREEN parameters as strings.
+
+    See `Manager.get_screen_xy_axis` to get numpy vectors instead.
+
+    Returns
+    -------
+    value : (str, str) or None
+        Touple containing X_SCREEN and Y_SCREEN strings, or None (if no parameters could be found).
+    &#39;&#39;&#39;
+    X = self.get(&#39;POINT:X_SCREEN&#39;)
+    Y = self.get(&#39;POINT:Y_SCREEN&#39;)
+    if X and Y:
+        return (X.string_value, Y.string_value)
+    return None</code></pre>
+</details>
+</dd>
+<dt id="c3d.manager.Manager.items"><code class="name flex">
+<span>def <span class="ident">items</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get iterable over pairs of (str, <code><a title="c3d.group.Group" href="group.html#c3d.group.Group">Group</a></code>) entries.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def items(self):
+    &#39;&#39;&#39; Get iterable over pairs of (str, `c3d.group.Group`) entries.
+    &#39;&#39;&#39;
+    return ((k, v) for k, v in self._groups.items() if isinstance(k, str))</code></pre>
+</details>
+</dd>
+<dt id="c3d.manager.Manager.keys"><code class="name flex">
+<span>def <span class="ident">keys</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get iterable over parameter name keys.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def keys(self):
+    &#39;&#39;&#39; Get iterable over parameter name keys.
+    &#39;&#39;&#39;
+    return (k for k in self._groups.keys() if isinstance(k, str))</code></pre>
+</details>
+</dd>
+<dt id="c3d.manager.Manager.listed"><code class="name flex">
+<span>def <span class="ident">listed</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get iterable over pairs of (int, <code><a title="c3d.group.Group" href="group.html#c3d.group.Group">Group</a></code>) entries.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def listed(self):
+    &#39;&#39;&#39; Get iterable over pairs of (int, `c3d.group.Group`) entries.
+    &#39;&#39;&#39;
+    return sorted((i, g) for i, g in self._groups.items() if isinstance(i, int))</code></pre>
+</details>
+</dd>
+<dt id="c3d.manager.Manager.parameter_blocks"><code class="name flex">
+<span>def <span class="ident">parameter_blocks</span></span>(<span>self) ‑> int</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Compute the size (in 512B blocks) of the parameter section.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def parameter_blocks(self) -&gt; int:
+    &#39;&#39;&#39;Compute the size (in 512B blocks) of the parameter section.&#39;&#39;&#39;
+    bytes = 4. + sum(g._data.binary_size for g in self._groups.values())
+    return int(np.ceil(bytes / 512))</code></pre>
+</details>
+</dd>
+<dt id="c3d.manager.Manager.values"><code class="name flex">
+<span>def <span class="ident">values</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get iterable over <code><a title="c3d.group.Group" href="group.html#c3d.group.Group">Group</a></code> entries.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def values(self):
+    &#39;&#39;&#39; Get iterable over `c3d.group.Group` entries.
+    &#39;&#39;&#39;
+    return (v for k, v in self._groups.items() if isinstance(k, str))</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="c3d" href="index.html">c3d</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="c3d.manager.Manager" href="#c3d.manager.Manager">Manager</a></code></h4>
+<ul class="">
+<li><code><a title="c3d.manager.Manager.analog_labels" href="#c3d.manager.Manager.analog_labels">analog_labels</a></code></li>
+<li><code><a title="c3d.manager.Manager.analog_per_frame" href="#c3d.manager.Manager.analog_per_frame">analog_per_frame</a></code></li>
+<li><code><a title="c3d.manager.Manager.analog_rate" href="#c3d.manager.Manager.analog_rate">analog_rate</a></code></li>
+<li><code><a title="c3d.manager.Manager.analog_sample_count" href="#c3d.manager.Manager.analog_sample_count">analog_sample_count</a></code></li>
+<li><code><a title="c3d.manager.Manager.analog_used" href="#c3d.manager.Manager.analog_used">analog_used</a></code></li>
+<li><code><a title="c3d.manager.Manager.first_frame" href="#c3d.manager.Manager.first_frame">first_frame</a></code></li>
+<li><code><a title="c3d.manager.Manager.frame_count" href="#c3d.manager.Manager.frame_count">frame_count</a></code></li>
+<li><code><a title="c3d.manager.Manager.get" href="#c3d.manager.Manager.get">get</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_analog_transform" href="#c3d.manager.Manager.get_analog_transform">get_analog_transform</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_analog_transform_parameters" href="#c3d.manager.Manager.get_analog_transform_parameters">get_analog_transform_parameters</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_screen_xy_axis" href="#c3d.manager.Manager.get_screen_xy_axis">get_screen_xy_axis</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_screen_xy_strings" href="#c3d.manager.Manager.get_screen_xy_strings">get_screen_xy_strings</a></code></li>
+<li><code><a title="c3d.manager.Manager.header" href="#c3d.manager.Manager.header">header</a></code></li>
+<li><code><a title="c3d.manager.Manager.items" href="#c3d.manager.Manager.items">items</a></code></li>
+<li><code><a title="c3d.manager.Manager.keys" href="#c3d.manager.Manager.keys">keys</a></code></li>
+<li><code><a title="c3d.manager.Manager.last_frame" href="#c3d.manager.Manager.last_frame">last_frame</a></code></li>
+<li><code><a title="c3d.manager.Manager.listed" href="#c3d.manager.Manager.listed">listed</a></code></li>
+<li><code><a title="c3d.manager.Manager.parameter_blocks" href="#c3d.manager.Manager.parameter_blocks">parameter_blocks</a></code></li>
+<li><code><a title="c3d.manager.Manager.point_labels" href="#c3d.manager.Manager.point_labels">point_labels</a></code></li>
+<li><code><a title="c3d.manager.Manager.point_rate" href="#c3d.manager.Manager.point_rate">point_rate</a></code></li>
+<li><code><a title="c3d.manager.Manager.point_scale" href="#c3d.manager.Manager.point_scale">point_scale</a></code></li>
+<li><code><a title="c3d.manager.Manager.point_used" href="#c3d.manager.Manager.point_used">point_used</a></code></li>
+<li><code><a title="c3d.manager.Manager.values" href="#c3d.manager.Manager.values">values</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+</footer>
+</body>
+</html>

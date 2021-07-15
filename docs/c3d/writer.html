@@ -1,0 +1,1804 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.2" />
+<title>c3d.writer API documentation</title>
+<meta name="description" content="Contains the Writer class for writing C3D files." />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS_CHTML" integrity="sha256-kZafAc6mZvK3W3v1pHOcUix30OHQN6pU/NO2oFkqZVw=" crossorigin></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>c3d.writer</code></h1>
+</header>
+<section id="section-intro">
+<p>Contains the Writer class for writing C3D files.</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#39;&#39;&#39;Contains the Writer class for writing C3D files.&#39;&#39;&#39;
+
+import copy
+import numpy as np
+import struct
+# import warnings
+from . import utils
+from .manager import Manager
+from .dtypes import DataTypes
+
+
+class Writer(Manager):
+    &#39;&#39;&#39;This class writes metadata and frames to a C3D file.
+
+    For example, to read an existing C3D file, apply some sort of data
+    processing to the frames, and write out another C3D file::
+
+    &gt;&gt;&gt; r = c3d.Reader(open(&#39;data.c3d&#39;, &#39;rb&#39;))
+    &gt;&gt;&gt; w = c3d.Writer()
+    &gt;&gt;&gt; w.add_frames(process_frames_somehow(r.read_frames()))
+    &gt;&gt;&gt; with open(&#39;smoothed.c3d&#39;, &#39;wb&#39;) as handle:
+    &gt;&gt;&gt;     w.write(handle)
+
+    Parameters
+    ----------
+    point_rate : float, optional
+        The frame rate of the data. Defaults to 480.
+    analog_rate : float, optional
+        The number of analog samples per frame. Defaults to 0.
+    point_scale : float, optional
+        The scale factor for point data. Defaults to -1 (i.e., &#34;check the
+        POINT:SCALE parameter&#34;).
+    point_units : str, optional
+        The units that the point numbers represent. Defaults to ``&#39;mm  &#39;``.
+    gen_scale : float, optional
+        General scaling factor for analog data. Defaults to 1.
+    &#39;&#39;&#39;
+
+    def __init__(self,
+                 point_rate=480.,
+                 analog_rate=0.,
+                 point_scale=-1.):
+        &#39;&#39;&#39;Set minimal metadata for this writer.
+
+        &#39;&#39;&#39;
+        self._dtypes = DataTypes()  # Only support INTEL format from writing
+        super(Writer, self).__init__()
+
+        # Header properties
+        self._header.frame_rate = np.float32(point_rate)
+        self._header.scale_factor = np.float32(point_scale)
+        self.analog_rate = analog_rate
+        self._frames = []
+
+    @staticmethod
+    def from_reader(reader, conversion=None):
+        &#39;&#39;&#39; Convert a `c3d.reader.Reader` to a persistent `c3d.writer.Writer` instance.
+
+        Parameters
+        ----------
+        source : `c3d.reader.Reader`
+            Source to copy data from.
+        conversion : str
+            Conversion mode, None is equivalent to the default mode. Supported modes are:
+
+                &#39;convert&#39;       - (Default) Convert the Reader to a Writer
+                                  instance and explicitly delete the Reader.
+
+                &#39;copy&#39;          - Reader objects will be deep copied.
+
+                &#39;copy_metadata&#39; - Similar to &#39;copy&#39; but only copies metadata and
+                                  not point and analog frame data.
+
+                &#39;copy_shallow&#39;  - Similar to &#39;copy&#39; but group parameters are
+                                  not copied.
+
+                &#39;copy_header&#39;   - Similar to &#39;copy_shallow&#39; but only the
+                                  header is copied (frame data is not copied).
+
+        Returns
+        -------
+        param : `c3d.writer.Writer`
+            A writeable and persistent representation of the `c3d.reader.Reader` object.
+
+        Raises
+        ------
+        ValueError
+            If mode string is not equivalent to one of the supported modes.
+            If attempting to convert non-Intel files using mode other than &#39;shallow_copy&#39;.
+        &#39;&#39;&#39;
+        writer = Writer()
+        # Modes
+        is_header_only = conversion == &#39;copy_header&#39;
+        is_meta_copy = conversion == &#39;copy_metadata&#39;
+        is_meta_only = is_header_only or is_meta_copy
+        is_consume = conversion == &#39;convert&#39; or conversion is None
+        is_shallow_copy = conversion == &#39;shallow_copy&#39; or is_header_only
+        is_deep_copy = conversion == &#39;copy&#39; or is_meta_copy
+        # Verify mode
+        if not (is_consume or is_shallow_copy or is_deep_copy):
+            raise ValueError(
+                &#34;Unknown mode argument %s. Supported modes are: &#39;consume&#39;, &#39;copy&#39;, or &#39;shallow_copy&#39;&#34;.format(
+                    conversion
+                ))
+        if not reader._dtypes.is_ieee and not is_shallow_copy:
+            # Can&#39;t copy/consume non-Intel files due to the uncertainty of converting parameter data.
+            raise ValueError(
+                &#34;File was read in %s format and only &#39;shallow_copy&#39; mode is supported for non Intel files!&#34;.format(
+                    reader._dtypes.proc_type
+                ))
+
+        if is_consume:
+            writer._header = reader._header
+            writer._groups = reader._groups
+        elif is_deep_copy:
+            writer._header = copy.deepcopy(reader._header)
+            writer._groups = copy.deepcopy(reader._groups)
+        elif is_shallow_copy:
+            # Only copy header (no groups)
+            writer._header = copy.deepcopy(reader._header)
+            # Reformat header events
+            writer._header.encode_events(writer._header.events)
+
+            # Transfer a minimal set parameters
+            writer.set_start_frame(reader.first_frame)
+            writer.set_point_labels(reader.point_labels)
+            writer.set_analog_labels(reader.analog_labels)
+
+            gen_scale, analog_scales, analog_offsets = reader.get_analog_transform_parameters()
+            writer.set_analog_general_scale(gen_scale)
+            writer.set_analog_scales(analog_scales)
+            writer.set_analog_offsets(analog_offsets)
+
+        if not is_meta_only:
+            # Copy frames
+            for (i, point, analog) in reader.read_frames(copy=True, camera_sum=False):
+                writer.add_frames((point, analog))
+        if is_consume:
+            # Cleanup
+            reader._header = None
+            reader._groups = None
+            del reader
+        return writer
+
+    @property
+    def analog_rate(self):
+        return super(Writer, self).analog_rate
+
+    @analog_rate.setter
+    def analog_rate(self, value):
+        per_frame_rate = value / self.point_rate
+        assert float(per_frame_rate).is_integer(), &#34;Analog rate must be a multiple of the point rate.&#34;
+        self._header.analog_per_frame = np.uint16(per_frame_rate)
+
+    @property
+    def numeric_key_max(self):
+        &#39;&#39;&#39; Get the largest numeric key.
+        &#39;&#39;&#39;
+        num = 0
+        if len(self._groups) &gt; 0:
+            for i in self._groups.keys():
+                if isinstance(i, int):
+                    num = max(i, num)
+        return num
+
+    @property
+    def numeric_key_next(self):
+        &#39;&#39;&#39; Get a new unique numeric group key.
+        &#39;&#39;&#39;
+        return self.numeric_key_max + 1
+
+    def get_create(self, label):
+        &#39;&#39;&#39; Get or create a parameter `c3d.group.Group`.&#39;&#39;&#39;
+        label = label.upper()
+        group = self.get(label)
+        if group is None:
+            group = self.add_group(self.numeric_key_next, label, label + &#39; group&#39;)
+        return group
+
+    @property
+    def point_group(self):
+        &#39;&#39;&#39; Get or create the POINT parameter group.&#39;&#39;&#39;
+        return self.get_create(&#39;POINT&#39;)
+
+    @property
+    def analog_group(self):
+        &#39;&#39;&#39; Get or create the ANALOG parameter group.&#39;&#39;&#39;
+        return self.get_create(&#39;ANALOG&#39;)
+
+    @property
+    def trial_group(self):
+        &#39;&#39;&#39; Get or create the TRIAL parameter group.&#39;&#39;&#39;
+        return self.get_create(&#39;TRIAL&#39;)
+
+    def add_group(self, group_id, name, desc):
+        &#39;&#39;&#39;Add a new parameter group. See Manager.add_group() for more information.
+
+        Returns
+        -------
+        group : `c3d.group.Group`
+            An editable group instance.
+        &#39;&#39;&#39;
+        return super(Writer, self)._add_group(group_id, name, desc)
+
+    def rename_group(self, *args):
+        &#39;&#39;&#39; Rename a specified parameter group (see Manager._rename_group for args). &#39;&#39;&#39;
+        super(Writer, self)._rename_group(*args)
+
+    def remove_group(self, *args):
+        &#39;&#39;&#39;Remove the parameter group. (see Manager._rename_group for args). &#39;&#39;&#39;
+        super(Writer, self)._remove_group(*args)
+
+    def add_frames(self, frames, index=None):
+        &#39;&#39;&#39;Add frames to this writer instance.
+
+        Parameters
+        ----------
+        frames : Single or sequence of (point, analog) pairs
+            A sequence or frame of frame data to add to the writer.
+        index : int or None
+            Insert the frame or sequence at the index (the first sequence frame will be inserted at the given `index`).
+            Note that the index should be relative to 0 rather then the frame number provided by read_frames()!
+        &#39;&#39;&#39;
+        sh = np.shape(frames)
+        # Single frame
+        if len(sh) &lt; 2:
+            frames = [frames]
+            sh = np.shape(frames)
+
+        # Check data shapes match
+        if len(self._frames) &gt; 0:
+            point0, analog0 = self._frames[0]
+            psh, ash = np.shape(point0), np.shape(analog0)
+            for f in frames:
+                if np.shape(f[0]) != psh:
+                    raise ValueError(
+                        &#39;Shape of analog data does not previous frames. Expexted shape {}, was {}.&#39;.format(
+                            str(psh), str(np.shape(f[0]))
+                        ))
+                if np.shape(f[1]) != ash:
+                    raise ValueError(
+                        &#39;Shape of analog data does not previous frames. Expexted shape {}, was {}.&#39;.format(
+                            str(ash), str(np.shape(f[1]))
+                        ))
+
+        # Sequence of invalid shape
+        if sh[1] != 2:
+            raise ValueError(
+                &#39;Expected frame input to be sequence of point and analog pairs on form (None, 2). &#39; +
+                &#39;Input was of shape {}.&#39;.format(str(sh)))
+
+        if index is not None:
+            self._frames[index:index] = frames
+        else:
+            self._frames.extend(frames)
+
+    def set_point_labels(self, labels):
+        &#39;&#39;&#39; Set point data labels.
+
+        Parameters
+        ----------
+        labels : iterable
+            Set POINT:LABELS parameter entry from a set of string labels.
+        &#39;&#39;&#39;
+        grp = self.point_group
+        if labels is None:
+            grp.add_empty_array(&#39;LABELS&#39;, &#39;Point labels.&#39;)
+        else:
+            label_str, label_max_size = utils.pack_labels(labels)
+            grp.add_str(&#39;LABELS&#39;, &#39;Point labels.&#39;, label_str, label_max_size, len(labels))
+
+    def set_analog_labels(self, labels):
+        &#39;&#39;&#39; Set analog data labels.
+
+        Parameters
+        ----------
+        labels : iterable
+            Set ANALOG:LABELS parameter entry from a set of string labels.
+        &#39;&#39;&#39;
+        grp = self.analog_group
+        if labels is None:
+            grp.add_empty_array(&#39;LABELS&#39;, &#39;Analog labels.&#39;)
+        else:
+            label_str, label_max_size = utils.pack_labels(labels)
+            grp.add_str(&#39;LABELS&#39;, &#39;Analog labels.&#39;, label_str, label_max_size, len(labels))
+
+    def set_analog_general_scale(self, value):
+        &#39;&#39;&#39; Set ANALOG:GEN_SCALE factor (uniform analog scale factor).
+        &#39;&#39;&#39;
+        self.analog_group.set(&#39;GEN_SCALE&#39;, &#39;Analog general scale factor&#39;, 4, &#39;&lt;f&#39;, value)
+
+    def set_analog_scales(self, values):
+        &#39;&#39;&#39; Set ANALOG:SCALE factors (per channel scale factor).
+
+        Parameters
+        ----------
+        values : iterable or None
+            Iterable containing individual scale factors (float32) for scaling analog channel data.
+        &#39;&#39;&#39;
+        if utils.is_iterable(values):
+            data = np.array([v for v in values], dtype=np.float32)
+            self.analog_group.set_array(&#39;SCALE&#39;, &#39;Analog channel scale factors&#39;, data)
+        elif values is None:
+            self.analog_group.set_empty_array(&#39;SCALE&#39;, &#39;Analog channel scale factors&#39;)
+        else:
+            raise ValueError(&#39;Expected iterable containing analog scale factors.&#39;)
+
+    def set_analog_offsets(self, values):
+        &#39;&#39;&#39; Set ANALOG:OFFSET offsets (per channel offset).
+
+        Parameters
+        ----------
+        values : iterable or None
+            Iterable containing individual offsets (int16) for encoding analog channel data.
+        &#39;&#39;&#39;
+        if utils.is_iterable(values):
+            data = np.array([v for v in values], dtype=np.int16)
+            self.analog_group.set_array(&#39;OFFSET&#39;, &#39;Analog channel offsets&#39;, data)
+        elif values is None:
+            self.analog_group.set_empty_array(&#39;OFFSET&#39;, &#39;Analog channel offsets&#39;)
+        else:
+            raise ValueError(&#39;Expected iterable containing analog data offsets.&#39;)
+
+    def set_start_frame(self, frame=1):
+        &#39;&#39;&#39; Set the &#39;TRIAL:ACTUAL_START_FIELD&#39; parameter and header.first_frame entry.
+
+        Parameters
+        ----------
+        frame : int
+            Number for the first frame recorded in the file.
+            Frame counter for a trial recording always start at 1 for the first frame.
+        &#39;&#39;&#39;
+        self.trial_group.set(&#39;ACTUAL_START_FIELD&#39;, &#39;Actual start frame&#39;, 2, &#39;&lt;I&#39;, frame, 2)
+        if frame &lt; 65535:
+            self._header.first_frame = np.uint16(frame)
+        else:
+            self._header.first_frame = np.uint16(65535)
+
+    def _set_last_frame(self, frame):
+        &#39;&#39;&#39; Sets the &#39;TRIAL:ACTUAL_END_FIELD&#39; parameter and header.last_frame entry.
+        &#39;&#39;&#39;
+        self.trial_group.set(&#39;ACTUAL_END_FIELD&#39;, &#39;Actual end frame&#39;, 2, &#39;&lt;I&#39;, frame, 2)
+        self._header.last_frame = np.uint16(min(frame, 65535))
+
+    def set_screen_axis(self, X=&#39;+X&#39;, Y=&#39;+Y&#39;):
+        &#39;&#39;&#39; Set the X_SCREEN and Y_SCREEN parameters in the POINT group.
+
+        Parameters
+        ----------
+        X : str
+            Two byte string with first character indicating positive or negative axis (+/-),
+            and the second axis (X/Y/Z). Example strings &#39;+X&#39; or &#39;-Y&#39;
+        Y : str
+            Second axis string with same format as Y. Determines the second Y screen axis.
+        &#39;&#39;&#39;
+        if len(X) != 2:
+            raise ValueError(&#39;Expected string literal to be a 2 character string for the X_SCREEN parameter.&#39;)
+        if len(Y) != 2:
+            raise ValueError(&#39;Expected string literal to be a 2 character string for the Y_SCREEN parameter.&#39;)
+        group = self.point_group
+        group.set_str(&#39;X_SCREEN&#39;, &#39;X_SCREEN parameter&#39;, X)
+        group.set_str(&#39;Y_SCREEN&#39;, &#39;Y_SCREEN parameter&#39;, Y)
+
+    def write(self, handle):
+        &#39;&#39;&#39;Write metadata, point and analog frames to a file handle.
+
+        Parameters
+        ----------
+        handle : file
+            Write metadata and C3D motion frames to the given file handle. The
+            writer does not close the handle.
+        &#39;&#39;&#39;
+        if not self._frames:
+            raise RuntimeError(&#39;Attempted to write empty file.&#39;)
+
+        points, analog = self._frames[0]
+        ppf = len(points)
+        apf = len(analog)
+
+        first_frame = self.first_frame
+        if first_frame &lt;= 0:  # Bad value
+            first_frame = 1
+        nframes = len(self._frames)
+        last_frame = first_frame + nframes - 1
+
+        UINT16_MAX = 65535
+
+        # POINT group
+        group = self.point_group
+        group.set(&#39;USED&#39;, &#39;Number of point samples&#39;, 2, &#39;&lt;H&#39;, ppf)
+        group.set(&#39;FRAMES&#39;, &#39;Total frame count&#39;, 2, &#39;&lt;H&#39;, min(UINT16_MAX, nframes))
+        if nframes &gt;= UINT16_MAX:
+            # Should be floating point
+            group.set(&#39;LONG_FRAMES&#39;, &#39;Total frame count&#39;, 4, &#39;&lt;f&#39;, nframes)
+        elif &#39;LONG_FRAMES&#39; in group:
+            # Docs states it should not exist if frame_count &lt; 65535
+            group.remove_param(&#39;LONG_FRAMES&#39;)
+        group.set(&#39;DATA_START&#39;, &#39;First data block containing frame samples.&#39;, 2, &#39;&lt;H&#39;, 0)
+        group.set(&#39;SCALE&#39;, &#39;Point data scaling factor&#39;, 4, &#39;&lt;f&#39;, self.point_scale)
+        group.set(&#39;RATE&#39;, &#39;Point data sample rate&#39;, 4, &#39;&lt;f&#39;, self.point_rate)
+        # Optional
+        if &#39;UNITS&#39; not in group:
+            group.add_str(&#39;UNITS&#39;, &#39;Units used for point data measurements.&#39;, &#39;mm&#39;)
+        if &#39;DESCRIPTIONS&#39; not in group:
+            group.add_str(&#39;DESCRIPTIONS&#39;, &#39;Channel descriptions.&#39;, &#39;  &#39; * ppf, 2, ppf)
+
+        # ANALOG group
+        group = self.analog_group
+        group.set(&#39;USED&#39;, &#39;Analog channel count&#39;, 2, &#39;&lt;H&#39;, apf)
+        group.set(&#39;RATE&#39;, &#39;Analog samples per second&#39;, 4, &#39;&lt;f&#39;, self.analog_rate)
+        if &#39;GEN_SCALE&#39; not in group:
+            self.set_analog_general_scale(1.0)
+        # Optional
+        if &#39;SCALE&#39; not in group:
+            self.set_analog_scales(None)
+        if &#39;OFFSET&#39; not in group:
+            self.set_analog_offsets(None)
+        if &#39;DESCRIPTIONS&#39; not in group:
+            group.add_str(&#39;DESCRIPTIONS&#39;, &#39;Channel descriptions.&#39;, &#39;  &#39; * apf, 2, apf)
+
+        # TRIAL group
+        self.set_start_frame(first_frame)
+        self._set_last_frame(last_frame)
+
+        # sync parameter information to header.
+        start_block = self.parameter_blocks() + 2
+        self.get(&#39;POINT:DATA_START&#39;).bytes = struct.pack(&#39;&lt;H&#39;, start_block)
+        self._header.data_block = np.uint16(start_block)
+        self._header.point_count = np.uint16(ppf)
+        self._header.analog_count = np.uint16(np.prod(np.shape(analog)))
+
+        self._write_metadata(handle)
+        self._write_frames(handle)
+
+    def _pad_block(self, handle):
+        &#39;&#39;&#39;Pad the file with 0s to the end of the next block boundary.&#39;&#39;&#39;
+        extra = handle.tell() % 512
+        if extra:
+            handle.write(b&#39;\x00&#39; * (512 - extra))
+
+    def _write_metadata(self, handle):
+        &#39;&#39;&#39;Write metadata to a file handle.
+
+        Parameters
+        ----------
+        handle : file
+            Write metadata and C3D motion frames to the given file handle. The
+            writer does not close the handle.
+        &#39;&#39;&#39;
+        self._check_metadata()
+
+        # Header
+        self._header.write(handle)
+        self._pad_block(handle)
+        assert handle.tell() == 512
+
+        # Groups
+        handle.write(struct.pack(
+            &#39;BBBB&#39;, 0, 0, self.parameter_blocks(), self._dtypes.processor))
+        for group_id, group in self.listed():
+            group._data.write(group_id, handle)
+
+        # Padding
+        self._pad_block(handle)
+        while handle.tell() != 512 * (self.header.data_block - 1):
+            handle.write(b&#39;\x00&#39; * 512)
+
+    def _write_frames(self, handle):
+        &#39;&#39;&#39;Write our frame data to the given file handle.
+
+        Parameters
+        ----------
+        handle : file
+            Write metadata and C3D motion frames to the given file handle. The
+            writer does not close the handle.
+        &#39;&#39;&#39;
+        assert handle.tell() == 512 * (self._header.data_block - 1)
+        scale_mag = abs(self.point_scale)
+        is_float = self.point_scale &lt; 0
+        if is_float:
+            point_dtype = self._dtypes.float32
+            point_scale = 1.0
+        else:
+            point_dtype = self._dtypes.int16
+            point_scale = scale_mag
+        raw = np.zeros((self.point_used, 4), point_dtype)
+
+        analog_scales, analog_offsets = self.get_analog_transform()
+        analog_scales_inv = 1.0 / analog_scales
+
+        for points, analog in self._frames:
+            # Transform point data
+            valid = points[:, 3] &gt;= 0.0
+            raw[~valid, 3] = -1
+            raw[valid, :3] = points[valid, :3] / point_scale
+            raw[valid, 3] = np.bitwise_or(np.rint(points[valid, 3] / scale_mag).astype(np.uint8),
+                                          (points[valid, 4].astype(np.uint16) &lt;&lt; 8),
+                                          dtype=np.uint16)
+
+            # Transform analog data
+            analog = analog * analog_scales_inv + analog_offsets
+            analog = analog.T
+
+            # Write
+            analog = analog.astype(point_dtype)
+            handle.write(raw.tobytes())
+            handle.write(analog.tobytes())
+        self._pad_block(handle)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="c3d.writer.Writer"><code class="flex name class">
+<span>class <span class="ident">Writer</span></span>
+<span>(</span><span>point_rate=480.0, analog_rate=0.0, point_scale=-1.0)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This class writes metadata and frames to a C3D file.</p>
+<p>For example, to read an existing C3D file, apply some sort of data
+processing to the frames, and write out another C3D file::</p>
+<pre><code class="python-repl">&gt;&gt;&gt; r = c3d.Reader(open('data.c3d', 'rb'))
+&gt;&gt;&gt; w = c3d.Writer()
+&gt;&gt;&gt; w.add_frames(process_frames_somehow(r.read_frames()))
+&gt;&gt;&gt; with open('smoothed.c3d', 'wb') as handle:
+&gt;&gt;&gt;     w.write(handle)
+</code></pre>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>point_rate</code></strong> :&ensp;<code>float</code>, optional</dt>
+<dd>The frame rate of the data. Defaults to 480.</dd>
+<dt><strong><code>analog_rate</code></strong> :&ensp;<code>float</code>, optional</dt>
+<dd>The number of analog samples per frame. Defaults to 0.</dd>
+<dt><strong><code>point_scale</code></strong> :&ensp;<code>float</code>, optional</dt>
+<dd>The scale factor for point data. Defaults to -1 (i.e., "check the
+POINT:SCALE parameter").</dd>
+<dt><strong><code>point_units</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The units that the point numbers represent. Defaults to <code>'mm
+'</code>.</dd>
+<dt><strong><code>gen_scale</code></strong> :&ensp;<code>float</code>, optional</dt>
+<dd>General scaling factor for analog data. Defaults to 1.</dd>
+</dl>
+<p>Set minimal metadata for this writer.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Writer(Manager):
+    &#39;&#39;&#39;This class writes metadata and frames to a C3D file.
+
+    For example, to read an existing C3D file, apply some sort of data
+    processing to the frames, and write out another C3D file::
+
+    &gt;&gt;&gt; r = c3d.Reader(open(&#39;data.c3d&#39;, &#39;rb&#39;))
+    &gt;&gt;&gt; w = c3d.Writer()
+    &gt;&gt;&gt; w.add_frames(process_frames_somehow(r.read_frames()))
+    &gt;&gt;&gt; with open(&#39;smoothed.c3d&#39;, &#39;wb&#39;) as handle:
+    &gt;&gt;&gt;     w.write(handle)
+
+    Parameters
+    ----------
+    point_rate : float, optional
+        The frame rate of the data. Defaults to 480.
+    analog_rate : float, optional
+        The number of analog samples per frame. Defaults to 0.
+    point_scale : float, optional
+        The scale factor for point data. Defaults to -1 (i.e., &#34;check the
+        POINT:SCALE parameter&#34;).
+    point_units : str, optional
+        The units that the point numbers represent. Defaults to ``&#39;mm  &#39;``.
+    gen_scale : float, optional
+        General scaling factor for analog data. Defaults to 1.
+    &#39;&#39;&#39;
+
+    def __init__(self,
+                 point_rate=480.,
+                 analog_rate=0.,
+                 point_scale=-1.):
+        &#39;&#39;&#39;Set minimal metadata for this writer.
+
+        &#39;&#39;&#39;
+        self._dtypes = DataTypes()  # Only support INTEL format from writing
+        super(Writer, self).__init__()
+
+        # Header properties
+        self._header.frame_rate = np.float32(point_rate)
+        self._header.scale_factor = np.float32(point_scale)
+        self.analog_rate = analog_rate
+        self._frames = []
+
+    @staticmethod
+    def from_reader(reader, conversion=None):
+        &#39;&#39;&#39; Convert a `c3d.reader.Reader` to a persistent `c3d.writer.Writer` instance.
+
+        Parameters
+        ----------
+        source : `c3d.reader.Reader`
+            Source to copy data from.
+        conversion : str
+            Conversion mode, None is equivalent to the default mode. Supported modes are:
+
+                &#39;convert&#39;       - (Default) Convert the Reader to a Writer
+                                  instance and explicitly delete the Reader.
+
+                &#39;copy&#39;          - Reader objects will be deep copied.
+
+                &#39;copy_metadata&#39; - Similar to &#39;copy&#39; but only copies metadata and
+                                  not point and analog frame data.
+
+                &#39;copy_shallow&#39;  - Similar to &#39;copy&#39; but group parameters are
+                                  not copied.
+
+                &#39;copy_header&#39;   - Similar to &#39;copy_shallow&#39; but only the
+                                  header is copied (frame data is not copied).
+
+        Returns
+        -------
+        param : `c3d.writer.Writer`
+            A writeable and persistent representation of the `c3d.reader.Reader` object.
+
+        Raises
+        ------
+        ValueError
+            If mode string is not equivalent to one of the supported modes.
+            If attempting to convert non-Intel files using mode other than &#39;shallow_copy&#39;.
+        &#39;&#39;&#39;
+        writer = Writer()
+        # Modes
+        is_header_only = conversion == &#39;copy_header&#39;
+        is_meta_copy = conversion == &#39;copy_metadata&#39;
+        is_meta_only = is_header_only or is_meta_copy
+        is_consume = conversion == &#39;convert&#39; or conversion is None
+        is_shallow_copy = conversion == &#39;shallow_copy&#39; or is_header_only
+        is_deep_copy = conversion == &#39;copy&#39; or is_meta_copy
+        # Verify mode
+        if not (is_consume or is_shallow_copy or is_deep_copy):
+            raise ValueError(
+                &#34;Unknown mode argument %s. Supported modes are: &#39;consume&#39;, &#39;copy&#39;, or &#39;shallow_copy&#39;&#34;.format(
+                    conversion
+                ))
+        if not reader._dtypes.is_ieee and not is_shallow_copy:
+            # Can&#39;t copy/consume non-Intel files due to the uncertainty of converting parameter data.
+            raise ValueError(
+                &#34;File was read in %s format and only &#39;shallow_copy&#39; mode is supported for non Intel files!&#34;.format(
+                    reader._dtypes.proc_type
+                ))
+
+        if is_consume:
+            writer._header = reader._header
+            writer._groups = reader._groups
+        elif is_deep_copy:
+            writer._header = copy.deepcopy(reader._header)
+            writer._groups = copy.deepcopy(reader._groups)
+        elif is_shallow_copy:
+            # Only copy header (no groups)
+            writer._header = copy.deepcopy(reader._header)
+            # Reformat header events
+            writer._header.encode_events(writer._header.events)
+
+            # Transfer a minimal set parameters
+            writer.set_start_frame(reader.first_frame)
+            writer.set_point_labels(reader.point_labels)
+            writer.set_analog_labels(reader.analog_labels)
+
+            gen_scale, analog_scales, analog_offsets = reader.get_analog_transform_parameters()
+            writer.set_analog_general_scale(gen_scale)
+            writer.set_analog_scales(analog_scales)
+            writer.set_analog_offsets(analog_offsets)
+
+        if not is_meta_only:
+            # Copy frames
+            for (i, point, analog) in reader.read_frames(copy=True, camera_sum=False):
+                writer.add_frames((point, analog))
+        if is_consume:
+            # Cleanup
+            reader._header = None
+            reader._groups = None
+            del reader
+        return writer
+
+    @property
+    def analog_rate(self):
+        return super(Writer, self).analog_rate
+
+    @analog_rate.setter
+    def analog_rate(self, value):
+        per_frame_rate = value / self.point_rate
+        assert float(per_frame_rate).is_integer(), &#34;Analog rate must be a multiple of the point rate.&#34;
+        self._header.analog_per_frame = np.uint16(per_frame_rate)
+
+    @property
+    def numeric_key_max(self):
+        &#39;&#39;&#39; Get the largest numeric key.
+        &#39;&#39;&#39;
+        num = 0
+        if len(self._groups) &gt; 0:
+            for i in self._groups.keys():
+                if isinstance(i, int):
+                    num = max(i, num)
+        return num
+
+    @property
+    def numeric_key_next(self):
+        &#39;&#39;&#39; Get a new unique numeric group key.
+        &#39;&#39;&#39;
+        return self.numeric_key_max + 1
+
+    def get_create(self, label):
+        &#39;&#39;&#39; Get or create a parameter `c3d.group.Group`.&#39;&#39;&#39;
+        label = label.upper()
+        group = self.get(label)
+        if group is None:
+            group = self.add_group(self.numeric_key_next, label, label + &#39; group&#39;)
+        return group
+
+    @property
+    def point_group(self):
+        &#39;&#39;&#39; Get or create the POINT parameter group.&#39;&#39;&#39;
+        return self.get_create(&#39;POINT&#39;)
+
+    @property
+    def analog_group(self):
+        &#39;&#39;&#39; Get or create the ANALOG parameter group.&#39;&#39;&#39;
+        return self.get_create(&#39;ANALOG&#39;)
+
+    @property
+    def trial_group(self):
+        &#39;&#39;&#39; Get or create the TRIAL parameter group.&#39;&#39;&#39;
+        return self.get_create(&#39;TRIAL&#39;)
+
+    def add_group(self, group_id, name, desc):
+        &#39;&#39;&#39;Add a new parameter group. See Manager.add_group() for more information.
+
+        Returns
+        -------
+        group : `c3d.group.Group`
+            An editable group instance.
+        &#39;&#39;&#39;
+        return super(Writer, self)._add_group(group_id, name, desc)
+
+    def rename_group(self, *args):
+        &#39;&#39;&#39; Rename a specified parameter group (see Manager._rename_group for args). &#39;&#39;&#39;
+        super(Writer, self)._rename_group(*args)
+
+    def remove_group(self, *args):
+        &#39;&#39;&#39;Remove the parameter group. (see Manager._rename_group for args). &#39;&#39;&#39;
+        super(Writer, self)._remove_group(*args)
+
+    def add_frames(self, frames, index=None):
+        &#39;&#39;&#39;Add frames to this writer instance.
+
+        Parameters
+        ----------
+        frames : Single or sequence of (point, analog) pairs
+            A sequence or frame of frame data to add to the writer.
+        index : int or None
+            Insert the frame or sequence at the index (the first sequence frame will be inserted at the given `index`).
+            Note that the index should be relative to 0 rather then the frame number provided by read_frames()!
+        &#39;&#39;&#39;
+        sh = np.shape(frames)
+        # Single frame
+        if len(sh) &lt; 2:
+            frames = [frames]
+            sh = np.shape(frames)
+
+        # Check data shapes match
+        if len(self._frames) &gt; 0:
+            point0, analog0 = self._frames[0]
+            psh, ash = np.shape(point0), np.shape(analog0)
+            for f in frames:
+                if np.shape(f[0]) != psh:
+                    raise ValueError(
+                        &#39;Shape of analog data does not previous frames. Expexted shape {}, was {}.&#39;.format(
+                            str(psh), str(np.shape(f[0]))
+                        ))
+                if np.shape(f[1]) != ash:
+                    raise ValueError(
+                        &#39;Shape of analog data does not previous frames. Expexted shape {}, was {}.&#39;.format(
+                            str(ash), str(np.shape(f[1]))
+                        ))
+
+        # Sequence of invalid shape
+        if sh[1] != 2:
+            raise ValueError(
+                &#39;Expected frame input to be sequence of point and analog pairs on form (None, 2). &#39; +
+                &#39;Input was of shape {}.&#39;.format(str(sh)))
+
+        if index is not None:
+            self._frames[index:index] = frames
+        else:
+            self._frames.extend(frames)
+
+    def set_point_labels(self, labels):
+        &#39;&#39;&#39; Set point data labels.
+
+        Parameters
+        ----------
+        labels : iterable
+            Set POINT:LABELS parameter entry from a set of string labels.
+        &#39;&#39;&#39;
+        grp = self.point_group
+        if labels is None:
+            grp.add_empty_array(&#39;LABELS&#39;, &#39;Point labels.&#39;)
+        else:
+            label_str, label_max_size = utils.pack_labels(labels)
+            grp.add_str(&#39;LABELS&#39;, &#39;Point labels.&#39;, label_str, label_max_size, len(labels))
+
+    def set_analog_labels(self, labels):
+        &#39;&#39;&#39; Set analog data labels.
+
+        Parameters
+        ----------
+        labels : iterable
+            Set ANALOG:LABELS parameter entry from a set of string labels.
+        &#39;&#39;&#39;
+        grp = self.analog_group
+        if labels is None:
+            grp.add_empty_array(&#39;LABELS&#39;, &#39;Analog labels.&#39;)
+        else:
+            label_str, label_max_size = utils.pack_labels(labels)
+            grp.add_str(&#39;LABELS&#39;, &#39;Analog labels.&#39;, label_str, label_max_size, len(labels))
+
+    def set_analog_general_scale(self, value):
+        &#39;&#39;&#39; Set ANALOG:GEN_SCALE factor (uniform analog scale factor).
+        &#39;&#39;&#39;
+        self.analog_group.set(&#39;GEN_SCALE&#39;, &#39;Analog general scale factor&#39;, 4, &#39;&lt;f&#39;, value)
+
+    def set_analog_scales(self, values):
+        &#39;&#39;&#39; Set ANALOG:SCALE factors (per channel scale factor).
+
+        Parameters
+        ----------
+        values : iterable or None
+            Iterable containing individual scale factors (float32) for scaling analog channel data.
+        &#39;&#39;&#39;
+        if utils.is_iterable(values):
+            data = np.array([v for v in values], dtype=np.float32)
+            self.analog_group.set_array(&#39;SCALE&#39;, &#39;Analog channel scale factors&#39;, data)
+        elif values is None:
+            self.analog_group.set_empty_array(&#39;SCALE&#39;, &#39;Analog channel scale factors&#39;)
+        else:
+            raise ValueError(&#39;Expected iterable containing analog scale factors.&#39;)
+
+    def set_analog_offsets(self, values):
+        &#39;&#39;&#39; Set ANALOG:OFFSET offsets (per channel offset).
+
+        Parameters
+        ----------
+        values : iterable or None
+            Iterable containing individual offsets (int16) for encoding analog channel data.
+        &#39;&#39;&#39;
+        if utils.is_iterable(values):
+            data = np.array([v for v in values], dtype=np.int16)
+            self.analog_group.set_array(&#39;OFFSET&#39;, &#39;Analog channel offsets&#39;, data)
+        elif values is None:
+            self.analog_group.set_empty_array(&#39;OFFSET&#39;, &#39;Analog channel offsets&#39;)
+        else:
+            raise ValueError(&#39;Expected iterable containing analog data offsets.&#39;)
+
+    def set_start_frame(self, frame=1):
+        &#39;&#39;&#39; Set the &#39;TRIAL:ACTUAL_START_FIELD&#39; parameter and header.first_frame entry.
+
+        Parameters
+        ----------
+        frame : int
+            Number for the first frame recorded in the file.
+            Frame counter for a trial recording always start at 1 for the first frame.
+        &#39;&#39;&#39;
+        self.trial_group.set(&#39;ACTUAL_START_FIELD&#39;, &#39;Actual start frame&#39;, 2, &#39;&lt;I&#39;, frame, 2)
+        if frame &lt; 65535:
+            self._header.first_frame = np.uint16(frame)
+        else:
+            self._header.first_frame = np.uint16(65535)
+
+    def _set_last_frame(self, frame):
+        &#39;&#39;&#39; Sets the &#39;TRIAL:ACTUAL_END_FIELD&#39; parameter and header.last_frame entry.
+        &#39;&#39;&#39;
+        self.trial_group.set(&#39;ACTUAL_END_FIELD&#39;, &#39;Actual end frame&#39;, 2, &#39;&lt;I&#39;, frame, 2)
+        self._header.last_frame = np.uint16(min(frame, 65535))
+
+    def set_screen_axis(self, X=&#39;+X&#39;, Y=&#39;+Y&#39;):
+        &#39;&#39;&#39; Set the X_SCREEN and Y_SCREEN parameters in the POINT group.
+
+        Parameters
+        ----------
+        X : str
+            Two byte string with first character indicating positive or negative axis (+/-),
+            and the second axis (X/Y/Z). Example strings &#39;+X&#39; or &#39;-Y&#39;
+        Y : str
+            Second axis string with same format as Y. Determines the second Y screen axis.
+        &#39;&#39;&#39;
+        if len(X) != 2:
+            raise ValueError(&#39;Expected string literal to be a 2 character string for the X_SCREEN parameter.&#39;)
+        if len(Y) != 2:
+            raise ValueError(&#39;Expected string literal to be a 2 character string for the Y_SCREEN parameter.&#39;)
+        group = self.point_group
+        group.set_str(&#39;X_SCREEN&#39;, &#39;X_SCREEN parameter&#39;, X)
+        group.set_str(&#39;Y_SCREEN&#39;, &#39;Y_SCREEN parameter&#39;, Y)
+
+    def write(self, handle):
+        &#39;&#39;&#39;Write metadata, point and analog frames to a file handle.
+
+        Parameters
+        ----------
+        handle : file
+            Write metadata and C3D motion frames to the given file handle. The
+            writer does not close the handle.
+        &#39;&#39;&#39;
+        if not self._frames:
+            raise RuntimeError(&#39;Attempted to write empty file.&#39;)
+
+        points, analog = self._frames[0]
+        ppf = len(points)
+        apf = len(analog)
+
+        first_frame = self.first_frame
+        if first_frame &lt;= 0:  # Bad value
+            first_frame = 1
+        nframes = len(self._frames)
+        last_frame = first_frame + nframes - 1
+
+        UINT16_MAX = 65535
+
+        # POINT group
+        group = self.point_group
+        group.set(&#39;USED&#39;, &#39;Number of point samples&#39;, 2, &#39;&lt;H&#39;, ppf)
+        group.set(&#39;FRAMES&#39;, &#39;Total frame count&#39;, 2, &#39;&lt;H&#39;, min(UINT16_MAX, nframes))
+        if nframes &gt;= UINT16_MAX:
+            # Should be floating point
+            group.set(&#39;LONG_FRAMES&#39;, &#39;Total frame count&#39;, 4, &#39;&lt;f&#39;, nframes)
+        elif &#39;LONG_FRAMES&#39; in group:
+            # Docs states it should not exist if frame_count &lt; 65535
+            group.remove_param(&#39;LONG_FRAMES&#39;)
+        group.set(&#39;DATA_START&#39;, &#39;First data block containing frame samples.&#39;, 2, &#39;&lt;H&#39;, 0)
+        group.set(&#39;SCALE&#39;, &#39;Point data scaling factor&#39;, 4, &#39;&lt;f&#39;, self.point_scale)
+        group.set(&#39;RATE&#39;, &#39;Point data sample rate&#39;, 4, &#39;&lt;f&#39;, self.point_rate)
+        # Optional
+        if &#39;UNITS&#39; not in group:
+            group.add_str(&#39;UNITS&#39;, &#39;Units used for point data measurements.&#39;, &#39;mm&#39;)
+        if &#39;DESCRIPTIONS&#39; not in group:
+            group.add_str(&#39;DESCRIPTIONS&#39;, &#39;Channel descriptions.&#39;, &#39;  &#39; * ppf, 2, ppf)
+
+        # ANALOG group
+        group = self.analog_group
+        group.set(&#39;USED&#39;, &#39;Analog channel count&#39;, 2, &#39;&lt;H&#39;, apf)
+        group.set(&#39;RATE&#39;, &#39;Analog samples per second&#39;, 4, &#39;&lt;f&#39;, self.analog_rate)
+        if &#39;GEN_SCALE&#39; not in group:
+            self.set_analog_general_scale(1.0)
+        # Optional
+        if &#39;SCALE&#39; not in group:
+            self.set_analog_scales(None)
+        if &#39;OFFSET&#39; not in group:
+            self.set_analog_offsets(None)
+        if &#39;DESCRIPTIONS&#39; not in group:
+            group.add_str(&#39;DESCRIPTIONS&#39;, &#39;Channel descriptions.&#39;, &#39;  &#39; * apf, 2, apf)
+
+        # TRIAL group
+        self.set_start_frame(first_frame)
+        self._set_last_frame(last_frame)
+
+        # sync parameter information to header.
+        start_block = self.parameter_blocks() + 2
+        self.get(&#39;POINT:DATA_START&#39;).bytes = struct.pack(&#39;&lt;H&#39;, start_block)
+        self._header.data_block = np.uint16(start_block)
+        self._header.point_count = np.uint16(ppf)
+        self._header.analog_count = np.uint16(np.prod(np.shape(analog)))
+
+        self._write_metadata(handle)
+        self._write_frames(handle)
+
+    def _pad_block(self, handle):
+        &#39;&#39;&#39;Pad the file with 0s to the end of the next block boundary.&#39;&#39;&#39;
+        extra = handle.tell() % 512
+        if extra:
+            handle.write(b&#39;\x00&#39; * (512 - extra))
+
+    def _write_metadata(self, handle):
+        &#39;&#39;&#39;Write metadata to a file handle.
+
+        Parameters
+        ----------
+        handle : file
+            Write metadata and C3D motion frames to the given file handle. The
+            writer does not close the handle.
+        &#39;&#39;&#39;
+        self._check_metadata()
+
+        # Header
+        self._header.write(handle)
+        self._pad_block(handle)
+        assert handle.tell() == 512
+
+        # Groups
+        handle.write(struct.pack(
+            &#39;BBBB&#39;, 0, 0, self.parameter_blocks(), self._dtypes.processor))
+        for group_id, group in self.listed():
+            group._data.write(group_id, handle)
+
+        # Padding
+        self._pad_block(handle)
+        while handle.tell() != 512 * (self.header.data_block - 1):
+            handle.write(b&#39;\x00&#39; * 512)
+
+    def _write_frames(self, handle):
+        &#39;&#39;&#39;Write our frame data to the given file handle.
+
+        Parameters
+        ----------
+        handle : file
+            Write metadata and C3D motion frames to the given file handle. The
+            writer does not close the handle.
+        &#39;&#39;&#39;
+        assert handle.tell() == 512 * (self._header.data_block - 1)
+        scale_mag = abs(self.point_scale)
+        is_float = self.point_scale &lt; 0
+        if is_float:
+            point_dtype = self._dtypes.float32
+            point_scale = 1.0
+        else:
+            point_dtype = self._dtypes.int16
+            point_scale = scale_mag
+        raw = np.zeros((self.point_used, 4), point_dtype)
+
+        analog_scales, analog_offsets = self.get_analog_transform()
+        analog_scales_inv = 1.0 / analog_scales
+
+        for points, analog in self._frames:
+            # Transform point data
+            valid = points[:, 3] &gt;= 0.0
+            raw[~valid, 3] = -1
+            raw[valid, :3] = points[valid, :3] / point_scale
+            raw[valid, 3] = np.bitwise_or(np.rint(points[valid, 3] / scale_mag).astype(np.uint8),
+                                          (points[valid, 4].astype(np.uint16) &lt;&lt; 8),
+                                          dtype=np.uint16)
+
+            # Transform analog data
+            analog = analog * analog_scales_inv + analog_offsets
+            analog = analog.T
+
+            # Write
+            analog = analog.astype(point_dtype)
+            handle.write(raw.tobytes())
+            handle.write(analog.tobytes())
+        self._pad_block(handle)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="c3d.manager.Manager" href="manager.html#c3d.manager.Manager">Manager</a></li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="c3d.writer.Writer.from_reader"><code class="name flex">
+<span>def <span class="ident">from_reader</span></span>(<span>reader, conversion=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Convert a <code><a title="c3d.reader.Reader" href="reader.html#c3d.reader.Reader">Reader</a></code> to a persistent <code><a title="c3d.writer.Writer" href="#c3d.writer.Writer">Writer</a></code> instance.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>source</code></strong> :&ensp;<code><a title="c3d.reader.Reader" href="reader.html#c3d.reader.Reader">Reader</a></code></dt>
+<dd>Source to copy data from.</dd>
+<dt><strong><code>conversion</code></strong> :&ensp;<code>str</code></dt>
+<dd>Conversion mode, None is equivalent to the default mode. Supported modes are:<pre><code>'convert'       - (Default) Convert the Reader to a Writer
+                  instance and explicitly delete the Reader.
+
+'copy'          - Reader objects will be deep copied.
+
+'copy_metadata' - Similar to 'copy' but only copies metadata and
+                  not point and analog frame data.
+
+'copy_shallow'  - Similar to 'copy' but group parameters are
+                  not copied.
+
+'copy_header'   - Similar to 'copy_shallow' but only the
+                  header is copied (frame data is not copied).
+</code></pre>
+</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>param</code></strong> :&ensp;<code><a title="c3d.writer.Writer" href="#c3d.writer.Writer">Writer</a></code></dt>
+<dd>A writeable and persistent representation of the <code><a title="c3d.reader.Reader" href="reader.html#c3d.reader.Reader">Reader</a></code> object.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>ValueError</code></dt>
+<dd>If mode string is not equivalent to one of the supported modes.
+If attempting to convert non-Intel files using mode other than 'shallow_copy'.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def from_reader(reader, conversion=None):
+    &#39;&#39;&#39; Convert a `c3d.reader.Reader` to a persistent `c3d.writer.Writer` instance.
+
+    Parameters
+    ----------
+    source : `c3d.reader.Reader`
+        Source to copy data from.
+    conversion : str
+        Conversion mode, None is equivalent to the default mode. Supported modes are:
+
+            &#39;convert&#39;       - (Default) Convert the Reader to a Writer
+                              instance and explicitly delete the Reader.
+
+            &#39;copy&#39;          - Reader objects will be deep copied.
+
+            &#39;copy_metadata&#39; - Similar to &#39;copy&#39; but only copies metadata and
+                              not point and analog frame data.
+
+            &#39;copy_shallow&#39;  - Similar to &#39;copy&#39; but group parameters are
+                              not copied.
+
+            &#39;copy_header&#39;   - Similar to &#39;copy_shallow&#39; but only the
+                              header is copied (frame data is not copied).
+
+    Returns
+    -------
+    param : `c3d.writer.Writer`
+        A writeable and persistent representation of the `c3d.reader.Reader` object.
+
+    Raises
+    ------
+    ValueError
+        If mode string is not equivalent to one of the supported modes.
+        If attempting to convert non-Intel files using mode other than &#39;shallow_copy&#39;.
+    &#39;&#39;&#39;
+    writer = Writer()
+    # Modes
+    is_header_only = conversion == &#39;copy_header&#39;
+    is_meta_copy = conversion == &#39;copy_metadata&#39;
+    is_meta_only = is_header_only or is_meta_copy
+    is_consume = conversion == &#39;convert&#39; or conversion is None
+    is_shallow_copy = conversion == &#39;shallow_copy&#39; or is_header_only
+    is_deep_copy = conversion == &#39;copy&#39; or is_meta_copy
+    # Verify mode
+    if not (is_consume or is_shallow_copy or is_deep_copy):
+        raise ValueError(
+            &#34;Unknown mode argument %s. Supported modes are: &#39;consume&#39;, &#39;copy&#39;, or &#39;shallow_copy&#39;&#34;.format(
+                conversion
+            ))
+    if not reader._dtypes.is_ieee and not is_shallow_copy:
+        # Can&#39;t copy/consume non-Intel files due to the uncertainty of converting parameter data.
+        raise ValueError(
+            &#34;File was read in %s format and only &#39;shallow_copy&#39; mode is supported for non Intel files!&#34;.format(
+                reader._dtypes.proc_type
+            ))
+
+    if is_consume:
+        writer._header = reader._header
+        writer._groups = reader._groups
+    elif is_deep_copy:
+        writer._header = copy.deepcopy(reader._header)
+        writer._groups = copy.deepcopy(reader._groups)
+    elif is_shallow_copy:
+        # Only copy header (no groups)
+        writer._header = copy.deepcopy(reader._header)
+        # Reformat header events
+        writer._header.encode_events(writer._header.events)
+
+        # Transfer a minimal set parameters
+        writer.set_start_frame(reader.first_frame)
+        writer.set_point_labels(reader.point_labels)
+        writer.set_analog_labels(reader.analog_labels)
+
+        gen_scale, analog_scales, analog_offsets = reader.get_analog_transform_parameters()
+        writer.set_analog_general_scale(gen_scale)
+        writer.set_analog_scales(analog_scales)
+        writer.set_analog_offsets(analog_offsets)
+
+    if not is_meta_only:
+        # Copy frames
+        for (i, point, analog) in reader.read_frames(copy=True, camera_sum=False):
+            writer.add_frames((point, analog))
+    if is_consume:
+        # Cleanup
+        reader._header = None
+        reader._groups = None
+        del reader
+    return writer</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="c3d.writer.Writer.analog_group"><code class="name">var <span class="ident">analog_group</span></code></dt>
+<dd>
+<div class="desc"><p>Get or create the ANALOG parameter group.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def analog_group(self):
+    &#39;&#39;&#39; Get or create the ANALOG parameter group.&#39;&#39;&#39;
+    return self.get_create(&#39;ANALOG&#39;)</code></pre>
+</details>
+</dd>
+<dt id="c3d.writer.Writer.numeric_key_max"><code class="name">var <span class="ident">numeric_key_max</span></code></dt>
+<dd>
+<div class="desc"><p>Get the largest numeric key.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def numeric_key_max(self):
+    &#39;&#39;&#39; Get the largest numeric key.
+    &#39;&#39;&#39;
+    num = 0
+    if len(self._groups) &gt; 0:
+        for i in self._groups.keys():
+            if isinstance(i, int):
+                num = max(i, num)
+    return num</code></pre>
+</details>
+</dd>
+<dt id="c3d.writer.Writer.numeric_key_next"><code class="name">var <span class="ident">numeric_key_next</span></code></dt>
+<dd>
+<div class="desc"><p>Get a new unique numeric group key.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def numeric_key_next(self):
+    &#39;&#39;&#39; Get a new unique numeric group key.
+    &#39;&#39;&#39;
+    return self.numeric_key_max + 1</code></pre>
+</details>
+</dd>
+<dt id="c3d.writer.Writer.point_group"><code class="name">var <span class="ident">point_group</span></code></dt>
+<dd>
+<div class="desc"><p>Get or create the POINT parameter group.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def point_group(self):
+    &#39;&#39;&#39; Get or create the POINT parameter group.&#39;&#39;&#39;
+    return self.get_create(&#39;POINT&#39;)</code></pre>
+</details>
+</dd>
+<dt id="c3d.writer.Writer.trial_group"><code class="name">var <span class="ident">trial_group</span></code></dt>
+<dd>
+<div class="desc"><p>Get or create the TRIAL parameter group.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def trial_group(self):
+    &#39;&#39;&#39; Get or create the TRIAL parameter group.&#39;&#39;&#39;
+    return self.get_create(&#39;TRIAL&#39;)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="c3d.writer.Writer.add_frames"><code class="name flex">
+<span>def <span class="ident">add_frames</span></span>(<span>self, frames, index=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Add frames to this writer instance.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>frames</code></strong> :&ensp;<code>Single</code> or <code>sequence</code> of <code>(point, analog) pairs</code></dt>
+<dd>A sequence or frame of frame data to add to the writer.</dd>
+<dt><strong><code>index</code></strong> :&ensp;<code>int</code> or <code>None</code></dt>
+<dd>Insert the frame or sequence at the index (the first sequence frame will be inserted at the given <code>index</code>).
+Note that the index should be relative to 0 rather then the frame number provided by read_frames()!</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_frames(self, frames, index=None):
+    &#39;&#39;&#39;Add frames to this writer instance.
+
+    Parameters
+    ----------
+    frames : Single or sequence of (point, analog) pairs
+        A sequence or frame of frame data to add to the writer.
+    index : int or None
+        Insert the frame or sequence at the index (the first sequence frame will be inserted at the given `index`).
+        Note that the index should be relative to 0 rather then the frame number provided by read_frames()!
+    &#39;&#39;&#39;
+    sh = np.shape(frames)
+    # Single frame
+    if len(sh) &lt; 2:
+        frames = [frames]
+        sh = np.shape(frames)
+
+    # Check data shapes match
+    if len(self._frames) &gt; 0:
+        point0, analog0 = self._frames[0]
+        psh, ash = np.shape(point0), np.shape(analog0)
+        for f in frames:
+            if np.shape(f[0]) != psh:
+                raise ValueError(
+                    &#39;Shape of analog data does not previous frames. Expexted shape {}, was {}.&#39;.format(
+                        str(psh), str(np.shape(f[0]))
+                    ))
+            if np.shape(f[1]) != ash:
+                raise ValueError(
+                    &#39;Shape of analog data does not previous frames. Expexted shape {}, was {}.&#39;.format(
+                        str(ash), str(np.shape(f[1]))
+                    ))
+
+    # Sequence of invalid shape
+    if sh[1] != 2:
+        raise ValueError(
+            &#39;Expected frame input to be sequence of point and analog pairs on form (None, 2). &#39; +
+            &#39;Input was of shape {}.&#39;.format(str(sh)))
+
+    if index is not None:
+        self._frames[index:index] = frames
+    else:
+        self._frames.extend(frames)</code></pre>
+</details>
+</dd>
+<dt id="c3d.writer.Writer.add_group"><code class="name flex">
+<span>def <span class="ident">add_group</span></span>(<span>self, group_id, name, desc)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Add a new parameter group. See Manager.add_group() for more information.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>group</code></strong> :&ensp;<code><a title="c3d.group.Group" href="group.html#c3d.group.Group">Group</a></code></dt>
+<dd>An editable group instance.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_group(self, group_id, name, desc):
+    &#39;&#39;&#39;Add a new parameter group. See Manager.add_group() for more information.
+
+    Returns
+    -------
+    group : `c3d.group.Group`
+        An editable group instance.
+    &#39;&#39;&#39;
+    return super(Writer, self)._add_group(group_id, name, desc)</code></pre>
+</details>
+</dd>
+<dt id="c3d.writer.Writer.get_create"><code class="name flex">
+<span>def <span class="ident">get_create</span></span>(<span>self, label)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get or create a parameter <code><a title="c3d.group.Group" href="group.html#c3d.group.Group">Group</a></code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_create(self, label):
+    &#39;&#39;&#39; Get or create a parameter `c3d.group.Group`.&#39;&#39;&#39;
+    label = label.upper()
+    group = self.get(label)
+    if group is None:
+        group = self.add_group(self.numeric_key_next, label, label + &#39; group&#39;)
+    return group</code></pre>
+</details>
+</dd>
+<dt id="c3d.writer.Writer.remove_group"><code class="name flex">
+<span>def <span class="ident">remove_group</span></span>(<span>self, *args)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Remove the parameter group. (see Manager._rename_group for args).</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def remove_group(self, *args):
+    &#39;&#39;&#39;Remove the parameter group. (see Manager._rename_group for args). &#39;&#39;&#39;
+    super(Writer, self)._remove_group(*args)</code></pre>
+</details>
+</dd>
+<dt id="c3d.writer.Writer.rename_group"><code class="name flex">
+<span>def <span class="ident">rename_group</span></span>(<span>self, *args)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Rename a specified parameter group (see Manager._rename_group for args).</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def rename_group(self, *args):
+    &#39;&#39;&#39; Rename a specified parameter group (see Manager._rename_group for args). &#39;&#39;&#39;
+    super(Writer, self)._rename_group(*args)</code></pre>
+</details>
+</dd>
+<dt id="c3d.writer.Writer.set_analog_general_scale"><code class="name flex">
+<span>def <span class="ident">set_analog_general_scale</span></span>(<span>self, value)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Set ANALOG:GEN_SCALE factor (uniform analog scale factor).</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_analog_general_scale(self, value):
+    &#39;&#39;&#39; Set ANALOG:GEN_SCALE factor (uniform analog scale factor).
+    &#39;&#39;&#39;
+    self.analog_group.set(&#39;GEN_SCALE&#39;, &#39;Analog general scale factor&#39;, 4, &#39;&lt;f&#39;, value)</code></pre>
+</details>
+</dd>
+<dt id="c3d.writer.Writer.set_analog_labels"><code class="name flex">
+<span>def <span class="ident">set_analog_labels</span></span>(<span>self, labels)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Set analog data labels.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>labels</code></strong> :&ensp;<code>iterable</code></dt>
+<dd>Set ANALOG:LABELS parameter entry from a set of string labels.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_analog_labels(self, labels):
+    &#39;&#39;&#39; Set analog data labels.
+
+    Parameters
+    ----------
+    labels : iterable
+        Set ANALOG:LABELS parameter entry from a set of string labels.
+    &#39;&#39;&#39;
+    grp = self.analog_group
+    if labels is None:
+        grp.add_empty_array(&#39;LABELS&#39;, &#39;Analog labels.&#39;)
+    else:
+        label_str, label_max_size = utils.pack_labels(labels)
+        grp.add_str(&#39;LABELS&#39;, &#39;Analog labels.&#39;, label_str, label_max_size, len(labels))</code></pre>
+</details>
+</dd>
+<dt id="c3d.writer.Writer.set_analog_offsets"><code class="name flex">
+<span>def <span class="ident">set_analog_offsets</span></span>(<span>self, values)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Set ANALOG:OFFSET offsets (per channel offset).</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>values</code></strong> :&ensp;<code>iterable</code> or <code>None</code></dt>
+<dd>Iterable containing individual offsets (int16) for encoding analog channel data.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_analog_offsets(self, values):
+    &#39;&#39;&#39; Set ANALOG:OFFSET offsets (per channel offset).
+
+    Parameters
+    ----------
+    values : iterable or None
+        Iterable containing individual offsets (int16) for encoding analog channel data.
+    &#39;&#39;&#39;
+    if utils.is_iterable(values):
+        data = np.array([v for v in values], dtype=np.int16)
+        self.analog_group.set_array(&#39;OFFSET&#39;, &#39;Analog channel offsets&#39;, data)
+    elif values is None:
+        self.analog_group.set_empty_array(&#39;OFFSET&#39;, &#39;Analog channel offsets&#39;)
+    else:
+        raise ValueError(&#39;Expected iterable containing analog data offsets.&#39;)</code></pre>
+</details>
+</dd>
+<dt id="c3d.writer.Writer.set_analog_scales"><code class="name flex">
+<span>def <span class="ident">set_analog_scales</span></span>(<span>self, values)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Set ANALOG:SCALE factors (per channel scale factor).</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>values</code></strong> :&ensp;<code>iterable</code> or <code>None</code></dt>
+<dd>Iterable containing individual scale factors (float32) for scaling analog channel data.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_analog_scales(self, values):
+    &#39;&#39;&#39; Set ANALOG:SCALE factors (per channel scale factor).
+
+    Parameters
+    ----------
+    values : iterable or None
+        Iterable containing individual scale factors (float32) for scaling analog channel data.
+    &#39;&#39;&#39;
+    if utils.is_iterable(values):
+        data = np.array([v for v in values], dtype=np.float32)
+        self.analog_group.set_array(&#39;SCALE&#39;, &#39;Analog channel scale factors&#39;, data)
+    elif values is None:
+        self.analog_group.set_empty_array(&#39;SCALE&#39;, &#39;Analog channel scale factors&#39;)
+    else:
+        raise ValueError(&#39;Expected iterable containing analog scale factors.&#39;)</code></pre>
+</details>
+</dd>
+<dt id="c3d.writer.Writer.set_point_labels"><code class="name flex">
+<span>def <span class="ident">set_point_labels</span></span>(<span>self, labels)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Set point data labels.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>labels</code></strong> :&ensp;<code>iterable</code></dt>
+<dd>Set POINT:LABELS parameter entry from a set of string labels.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_point_labels(self, labels):
+    &#39;&#39;&#39; Set point data labels.
+
+    Parameters
+    ----------
+    labels : iterable
+        Set POINT:LABELS parameter entry from a set of string labels.
+    &#39;&#39;&#39;
+    grp = self.point_group
+    if labels is None:
+        grp.add_empty_array(&#39;LABELS&#39;, &#39;Point labels.&#39;)
+    else:
+        label_str, label_max_size = utils.pack_labels(labels)
+        grp.add_str(&#39;LABELS&#39;, &#39;Point labels.&#39;, label_str, label_max_size, len(labels))</code></pre>
+</details>
+</dd>
+<dt id="c3d.writer.Writer.set_screen_axis"><code class="name flex">
+<span>def <span class="ident">set_screen_axis</span></span>(<span>self, X='+X', Y='+Y')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Set the X_SCREEN and Y_SCREEN parameters in the POINT group.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>X</code></strong> :&ensp;<code>str</code></dt>
+<dd>Two byte string with first character indicating positive or negative axis (+/-),
+and the second axis (X/Y/Z). Example strings '+X' or '-Y'</dd>
+<dt><strong><code>Y</code></strong> :&ensp;<code>str</code></dt>
+<dd>Second axis string with same format as Y. Determines the second Y screen axis.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_screen_axis(self, X=&#39;+X&#39;, Y=&#39;+Y&#39;):
+    &#39;&#39;&#39; Set the X_SCREEN and Y_SCREEN parameters in the POINT group.
+
+    Parameters
+    ----------
+    X : str
+        Two byte string with first character indicating positive or negative axis (+/-),
+        and the second axis (X/Y/Z). Example strings &#39;+X&#39; or &#39;-Y&#39;
+    Y : str
+        Second axis string with same format as Y. Determines the second Y screen axis.
+    &#39;&#39;&#39;
+    if len(X) != 2:
+        raise ValueError(&#39;Expected string literal to be a 2 character string for the X_SCREEN parameter.&#39;)
+    if len(Y) != 2:
+        raise ValueError(&#39;Expected string literal to be a 2 character string for the Y_SCREEN parameter.&#39;)
+    group = self.point_group
+    group.set_str(&#39;X_SCREEN&#39;, &#39;X_SCREEN parameter&#39;, X)
+    group.set_str(&#39;Y_SCREEN&#39;, &#39;Y_SCREEN parameter&#39;, Y)</code></pre>
+</details>
+</dd>
+<dt id="c3d.writer.Writer.set_start_frame"><code class="name flex">
+<span>def <span class="ident">set_start_frame</span></span>(<span>self, frame=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Set the 'TRIAL:ACTUAL_START_FIELD' parameter and header.first_frame entry.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>frame</code></strong> :&ensp;<code>int</code></dt>
+<dd>Number for the first frame recorded in the file.
+Frame counter for a trial recording always start at 1 for the first frame.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_start_frame(self, frame=1):
+    &#39;&#39;&#39; Set the &#39;TRIAL:ACTUAL_START_FIELD&#39; parameter and header.first_frame entry.
+
+    Parameters
+    ----------
+    frame : int
+        Number for the first frame recorded in the file.
+        Frame counter for a trial recording always start at 1 for the first frame.
+    &#39;&#39;&#39;
+    self.trial_group.set(&#39;ACTUAL_START_FIELD&#39;, &#39;Actual start frame&#39;, 2, &#39;&lt;I&#39;, frame, 2)
+    if frame &lt; 65535:
+        self._header.first_frame = np.uint16(frame)
+    else:
+        self._header.first_frame = np.uint16(65535)</code></pre>
+</details>
+</dd>
+<dt id="c3d.writer.Writer.write"><code class="name flex">
+<span>def <span class="ident">write</span></span>(<span>self, handle)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Write metadata, point and analog frames to a file handle.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>handle</code></strong> :&ensp;<code>file</code></dt>
+<dd>Write metadata and C3D motion frames to the given file handle. The
+writer does not close the handle.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def write(self, handle):
+    &#39;&#39;&#39;Write metadata, point and analog frames to a file handle.
+
+    Parameters
+    ----------
+    handle : file
+        Write metadata and C3D motion frames to the given file handle. The
+        writer does not close the handle.
+    &#39;&#39;&#39;
+    if not self._frames:
+        raise RuntimeError(&#39;Attempted to write empty file.&#39;)
+
+    points, analog = self._frames[0]
+    ppf = len(points)
+    apf = len(analog)
+
+    first_frame = self.first_frame
+    if first_frame &lt;= 0:  # Bad value
+        first_frame = 1
+    nframes = len(self._frames)
+    last_frame = first_frame + nframes - 1
+
+    UINT16_MAX = 65535
+
+    # POINT group
+    group = self.point_group
+    group.set(&#39;USED&#39;, &#39;Number of point samples&#39;, 2, &#39;&lt;H&#39;, ppf)
+    group.set(&#39;FRAMES&#39;, &#39;Total frame count&#39;, 2, &#39;&lt;H&#39;, min(UINT16_MAX, nframes))
+    if nframes &gt;= UINT16_MAX:
+        # Should be floating point
+        group.set(&#39;LONG_FRAMES&#39;, &#39;Total frame count&#39;, 4, &#39;&lt;f&#39;, nframes)
+    elif &#39;LONG_FRAMES&#39; in group:
+        # Docs states it should not exist if frame_count &lt; 65535
+        group.remove_param(&#39;LONG_FRAMES&#39;)
+    group.set(&#39;DATA_START&#39;, &#39;First data block containing frame samples.&#39;, 2, &#39;&lt;H&#39;, 0)
+    group.set(&#39;SCALE&#39;, &#39;Point data scaling factor&#39;, 4, &#39;&lt;f&#39;, self.point_scale)
+    group.set(&#39;RATE&#39;, &#39;Point data sample rate&#39;, 4, &#39;&lt;f&#39;, self.point_rate)
+    # Optional
+    if &#39;UNITS&#39; not in group:
+        group.add_str(&#39;UNITS&#39;, &#39;Units used for point data measurements.&#39;, &#39;mm&#39;)
+    if &#39;DESCRIPTIONS&#39; not in group:
+        group.add_str(&#39;DESCRIPTIONS&#39;, &#39;Channel descriptions.&#39;, &#39;  &#39; * ppf, 2, ppf)
+
+    # ANALOG group
+    group = self.analog_group
+    group.set(&#39;USED&#39;, &#39;Analog channel count&#39;, 2, &#39;&lt;H&#39;, apf)
+    group.set(&#39;RATE&#39;, &#39;Analog samples per second&#39;, 4, &#39;&lt;f&#39;, self.analog_rate)
+    if &#39;GEN_SCALE&#39; not in group:
+        self.set_analog_general_scale(1.0)
+    # Optional
+    if &#39;SCALE&#39; not in group:
+        self.set_analog_scales(None)
+    if &#39;OFFSET&#39; not in group:
+        self.set_analog_offsets(None)
+    if &#39;DESCRIPTIONS&#39; not in group:
+        group.add_str(&#39;DESCRIPTIONS&#39;, &#39;Channel descriptions.&#39;, &#39;  &#39; * apf, 2, apf)
+
+    # TRIAL group
+    self.set_start_frame(first_frame)
+    self._set_last_frame(last_frame)
+
+    # sync parameter information to header.
+    start_block = self.parameter_blocks() + 2
+    self.get(&#39;POINT:DATA_START&#39;).bytes = struct.pack(&#39;&lt;H&#39;, start_block)
+    self._header.data_block = np.uint16(start_block)
+    self._header.point_count = np.uint16(ppf)
+    self._header.analog_count = np.uint16(np.prod(np.shape(analog)))
+
+    self._write_metadata(handle)
+    self._write_frames(handle)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="c3d.manager.Manager" href="manager.html#c3d.manager.Manager">Manager</a></b></code>:
+<ul class="hlist">
+<li><code><a title="c3d.manager.Manager.analog_labels" href="manager.html#c3d.manager.Manager.analog_labels">analog_labels</a></code></li>
+<li><code><a title="c3d.manager.Manager.analog_per_frame" href="manager.html#c3d.manager.Manager.analog_per_frame">analog_per_frame</a></code></li>
+<li><code><a title="c3d.manager.Manager.analog_rate" href="manager.html#c3d.manager.Manager.analog_rate">analog_rate</a></code></li>
+<li><code><a title="c3d.manager.Manager.analog_sample_count" href="manager.html#c3d.manager.Manager.analog_sample_count">analog_sample_count</a></code></li>
+<li><code><a title="c3d.manager.Manager.analog_used" href="manager.html#c3d.manager.Manager.analog_used">analog_used</a></code></li>
+<li><code><a title="c3d.manager.Manager.first_frame" href="manager.html#c3d.manager.Manager.first_frame">first_frame</a></code></li>
+<li><code><a title="c3d.manager.Manager.frame_count" href="manager.html#c3d.manager.Manager.frame_count">frame_count</a></code></li>
+<li><code><a title="c3d.manager.Manager.get" href="manager.html#c3d.manager.Manager.get">get</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_analog_transform" href="manager.html#c3d.manager.Manager.get_analog_transform">get_analog_transform</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_analog_transform_parameters" href="manager.html#c3d.manager.Manager.get_analog_transform_parameters">get_analog_transform_parameters</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_screen_xy_axis" href="manager.html#c3d.manager.Manager.get_screen_xy_axis">get_screen_xy_axis</a></code></li>
+<li><code><a title="c3d.manager.Manager.get_screen_xy_strings" href="manager.html#c3d.manager.Manager.get_screen_xy_strings">get_screen_xy_strings</a></code></li>
+<li><code><a title="c3d.manager.Manager.header" href="manager.html#c3d.manager.Manager.header">header</a></code></li>
+<li><code><a title="c3d.manager.Manager.items" href="manager.html#c3d.manager.Manager.items">items</a></code></li>
+<li><code><a title="c3d.manager.Manager.keys" href="manager.html#c3d.manager.Manager.keys">keys</a></code></li>
+<li><code><a title="c3d.manager.Manager.last_frame" href="manager.html#c3d.manager.Manager.last_frame">last_frame</a></code></li>
+<li><code><a title="c3d.manager.Manager.listed" href="manager.html#c3d.manager.Manager.listed">listed</a></code></li>
+<li><code><a title="c3d.manager.Manager.parameter_blocks" href="manager.html#c3d.manager.Manager.parameter_blocks">parameter_blocks</a></code></li>
+<li><code><a title="c3d.manager.Manager.point_labels" href="manager.html#c3d.manager.Manager.point_labels">point_labels</a></code></li>
+<li><code><a title="c3d.manager.Manager.point_rate" href="manager.html#c3d.manager.Manager.point_rate">point_rate</a></code></li>
+<li><code><a title="c3d.manager.Manager.point_scale" href="manager.html#c3d.manager.Manager.point_scale">point_scale</a></code></li>
+<li><code><a title="c3d.manager.Manager.point_used" href="manager.html#c3d.manager.Manager.point_used">point_used</a></code></li>
+<li><code><a title="c3d.manager.Manager.values" href="manager.html#c3d.manager.Manager.values">values</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="c3d" href="index.html">c3d</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="c3d.writer.Writer" href="#c3d.writer.Writer">Writer</a></code></h4>
+<ul class="">
+<li><code><a title="c3d.writer.Writer.add_frames" href="#c3d.writer.Writer.add_frames">add_frames</a></code></li>
+<li><code><a title="c3d.writer.Writer.add_group" href="#c3d.writer.Writer.add_group">add_group</a></code></li>
+<li><code><a title="c3d.writer.Writer.analog_group" href="#c3d.writer.Writer.analog_group">analog_group</a></code></li>
+<li><code><a title="c3d.writer.Writer.from_reader" href="#c3d.writer.Writer.from_reader">from_reader</a></code></li>
+<li><code><a title="c3d.writer.Writer.get_create" href="#c3d.writer.Writer.get_create">get_create</a></code></li>
+<li><code><a title="c3d.writer.Writer.numeric_key_max" href="#c3d.writer.Writer.numeric_key_max">numeric_key_max</a></code></li>
+<li><code><a title="c3d.writer.Writer.numeric_key_next" href="#c3d.writer.Writer.numeric_key_next">numeric_key_next</a></code></li>
+<li><code><a title="c3d.writer.Writer.point_group" href="#c3d.writer.Writer.point_group">point_group</a></code></li>
+<li><code><a title="c3d.writer.Writer.remove_group" href="#c3d.writer.Writer.remove_group">remove_group</a></code></li>
+<li><code><a title="c3d.writer.Writer.rename_group" href="#c3d.writer.Writer.rename_group">rename_group</a></code></li>
+<li><code><a title="c3d.writer.Writer.set_analog_general_scale" href="#c3d.writer.Writer.set_analog_general_scale">set_analog_general_scale</a></code></li>
+<li><code><a title="c3d.writer.Writer.set_analog_labels" href="#c3d.writer.Writer.set_analog_labels">set_analog_labels</a></code></li>
+<li><code><a title="c3d.writer.Writer.set_analog_offsets" href="#c3d.writer.Writer.set_analog_offsets">set_analog_offsets</a></code></li>
+<li><code><a title="c3d.writer.Writer.set_analog_scales" href="#c3d.writer.Writer.set_analog_scales">set_analog_scales</a></code></li>
+<li><code><a title="c3d.writer.Writer.set_point_labels" href="#c3d.writer.Writer.set_point_labels">set_point_labels</a></code></li>
+<li><code><a title="c3d.writer.Writer.set_screen_axis" href="#c3d.writer.Writer.set_screen_axis">set_screen_axis</a></code></li>
+<li><code><a title="c3d.writer.Writer.set_start_frame" href="#c3d.writer.Writer.set_start_frame">set_start_frame</a></code></li>
+<li><code><a title="c3d.writer.Writer.trial_group" href="#c3d.writer.Writer.trial_group">trial_group</a></code></li>
+<li><code><a title="c3d.writer.Writer.write" href="#c3d.writer.Writer.write">write</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+</footer>
+</body>
+</html>

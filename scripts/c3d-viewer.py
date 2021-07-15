@@ -1,14 +1,18 @@
 #!/usr/bin/env python
 
 '''A simple OpenGL viewer for C3D files.'''
-
-import c3d
+try:
+    import c3d
+except ModuleNotFoundError:
+    import sys
+    import os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..\\'))
+    import c3d
 import argparse
 import collections
 import contextlib
 import numpy as np
 import pyglet
-
 from pyglet.gl import *
 
 parser = argparse.ArgumentParser(description='A simple OpenGL viewer for C3D files.')
@@ -90,7 +94,8 @@ class Viewer(pyglet.window.Window):
         super(Viewer, self).__init__(
             width=800, height=450, resizable=True, vsync=False, config=config)
 
-        self._frames = c3d_reader.read_frames(copy=False)
+        self.c3d_reader = c3d_reader
+        self._frames = iter(())
         self._frame_rate = c3d_reader.header.frame_rate
 
         self._maxlen = 16
@@ -106,7 +111,7 @@ class Viewer(pyglet.window.Window):
         self.ry = 30
         self.rz = 30
 
-        #self.fps = pyglet.clock.ClockDisplay()
+        # self.fps = pyglet.clock.ClockDisplay()
 
         self.on_resize(self.width, self.height)
 
@@ -152,7 +157,8 @@ class Viewer(pyglet.window.Window):
             len(vtx) // 3, idx, ('v3f/static', vtx), ('n3f/static', nrm))
 
     def on_mouse_scroll(self, x, y, dx, dy):
-        if dy == 0: return
+        if dy == 0:
+            return
         self.zoom *= 1.1 ** (-1 if dy < 0 else 1)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
@@ -164,7 +170,6 @@ class Viewer(pyglet.window.Window):
             # roll
             self.ry += 0.2 * -dy
             self.rz += 0.2 * dx
-        #print('z', self.zoom, 't', self.ty, self.tz, 'r', self.ry, self.rz)
 
     def on_resize(self, width, height):
         glViewport(0, 0, width, height)
@@ -221,6 +226,8 @@ class Viewer(pyglet.window.Window):
         try:
             return next(self._frames)
         except StopIteration:
+            self._frames = self.c3d_reader.read_frames(copy=False)
+            return self._next_frame()
             pyglet.app.exit()
 
     def update(self, dt):

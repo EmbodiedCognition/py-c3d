@@ -1,0 +1,958 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.2" />
+<title>c3d.header API documentation</title>
+<meta name="description" content="Defines the header class used for reading, writing and tracking metadata in the .c3d header." />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS_CHTML" integrity="sha256-kZafAc6mZvK3W3v1pHOcUix30OHQN6pU/NO2oFkqZVw=" crossorigin></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>c3d.header</code></h1>
+</header>
+<section id="section-intro">
+<p>Defines the header class used for reading, writing and tracking metadata in the .c3d header.</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#39;&#39;&#39;
+Defines the header class used for reading, writing and tracking metadata in the .c3d header.
+&#39;&#39;&#39;
+import sys
+import struct
+import numpy as np
+from .utils import UNPACK_FLOAT_IEEE, DEC_to_IEEE
+
+
+class Header(object):
+    &#39;&#39;&#39;Header information from a C3D file.
+
+    Attributes
+    ----------
+    event_block : int
+        Index of the 512-byte block where labels (metadata) are found.
+    parameter_block : int
+        Index of the 512-byte block where parameters (metadata) are found.
+    data_block : int
+        Index of the 512-byte block where data starts.
+    point_count : int
+        Number of motion capture channels recorded in this file.
+    analog_count : int
+        Number of analog values recorded per frame of 3D point data.
+    first_frame : int
+        Index of the first frame of data.
+    last_frame : int
+        Index of the last frame of data.
+    analog_per_frame : int
+        Number of analog frames per frame of 3D point data. The analog frame
+        rate (ANALOG:RATE) is equivalent to the point frame rate (POINT:RATE)
+        times the analog per frame value.
+    frame_rate : float
+        The frame rate of the recording, in frames per second.
+    scale_factor : float
+        Multiply values in the file by this scale parameter.
+    long_event_labels : bool
+    max_gap : int
+
+    .. note::
+        The ``scale_factor`` attribute is not used in Phasespace C3D files;
+        instead, use the POINT.SCALE parameter.
+
+    .. note::
+        The ``first_frame`` and ``last_frame`` header attributes are not used in
+        C3D files generated by Phasespace. Instead, the first and last
+        frame numbers are stored in the POINTS:ACTUAL_START_FIELD and
+        POINTS:ACTUAL_END_FIELD parameters.
+    &#39;&#39;&#39;
+
+    # Read/Write header formats, read values as unsigned ints rather then floats.
+    BINARY_FORMAT_WRITE = &#39;&lt;BBHHHHHfHHf274sHHH164s44s&#39;
+    BINARY_FORMAT_READ = &#39;&lt;BBHHHHHIHHI274sHHH164s44s&#39;
+    BINARY_FORMAT_READ_BIG_ENDIAN = &#39;&gt;BBHHHHHIHHI274sHHH164s44s&#39;
+
+    def __init__(self, handle=None):
+        &#39;&#39;&#39;Create a new Header object.
+
+        Parameters
+        ----------
+        handle : file handle, optional
+            If given, initialize attributes for the Header from this file
+            handle. The handle must be seek-able and readable. If `handle` is
+            not given, Header attributes are initialized with default values.
+        &#39;&#39;&#39;
+        self.parameter_block = 2
+        self.data_block = 3
+
+        self.point_count = 50
+        self.analog_count = 0
+
+        self.first_frame = 1
+        self.last_frame = 1
+        self.analog_per_frame = 0
+        self.frame_rate = 60.0
+
+        self.max_gap = 0
+        self.scale_factor = -1.0
+        self.long_event_labels = False
+        self.event_count = 0
+
+        self.event_block = b&#39;&#39;
+        self.event_timings = np.zeros(0, dtype=np.float32)
+        self.event_disp_flags = np.zeros(0, dtype=np.bool)
+        self.event_labels = []
+
+        if handle:
+            self.read(handle)
+
+    def write(self, handle):
+        &#39;&#39;&#39;Write binary header data to a file handle.
+
+        This method writes exactly 512 bytes to the beginning of the given file
+        handle.
+
+        Parameters
+        ----------
+        handle : file handle
+            The given handle will be reset to 0 using `seek` and then 512 bytes
+            will be written to describe the parameters in this Header. The
+            handle must be writeable.
+        &#39;&#39;&#39;
+        handle.seek(0)
+        handle.write(struct.pack(self.BINARY_FORMAT_WRITE,
+                                 # Pack vars:
+                                 self.parameter_block,
+                                 0x50,
+                                 self.point_count,
+                                 self.analog_count,
+                                 self.first_frame,
+                                 self.last_frame,
+                                 self.max_gap,
+                                 self.scale_factor,
+                                 self.data_block,
+                                 self.analog_per_frame,
+                                 self.frame_rate,
+                                 b&#39;&#39;,
+                                 self.long_event_labels and 0x3039 or 0x0,  # If True write long_event_key else 0
+                                 self.event_count,
+                                 0x0,
+                                 self.event_block,
+                                 b&#39;&#39;))
+
+    def __str__(self):
+        &#39;&#39;&#39;Return a string representation of this Header&#39;s attributes.&#39;&#39;&#39;
+        return &#39;&#39;&#39;\
+                  parameter_block: {0.parameter_block}
+                      point_count: {0.point_count}
+                     analog_count: {0.analog_count}
+                      first_frame: {0.first_frame}
+                       last_frame: {0.last_frame}
+                          max_gap: {0.max_gap}
+                     scale_factor: {0.scale_factor}
+                       data_block: {0.data_block}
+                 analog_per_frame: {0.analog_per_frame}
+                       frame_rate: {0.frame_rate}
+                long_event_labels: {0.long_event_labels}
+                      event_block: {0.event_block}&#39;&#39;&#39;.format(self)
+
+    def read(self, handle, fmt=BINARY_FORMAT_READ):
+        &#39;&#39;&#39;Read and parse binary header data from a file handle.
+
+        This method reads exactly 512 bytes from the beginning of the given file
+        handle.
+
+        Parameters
+        ----------
+        handle : file handle
+            The given handle will be reset to 0 using `seek` and then 512 bytes
+            will be read to initialize the attributes in this Header. The handle
+            must be readable.
+
+        fmt : Formating string used to read the header.
+
+        Raises
+        ------
+        AssertionError
+            If the magic byte from the header is not 80 (the C3D magic value).
+        &#39;&#39;&#39;
+        handle.seek(0)
+        raw = handle.read(512)
+
+        (self.parameter_block,
+         magic,
+         self.point_count,
+         self.analog_count,
+         self.first_frame,
+         self.last_frame,
+         self.max_gap,
+         self.scale_factor,
+         self.data_block,
+         self.analog_per_frame,
+         self.frame_rate,
+         _,
+         self.long_event_labels,
+         self.event_count,
+         __,
+         self.event_block,
+         _) = struct.unpack(fmt, raw)
+
+        # Check magic number
+        assert magic == 80, &#39;C3D magic {} != 80 !&#39;.format(magic)
+
+        # Check long event key
+        self.long_event_labels = self.long_event_labels == 0x3039
+
+    def _processor_convert(self, dtypes, handle):
+        &#39;&#39;&#39; Function interpreting the header once a processor type has been determined.
+        &#39;&#39;&#39;
+
+        if dtypes.is_dec:
+            self.scale_factor = DEC_to_IEEE(self.scale_factor)
+            self.frame_rate = DEC_to_IEEE(self.frame_rate)
+            float_unpack = DEC_to_IEEE
+        elif dtypes.is_ieee:
+            self.scale_factor = UNPACK_FLOAT_IEEE(self.scale_factor)
+            self.frame_rate = UNPACK_FLOAT_IEEE(self.frame_rate)
+            float_unpack = UNPACK_FLOAT_IEEE
+        elif dtypes.is_mips:
+            # Re-read header in big-endian
+            self.read(handle, Header.BINARY_FORMAT_READ_BIG_ENDIAN)
+            # Then unpack
+            self.scale_factor = UNPACK_FLOAT_IEEE(self.scale_factor)
+            self.frame_rate = UNPACK_FLOAT_IEEE(self.frame_rate)
+            float_unpack = UNPACK_FLOAT_IEEE
+
+        self._parse_events(dtypes, float_unpack)
+
+    def _parse_events(self, dtypes, float_unpack):
+        &#39;&#39;&#39; Parse the event section of the header.
+        &#39;&#39;&#39;
+
+        # Event section byte blocks
+        time_bytes = self.event_block[:72]
+        disp_bytes = self.event_block[72:90]
+        label_bytes = self.event_block[92:]
+
+        if dtypes.is_mips:
+            unpack_fmt = &#39;&gt;I&#39;
+        else:
+            unpack_fmt = &#39;&lt;I&#39;
+
+        read_count = self.event_count
+        self.event_timings = np.zeros(read_count, dtype=np.float32)
+        self.event_disp_flags = np.zeros(read_count, dtype=np.bool)
+        self.event_labels = np.empty(read_count, dtype=object)
+        for i in range(read_count):
+            ilong = i * 4
+            # Unpack
+            self.event_disp_flags[i] = disp_bytes[i] &gt; 0
+            self.event_timings[i] = float_unpack(struct.unpack(unpack_fmt, time_bytes[ilong:ilong + 4])[0])
+            self.event_labels[i] = dtypes.decode_string(label_bytes[ilong:ilong + 4])
+
+    @property
+    def events(self):
+        &#39;&#39;&#39; Get an iterable over displayed events defined in the header. Iterable items are on form (timing, label).
+
+            Note*:
+            Time as defined by the &#39;timing&#39; is relative to frame 1 and not the &#39;first_frame&#39; parameter.
+            Frame 1 therefor has the time 0.0 in relation to the event timing.
+        &#39;&#39;&#39;
+        return zip(self.event_timings[self.event_disp_flags], self.event_labels[self.event_disp_flags])
+
+    def encode_events(self, events):
+        &#39;&#39;&#39; Encode event data in the event block.
+
+        Parameters
+        ----------
+        events : [(float, str), ...]
+            Event data, iterable of touples containing the event timing and a 4 character label string.
+             Event timings should be calculated relative to sample 1 with the timing 0.0s, and should
+             not be relative to the first_frame header parameter.
+        &#39;&#39;&#39;
+        endian = &#39;&lt;&#39;
+        if sys.byteorder == &#39;big&#39;:
+            endian = &#39;&gt;&#39;
+
+        # Event block format
+        fmt = &#39;{}{}{}{}{}&#39;.format(endian,
+                                  str(18 * 4) + &#39;s&#39;,  # Timings
+                                  str(18) + &#39;s&#39;,      # Flags
+                                  &#39;H&#39;,                # __
+                                  str(18 * 4) + &#39;s&#39;   # Labels
+                                  )
+        # Pack bytes
+        event_timings = np.zeros(18, dtype=np.float32)
+        event_disp_flags = np.zeros(18, dtype=np.uint8)
+        event_labels = np.empty(18, dtype=object)
+        label_bytes = bytearray(18 * 4)
+        for i, (time, label) in enumerate(events):
+            if i &gt; 17:
+                # Don&#39;t raise Error, header events are rarely used.
+                warnings.warn(&#39;Maximum of 18 events can be encoded in the header, skipping remaining events.&#39;)
+                break
+
+            event_timings[i] = time
+            event_labels[i] = label
+            label_bytes[i * 4:(i + 1) * 4] = label.encode(&#39;utf-8&#39;)
+
+        write_count = min(i + 1, 18)
+        event_disp_flags[:write_count] = 1
+
+        # Update event headers in self
+        self.long_event_labels = 0x3039  # Magic number
+        self.event_count = write_count
+        # Update event block
+        self.event_timings = event_timings[:write_count]
+        self.event_disp_flags = np.ones(write_count, dtype=np.bool)
+        self.event_labels = event_labels[:write_count]
+        self.event_block = struct.pack(fmt,
+                                       event_timings.tobytes(),
+                                       event_disp_flags.tobytes(),
+                                       0,
+                                       label_bytes
+                                       )</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="c3d.header.Header"><code class="flex name class">
+<span>class <span class="ident">Header</span></span>
+<span>(</span><span>handle=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Header information from a C3D file.</p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>event_block</code></strong> :&ensp;<code>int</code></dt>
+<dd>Index of the 512-byte block where labels (metadata) are found.</dd>
+<dt><strong><code>parameter_block</code></strong> :&ensp;<code>int</code></dt>
+<dd>Index of the 512-byte block where parameters (metadata) are found.</dd>
+<dt><strong><code>data_block</code></strong> :&ensp;<code>int</code></dt>
+<dd>Index of the 512-byte block where data starts.</dd>
+<dt><strong><code>point_count</code></strong> :&ensp;<code>int</code></dt>
+<dd>Number of motion capture channels recorded in this file.</dd>
+<dt><strong><code>analog_count</code></strong> :&ensp;<code>int</code></dt>
+<dd>Number of analog values recorded per frame of 3D point data.</dd>
+<dt><strong><code>first_frame</code></strong> :&ensp;<code>int</code></dt>
+<dd>Index of the first frame of data.</dd>
+<dt><strong><code>last_frame</code></strong> :&ensp;<code>int</code></dt>
+<dd>Index of the last frame of data.</dd>
+<dt><strong><code>analog_per_frame</code></strong> :&ensp;<code>int</code></dt>
+<dd>Number of analog frames per frame of 3D point data. The analog frame
+rate (ANALOG:RATE) is equivalent to the point frame rate (POINT:RATE)
+times the analog per frame value.</dd>
+<dt><strong><code>frame_rate</code></strong> :&ensp;<code>float</code></dt>
+<dd>The frame rate of the recording, in frames per second.</dd>
+<dt><strong><code>scale_factor</code></strong> :&ensp;<code>float</code></dt>
+<dd>Multiply values in the file by this scale parameter.</dd>
+<dt><strong><code>long_event_labels</code></strong> :&ensp;<code>bool</code></dt>
+<dd>&nbsp;</dd>
+<dt><strong><code>max_gap</code></strong> :&ensp;<code>int</code></dt>
+<dd>&nbsp;</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code>scale_factor</code> attribute is not used in Phasespace C3D files;
+instead, use the POINT.SCALE parameter.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code>first_frame</code> and <code>last_frame</code> header attributes are not used in
+C3D files generated by Phasespace. Instead, the first and last
+frame numbers are stored in the POINTS:ACTUAL_START_FIELD and
+POINTS:ACTUAL_END_FIELD parameters.</p>
+</div>
+<p>Create a new Header object.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>handle</code></strong> :&ensp;<code>file handle</code>, optional</dt>
+<dd>If given, initialize attributes for the Header from this file
+handle. The handle must be seek-able and readable. If <code>handle</code> is
+not given, Header attributes are initialized with default values.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Header(object):
+    &#39;&#39;&#39;Header information from a C3D file.
+
+    Attributes
+    ----------
+    event_block : int
+        Index of the 512-byte block where labels (metadata) are found.
+    parameter_block : int
+        Index of the 512-byte block where parameters (metadata) are found.
+    data_block : int
+        Index of the 512-byte block where data starts.
+    point_count : int
+        Number of motion capture channels recorded in this file.
+    analog_count : int
+        Number of analog values recorded per frame of 3D point data.
+    first_frame : int
+        Index of the first frame of data.
+    last_frame : int
+        Index of the last frame of data.
+    analog_per_frame : int
+        Number of analog frames per frame of 3D point data. The analog frame
+        rate (ANALOG:RATE) is equivalent to the point frame rate (POINT:RATE)
+        times the analog per frame value.
+    frame_rate : float
+        The frame rate of the recording, in frames per second.
+    scale_factor : float
+        Multiply values in the file by this scale parameter.
+    long_event_labels : bool
+    max_gap : int
+
+    .. note::
+        The ``scale_factor`` attribute is not used in Phasespace C3D files;
+        instead, use the POINT.SCALE parameter.
+
+    .. note::
+        The ``first_frame`` and ``last_frame`` header attributes are not used in
+        C3D files generated by Phasespace. Instead, the first and last
+        frame numbers are stored in the POINTS:ACTUAL_START_FIELD and
+        POINTS:ACTUAL_END_FIELD parameters.
+    &#39;&#39;&#39;
+
+    # Read/Write header formats, read values as unsigned ints rather then floats.
+    BINARY_FORMAT_WRITE = &#39;&lt;BBHHHHHfHHf274sHHH164s44s&#39;
+    BINARY_FORMAT_READ = &#39;&lt;BBHHHHHIHHI274sHHH164s44s&#39;
+    BINARY_FORMAT_READ_BIG_ENDIAN = &#39;&gt;BBHHHHHIHHI274sHHH164s44s&#39;
+
+    def __init__(self, handle=None):
+        &#39;&#39;&#39;Create a new Header object.
+
+        Parameters
+        ----------
+        handle : file handle, optional
+            If given, initialize attributes for the Header from this file
+            handle. The handle must be seek-able and readable. If `handle` is
+            not given, Header attributes are initialized with default values.
+        &#39;&#39;&#39;
+        self.parameter_block = 2
+        self.data_block = 3
+
+        self.point_count = 50
+        self.analog_count = 0
+
+        self.first_frame = 1
+        self.last_frame = 1
+        self.analog_per_frame = 0
+        self.frame_rate = 60.0
+
+        self.max_gap = 0
+        self.scale_factor = -1.0
+        self.long_event_labels = False
+        self.event_count = 0
+
+        self.event_block = b&#39;&#39;
+        self.event_timings = np.zeros(0, dtype=np.float32)
+        self.event_disp_flags = np.zeros(0, dtype=np.bool)
+        self.event_labels = []
+
+        if handle:
+            self.read(handle)
+
+    def write(self, handle):
+        &#39;&#39;&#39;Write binary header data to a file handle.
+
+        This method writes exactly 512 bytes to the beginning of the given file
+        handle.
+
+        Parameters
+        ----------
+        handle : file handle
+            The given handle will be reset to 0 using `seek` and then 512 bytes
+            will be written to describe the parameters in this Header. The
+            handle must be writeable.
+        &#39;&#39;&#39;
+        handle.seek(0)
+        handle.write(struct.pack(self.BINARY_FORMAT_WRITE,
+                                 # Pack vars:
+                                 self.parameter_block,
+                                 0x50,
+                                 self.point_count,
+                                 self.analog_count,
+                                 self.first_frame,
+                                 self.last_frame,
+                                 self.max_gap,
+                                 self.scale_factor,
+                                 self.data_block,
+                                 self.analog_per_frame,
+                                 self.frame_rate,
+                                 b&#39;&#39;,
+                                 self.long_event_labels and 0x3039 or 0x0,  # If True write long_event_key else 0
+                                 self.event_count,
+                                 0x0,
+                                 self.event_block,
+                                 b&#39;&#39;))
+
+    def __str__(self):
+        &#39;&#39;&#39;Return a string representation of this Header&#39;s attributes.&#39;&#39;&#39;
+        return &#39;&#39;&#39;\
+                  parameter_block: {0.parameter_block}
+                      point_count: {0.point_count}
+                     analog_count: {0.analog_count}
+                      first_frame: {0.first_frame}
+                       last_frame: {0.last_frame}
+                          max_gap: {0.max_gap}
+                     scale_factor: {0.scale_factor}
+                       data_block: {0.data_block}
+                 analog_per_frame: {0.analog_per_frame}
+                       frame_rate: {0.frame_rate}
+                long_event_labels: {0.long_event_labels}
+                      event_block: {0.event_block}&#39;&#39;&#39;.format(self)
+
+    def read(self, handle, fmt=BINARY_FORMAT_READ):
+        &#39;&#39;&#39;Read and parse binary header data from a file handle.
+
+        This method reads exactly 512 bytes from the beginning of the given file
+        handle.
+
+        Parameters
+        ----------
+        handle : file handle
+            The given handle will be reset to 0 using `seek` and then 512 bytes
+            will be read to initialize the attributes in this Header. The handle
+            must be readable.
+
+        fmt : Formating string used to read the header.
+
+        Raises
+        ------
+        AssertionError
+            If the magic byte from the header is not 80 (the C3D magic value).
+        &#39;&#39;&#39;
+        handle.seek(0)
+        raw = handle.read(512)
+
+        (self.parameter_block,
+         magic,
+         self.point_count,
+         self.analog_count,
+         self.first_frame,
+         self.last_frame,
+         self.max_gap,
+         self.scale_factor,
+         self.data_block,
+         self.analog_per_frame,
+         self.frame_rate,
+         _,
+         self.long_event_labels,
+         self.event_count,
+         __,
+         self.event_block,
+         _) = struct.unpack(fmt, raw)
+
+        # Check magic number
+        assert magic == 80, &#39;C3D magic {} != 80 !&#39;.format(magic)
+
+        # Check long event key
+        self.long_event_labels = self.long_event_labels == 0x3039
+
+    def _processor_convert(self, dtypes, handle):
+        &#39;&#39;&#39; Function interpreting the header once a processor type has been determined.
+        &#39;&#39;&#39;
+
+        if dtypes.is_dec:
+            self.scale_factor = DEC_to_IEEE(self.scale_factor)
+            self.frame_rate = DEC_to_IEEE(self.frame_rate)
+            float_unpack = DEC_to_IEEE
+        elif dtypes.is_ieee:
+            self.scale_factor = UNPACK_FLOAT_IEEE(self.scale_factor)
+            self.frame_rate = UNPACK_FLOAT_IEEE(self.frame_rate)
+            float_unpack = UNPACK_FLOAT_IEEE
+        elif dtypes.is_mips:
+            # Re-read header in big-endian
+            self.read(handle, Header.BINARY_FORMAT_READ_BIG_ENDIAN)
+            # Then unpack
+            self.scale_factor = UNPACK_FLOAT_IEEE(self.scale_factor)
+            self.frame_rate = UNPACK_FLOAT_IEEE(self.frame_rate)
+            float_unpack = UNPACK_FLOAT_IEEE
+
+        self._parse_events(dtypes, float_unpack)
+
+    def _parse_events(self, dtypes, float_unpack):
+        &#39;&#39;&#39; Parse the event section of the header.
+        &#39;&#39;&#39;
+
+        # Event section byte blocks
+        time_bytes = self.event_block[:72]
+        disp_bytes = self.event_block[72:90]
+        label_bytes = self.event_block[92:]
+
+        if dtypes.is_mips:
+            unpack_fmt = &#39;&gt;I&#39;
+        else:
+            unpack_fmt = &#39;&lt;I&#39;
+
+        read_count = self.event_count
+        self.event_timings = np.zeros(read_count, dtype=np.float32)
+        self.event_disp_flags = np.zeros(read_count, dtype=np.bool)
+        self.event_labels = np.empty(read_count, dtype=object)
+        for i in range(read_count):
+            ilong = i * 4
+            # Unpack
+            self.event_disp_flags[i] = disp_bytes[i] &gt; 0
+            self.event_timings[i] = float_unpack(struct.unpack(unpack_fmt, time_bytes[ilong:ilong + 4])[0])
+            self.event_labels[i] = dtypes.decode_string(label_bytes[ilong:ilong + 4])
+
+    @property
+    def events(self):
+        &#39;&#39;&#39; Get an iterable over displayed events defined in the header. Iterable items are on form (timing, label).
+
+            Note*:
+            Time as defined by the &#39;timing&#39; is relative to frame 1 and not the &#39;first_frame&#39; parameter.
+            Frame 1 therefor has the time 0.0 in relation to the event timing.
+        &#39;&#39;&#39;
+        return zip(self.event_timings[self.event_disp_flags], self.event_labels[self.event_disp_flags])
+
+    def encode_events(self, events):
+        &#39;&#39;&#39; Encode event data in the event block.
+
+        Parameters
+        ----------
+        events : [(float, str), ...]
+            Event data, iterable of touples containing the event timing and a 4 character label string.
+             Event timings should be calculated relative to sample 1 with the timing 0.0s, and should
+             not be relative to the first_frame header parameter.
+        &#39;&#39;&#39;
+        endian = &#39;&lt;&#39;
+        if sys.byteorder == &#39;big&#39;:
+            endian = &#39;&gt;&#39;
+
+        # Event block format
+        fmt = &#39;{}{}{}{}{}&#39;.format(endian,
+                                  str(18 * 4) + &#39;s&#39;,  # Timings
+                                  str(18) + &#39;s&#39;,      # Flags
+                                  &#39;H&#39;,                # __
+                                  str(18 * 4) + &#39;s&#39;   # Labels
+                                  )
+        # Pack bytes
+        event_timings = np.zeros(18, dtype=np.float32)
+        event_disp_flags = np.zeros(18, dtype=np.uint8)
+        event_labels = np.empty(18, dtype=object)
+        label_bytes = bytearray(18 * 4)
+        for i, (time, label) in enumerate(events):
+            if i &gt; 17:
+                # Don&#39;t raise Error, header events are rarely used.
+                warnings.warn(&#39;Maximum of 18 events can be encoded in the header, skipping remaining events.&#39;)
+                break
+
+            event_timings[i] = time
+            event_labels[i] = label
+            label_bytes[i * 4:(i + 1) * 4] = label.encode(&#39;utf-8&#39;)
+
+        write_count = min(i + 1, 18)
+        event_disp_flags[:write_count] = 1
+
+        # Update event headers in self
+        self.long_event_labels = 0x3039  # Magic number
+        self.event_count = write_count
+        # Update event block
+        self.event_timings = event_timings[:write_count]
+        self.event_disp_flags = np.ones(write_count, dtype=np.bool)
+        self.event_labels = event_labels[:write_count]
+        self.event_block = struct.pack(fmt,
+                                       event_timings.tobytes(),
+                                       event_disp_flags.tobytes(),
+                                       0,
+                                       label_bytes
+                                       )</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="c3d.header.Header.BINARY_FORMAT_READ"><code class="name">var <span class="ident">BINARY_FORMAT_READ</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="c3d.header.Header.BINARY_FORMAT_READ_BIG_ENDIAN"><code class="name">var <span class="ident">BINARY_FORMAT_READ_BIG_ENDIAN</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="c3d.header.Header.BINARY_FORMAT_WRITE"><code class="name">var <span class="ident">BINARY_FORMAT_WRITE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="c3d.header.Header.events"><code class="name">var <span class="ident">events</span></code></dt>
+<dd>
+<div class="desc"><p>Get an iterable over displayed events defined in the header. Iterable items are on form (timing, label).</p>
+<p>Note*:
+Time as defined by the 'timing' is relative to frame 1 and not the 'first_frame' parameter.
+Frame 1 therefor has the time 0.0 in relation to the event timing.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def events(self):
+    &#39;&#39;&#39; Get an iterable over displayed events defined in the header. Iterable items are on form (timing, label).
+
+        Note*:
+        Time as defined by the &#39;timing&#39; is relative to frame 1 and not the &#39;first_frame&#39; parameter.
+        Frame 1 therefor has the time 0.0 in relation to the event timing.
+    &#39;&#39;&#39;
+    return zip(self.event_timings[self.event_disp_flags], self.event_labels[self.event_disp_flags])</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="c3d.header.Header.encode_events"><code class="name flex">
+<span>def <span class="ident">encode_events</span></span>(<span>self, events)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Encode event data in the event block.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>events</code></strong> :&ensp;<code>[(float, str), &hellip;]</code></dt>
+<dd>Event data, iterable of touples containing the event timing and a 4 character label string.
+Event timings should be calculated relative to sample 1 with the timing 0.0s, and should
+not be relative to the first_frame header parameter.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def encode_events(self, events):
+    &#39;&#39;&#39; Encode event data in the event block.
+
+    Parameters
+    ----------
+    events : [(float, str), ...]
+        Event data, iterable of touples containing the event timing and a 4 character label string.
+         Event timings should be calculated relative to sample 1 with the timing 0.0s, and should
+         not be relative to the first_frame header parameter.
+    &#39;&#39;&#39;
+    endian = &#39;&lt;&#39;
+    if sys.byteorder == &#39;big&#39;:
+        endian = &#39;&gt;&#39;
+
+    # Event block format
+    fmt = &#39;{}{}{}{}{}&#39;.format(endian,
+                              str(18 * 4) + &#39;s&#39;,  # Timings
+                              str(18) + &#39;s&#39;,      # Flags
+                              &#39;H&#39;,                # __
+                              str(18 * 4) + &#39;s&#39;   # Labels
+                              )
+    # Pack bytes
+    event_timings = np.zeros(18, dtype=np.float32)
+    event_disp_flags = np.zeros(18, dtype=np.uint8)
+    event_labels = np.empty(18, dtype=object)
+    label_bytes = bytearray(18 * 4)
+    for i, (time, label) in enumerate(events):
+        if i &gt; 17:
+            # Don&#39;t raise Error, header events are rarely used.
+            warnings.warn(&#39;Maximum of 18 events can be encoded in the header, skipping remaining events.&#39;)
+            break
+
+        event_timings[i] = time
+        event_labels[i] = label
+        label_bytes[i * 4:(i + 1) * 4] = label.encode(&#39;utf-8&#39;)
+
+    write_count = min(i + 1, 18)
+    event_disp_flags[:write_count] = 1
+
+    # Update event headers in self
+    self.long_event_labels = 0x3039  # Magic number
+    self.event_count = write_count
+    # Update event block
+    self.event_timings = event_timings[:write_count]
+    self.event_disp_flags = np.ones(write_count, dtype=np.bool)
+    self.event_labels = event_labels[:write_count]
+    self.event_block = struct.pack(fmt,
+                                   event_timings.tobytes(),
+                                   event_disp_flags.tobytes(),
+                                   0,
+                                   label_bytes
+                                   )</code></pre>
+</details>
+</dd>
+<dt id="c3d.header.Header.read"><code class="name flex">
+<span>def <span class="ident">read</span></span>(<span>self, handle, fmt=&#x27;&lt;BBHHHHHIHHI274sHHH164s44s&#x27;)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Read and parse binary header data from a file handle.</p>
+<p>This method reads exactly 512 bytes from the beginning of the given file
+handle.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>handle</code></strong> :&ensp;<code>file handle</code></dt>
+<dd>The given handle will be reset to 0 using <code>seek</code> and then 512 bytes
+will be read to initialize the attributes in this Header. The handle
+must be readable.</dd>
+</dl>
+<p>fmt : Formating string used to read the header.</p>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>AssertionError</code></dt>
+<dd>If the magic byte from the header is not 80 (the C3D magic value).</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def read(self, handle, fmt=BINARY_FORMAT_READ):
+    &#39;&#39;&#39;Read and parse binary header data from a file handle.
+
+    This method reads exactly 512 bytes from the beginning of the given file
+    handle.
+
+    Parameters
+    ----------
+    handle : file handle
+        The given handle will be reset to 0 using `seek` and then 512 bytes
+        will be read to initialize the attributes in this Header. The handle
+        must be readable.
+
+    fmt : Formating string used to read the header.
+
+    Raises
+    ------
+    AssertionError
+        If the magic byte from the header is not 80 (the C3D magic value).
+    &#39;&#39;&#39;
+    handle.seek(0)
+    raw = handle.read(512)
+
+    (self.parameter_block,
+     magic,
+     self.point_count,
+     self.analog_count,
+     self.first_frame,
+     self.last_frame,
+     self.max_gap,
+     self.scale_factor,
+     self.data_block,
+     self.analog_per_frame,
+     self.frame_rate,
+     _,
+     self.long_event_labels,
+     self.event_count,
+     __,
+     self.event_block,
+     _) = struct.unpack(fmt, raw)
+
+    # Check magic number
+    assert magic == 80, &#39;C3D magic {} != 80 !&#39;.format(magic)
+
+    # Check long event key
+    self.long_event_labels = self.long_event_labels == 0x3039</code></pre>
+</details>
+</dd>
+<dt id="c3d.header.Header.write"><code class="name flex">
+<span>def <span class="ident">write</span></span>(<span>self, handle)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Write binary header data to a file handle.</p>
+<p>This method writes exactly 512 bytes to the beginning of the given file
+handle.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>handle</code></strong> :&ensp;<code>file handle</code></dt>
+<dd>The given handle will be reset to 0 using <code>seek</code> and then 512 bytes
+will be written to describe the parameters in this Header. The
+handle must be writeable.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def write(self, handle):
+    &#39;&#39;&#39;Write binary header data to a file handle.
+
+    This method writes exactly 512 bytes to the beginning of the given file
+    handle.
+
+    Parameters
+    ----------
+    handle : file handle
+        The given handle will be reset to 0 using `seek` and then 512 bytes
+        will be written to describe the parameters in this Header. The
+        handle must be writeable.
+    &#39;&#39;&#39;
+    handle.seek(0)
+    handle.write(struct.pack(self.BINARY_FORMAT_WRITE,
+                             # Pack vars:
+                             self.parameter_block,
+                             0x50,
+                             self.point_count,
+                             self.analog_count,
+                             self.first_frame,
+                             self.last_frame,
+                             self.max_gap,
+                             self.scale_factor,
+                             self.data_block,
+                             self.analog_per_frame,
+                             self.frame_rate,
+                             b&#39;&#39;,
+                             self.long_event_labels and 0x3039 or 0x0,  # If True write long_event_key else 0
+                             self.event_count,
+                             0x0,
+                             self.event_block,
+                             b&#39;&#39;))</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="c3d" href="index.html">c3d</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="c3d.header.Header" href="#c3d.header.Header">Header</a></code></h4>
+<ul class="">
+<li><code><a title="c3d.header.Header.BINARY_FORMAT_READ" href="#c3d.header.Header.BINARY_FORMAT_READ">BINARY_FORMAT_READ</a></code></li>
+<li><code><a title="c3d.header.Header.BINARY_FORMAT_READ_BIG_ENDIAN" href="#c3d.header.Header.BINARY_FORMAT_READ_BIG_ENDIAN">BINARY_FORMAT_READ_BIG_ENDIAN</a></code></li>
+<li><code><a title="c3d.header.Header.BINARY_FORMAT_WRITE" href="#c3d.header.Header.BINARY_FORMAT_WRITE">BINARY_FORMAT_WRITE</a></code></li>
+<li><code><a title="c3d.header.Header.encode_events" href="#c3d.header.Header.encode_events">encode_events</a></code></li>
+<li><code><a title="c3d.header.Header.events" href="#c3d.header.Header.events">events</a></code></li>
+<li><code><a title="c3d.header.Header.read" href="#c3d.header.Header.read">read</a></code></li>
+<li><code><a title="c3d.header.Header.write" href="#c3d.header.Header.write">write</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+</footer>
+</body>
+</html>

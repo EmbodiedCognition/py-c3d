@@ -11,10 +11,17 @@ import gzip
 import numpy as np
 import sys
 from tempfile import TemporaryFile
+try:
+    import c3d
+except ModuleNotFoundError:
+    import os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..\\'))
+    import c3d
 
 parser = argparse.ArgumentParser(description='Convert a C3D file to NPZ (numpy binary) format.')
 parser.add_argument('input', default='-', metavar='FILE', nargs='+', help='process data from this input FILE')
 parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
+
 
 def convert(filename, args):
     input = sys.stdin
@@ -22,7 +29,7 @@ def convert(filename, args):
     if filename != '-':
         input = open(filename, 'rb')
         outname = filename.replace('.c3d', '.npz')
-        
+
     points = []
     analog = []
     for i, (_, p, a) in enumerate(c3d.Reader(input).read_frames()):
@@ -32,12 +39,13 @@ def convert(filename, args):
             logging.debug('%s: extracted %d point frames', outname, len(points))
 
     np.savez(outname, points=points, analog=analog)
-    print(outname + ': saved', len(points), "x", str(points[0].shape), "points,", 
-        len(analog), analog[0].shape, 'analog' if len(analog) else ()
-    )
-    
+    print(outname + ': saved', len(points), "x", str(points[0].shape), "points,",
+          len(analog), analog[0].shape, 'analog' if len(analog) else ()
+          )
+
     if filename != '-':
         input.close()
+
 
 def main(args):
     if args.verbose:

@@ -1,0 +1,1958 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.2" />
+<title>c3d.parameter API documentation</title>
+<meta name="description" content="Classes used to represent the concept of a parameter in a .c3d file." />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS_CHTML" integrity="sha256-kZafAc6mZvK3W3v1pHOcUix30OHQN6pU/NO2oFkqZVw=" crossorigin></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>c3d.parameter</code></h1>
+</header>
+<section id="section-intro">
+<p>Classes used to represent the concept of a parameter in a .c3d file.</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#39;&#39;&#39; Classes used to represent the concept of a parameter in a .c3d file.
+&#39;&#39;&#39;
+import struct
+import numpy as np
+from .utils import DEC_to_IEEE, DEC_to_IEEE_BYTES
+
+
+class ParamData(object):
+    &#39;&#39;&#39;A class representing a single named parameter from a C3D file.
+
+    Attributes
+    ----------
+    name : str
+        Name of this parameter.
+    dtype: DataTypes
+        Reference to the DataTypes object associated with the file.
+    desc : str
+        Brief description of this parameter.
+    bytes_per_element : int, optional
+        For array data, this describes the size of each element of data. For
+        string data (including arrays of strings), this should be -1.
+    dimensions : list of int
+        For array data, this describes the dimensions of the array, stored in
+        column-major (Fortran) order. For arrays of strings, the dimensions here will be
+        the number of columns (length of each string) followed by the number of
+        rows (number of strings).
+    bytes : str
+        Raw data for this parameter.
+    &#39;&#39;&#39;
+
+    def __init__(self,
+                 name,
+                 dtype,
+                 desc=&#39;&#39;,
+                 bytes_per_element=1,
+                 dimensions=None,
+                 bytes=b&#39;&#39;,
+                 handle=None):
+        &#39;&#39;&#39;Set up a new parameter, only the name is required.&#39;&#39;&#39;
+        self.name = name
+        self.dtypes = dtype
+        self.desc = desc
+        self.bytes_per_element = bytes_per_element
+        self.dimensions = dimensions or []
+        self.bytes = bytes
+        if handle:
+            self.read(handle)
+
+    def __repr__(self):
+        return &#39;&lt;Param: {}&gt;&#39;.format(self.desc)
+
+    @property
+    def num_elements(self) -&gt; int:
+        &#39;&#39;&#39;Return the number of elements in this parameter&#39;s array value.&#39;&#39;&#39;
+        e = 1
+        for d in self.dimensions:
+            e *= d
+        return e
+
+    @property
+    def total_bytes(self) -&gt; int:
+        &#39;&#39;&#39;Return the number of bytes used for storing this parameter&#39;s data.&#39;&#39;&#39;
+        return self.num_elements * abs(self.bytes_per_element)
+
+    @property
+    def binary_size(self) -&gt; int:
+        &#39;&#39;&#39;Return the number of bytes needed to store this parameter.&#39;&#39;&#39;
+        return (
+            1 +  # group_id
+            2 +  # next offset marker
+            1 + len(self.name.encode(&#39;utf-8&#39;)) +  # size of name and name bytes
+            1 +  # data size
+            # size of dimensions and dimension bytes
+            1 + len(self.dimensions) +
+            self.total_bytes +  # data
+            1 + len(self.desc.encode(&#39;utf-8&#39;))  # size of desc and desc bytes
+        )
+
+    def write(self, group_id, handle):
+        &#39;&#39;&#39;Write binary data for this parameter to a file handle.
+
+        Parameters
+        ----------
+        group_id : int
+            The numerical ID of the group that holds this parameter.
+        handle : file handle
+            An open, writable, binary file handle.
+        &#39;&#39;&#39;
+        name = self.name.encode(&#39;utf-8&#39;)
+        handle.write(struct.pack(&#39;bb&#39;, len(name), group_id))
+        handle.write(name)
+        handle.write(struct.pack(&#39;&lt;h&#39;, self.binary_size - 2 - len(name)))
+        handle.write(struct.pack(&#39;b&#39;, self.bytes_per_element))
+        handle.write(struct.pack(&#39;B&#39;, len(self.dimensions)))
+        handle.write(struct.pack(&#39;B&#39; * len(self.dimensions), *self.dimensions))
+        if self.bytes is not None and len(self.bytes) &gt; 0:
+            handle.write(self.bytes)
+        desc = self.desc.encode(&#39;utf-8&#39;)
+        handle.write(struct.pack(&#39;B&#39;, len(desc)))
+        handle.write(desc)
+
+    def read(self, handle):
+        &#39;&#39;&#39;Read binary data for this parameter from a file handle.
+
+        This reads exactly enough data from the current position in the file to
+        initialize the parameter.
+        &#39;&#39;&#39;
+        self.bytes_per_element, = struct.unpack(&#39;b&#39;, handle.read(1))
+        dims, = struct.unpack(&#39;B&#39;, handle.read(1))
+        self.dimensions = [struct.unpack(&#39;B&#39;, handle.read(1))[
+            0] for _ in range(dims)]
+        self.bytes = b&#39;&#39;
+        if self.total_bytes:
+            self.bytes = handle.read(self.total_bytes)
+        desc_size, = struct.unpack(&#39;B&#39;, handle.read(1))
+        self.desc = desc_size and self.dtypes.decode_string(handle.read(desc_size)) or &#39;&#39;
+
+    def _as(self, dtype):
+        &#39;&#39;&#39;Unpack the raw bytes of this param using the given struct format.&#39;&#39;&#39;
+        return np.frombuffer(self.bytes, count=1, dtype=dtype)[0]
+
+    def _as_array(self, dtype, copy=True):
+        &#39;&#39;&#39;Unpack the raw bytes of this param using the given data format.&#39;&#39;&#39;
+        if not self.dimensions:
+            return [self._as(dtype)]
+        elems = np.frombuffer(self.bytes, dtype=dtype)
+        # Reverse shape as the shape is defined in fortran format
+        view = elems.reshape(self.dimensions[::-1])
+        if copy:
+            return view.copy()
+        return view
+
+
+class ParamReadonly(object):
+    &#39;&#39;&#39; Wrapper exposing readonly attributes of a `c3d.parameter.ParamData` entry.
+    &#39;&#39;&#39;
+
+    def __init__(self, data):
+        self._data = data
+
+    def __eq__(self, other):
+        return self._data is other._data
+
+    @property
+    def name(self) -&gt; str:
+        &#39;&#39;&#39; Get the parameter name. &#39;&#39;&#39;
+        return self._data.name
+
+    @property
+    def desc(self) -&gt; str:
+        &#39;&#39;&#39; Get the parameter descriptor. &#39;&#39;&#39;
+        return self._data.desc
+
+    @property
+    def dtypes(self):
+        &#39;&#39;&#39; Convenience accessor to the `c3d.dtypes.DataTypes` instance associated with the parameter. &#39;&#39;&#39;
+        return self._data.dtypes
+
+    @property
+    def dimensions(self) -&gt; (int, ...):
+        &#39;&#39;&#39; Shape of the parameter data (Fortran format). &#39;&#39;&#39;
+        return self._data.dimensions
+
+    @property
+    def num_elements(self) -&gt; int:
+        &#39;&#39;&#39;Return the number of elements in this parameter&#39;s array value.&#39;&#39;&#39;
+        return self._data.num_elements
+
+    @property
+    def bytes_per_element(self) -&gt; int:
+        &#39;&#39;&#39;Return the number of bytes used to store each data element.&#39;&#39;&#39;
+        return self._data.bytes_per_element
+
+    @property
+    def total_bytes(self) -&gt; int:
+        &#39;&#39;&#39;Return the number of bytes used for storing this parameter&#39;s data.&#39;&#39;&#39;
+        return self._data.total_bytes
+
+    @property
+    def binary_size(self) -&gt; int:
+        &#39;&#39;&#39;Return the number of bytes needed to store this parameter.&#39;&#39;&#39;
+        return self._data.binary_size
+
+    @property
+    def int8_value(self):
+        &#39;&#39;&#39;Get the parameter data as an 8-bit signed integer.&#39;&#39;&#39;
+        return self._data._as(self.dtypes.int8)
+
+    @property
+    def uint8_value(self):
+        &#39;&#39;&#39;Get the parameter data as an 8-bit unsigned integer.&#39;&#39;&#39;
+        return self._data._as(self.dtypes.uint8)
+
+    @property
+    def int16_value(self):
+        &#39;&#39;&#39;Get the parameter data as a 16-bit signed integer.&#39;&#39;&#39;
+        return self._data._as(self.dtypes.int16)
+
+    @property
+    def uint16_value(self):
+        &#39;&#39;&#39;Get the parameter data as a 16-bit unsigned integer.&#39;&#39;&#39;
+        return self._data._as(self.dtypes.uint16)
+
+    @property
+    def int32_value(self):
+        &#39;&#39;&#39;Get the parameter data as a 32-bit signed integer.&#39;&#39;&#39;
+        return self._data._as(self.dtypes.int32)
+
+    @property
+    def uint32_value(self):
+        &#39;&#39;&#39;Get the parameter data as a 32-bit unsigned integer.&#39;&#39;&#39;
+        return self._data._as(self.dtypes.uint32)
+
+    @property
+    def uint_value(self):
+        &#39;&#39;&#39; Get the parameter data as a unsigned integer of appropriate type. &#39;&#39;&#39;
+        if self.bytes_per_element &gt;= 4:
+            return self.uint32_value
+        elif self.bytes_per_element &gt;= 2:
+            return self.uint16_value
+        else:
+            return self.uint8_value
+
+    @property
+    def int_value(self):
+        &#39;&#39;&#39; Get the parameter data as a signed integer of appropriate type. &#39;&#39;&#39;
+        if self.bytes_per_element &gt;= 4:
+            return self.int32_value
+        elif self.bytes_per_element &gt;= 2:
+            return self.int16_value
+        else:
+            return self.int8_value
+
+    @property
+    def float_value(self):
+        &#39;&#39;&#39;Get the parameter data as a floating point value of appropriate type.&#39;&#39;&#39;
+        if self.bytes_per_element &gt; 4:
+            if self.dtypes.is_dec:
+                raise AttributeError(&#34;64 bit DEC floating point is not supported.&#34;)
+            # 64-bit floating point is not a standard
+            return self._data._as(self.dtypes.float64)
+        elif self.bytes_per_element == 4:
+            if self.dtypes.is_dec:
+                return DEC_to_IEEE(self._data._as(np.uint32))
+            else:  # is_mips or is_ieee
+                return self._data._as(self.dtypes.float32)
+        else:
+            raise AttributeError(&#34;Only 32 and 64 bit floating point is supported.&#34;)
+
+    @property
+    def bytes_value(self) -&gt; bytes:
+        &#39;&#39;&#39;Get the raw byte string.&#39;&#39;&#39;
+        return self._data.bytes
+
+    @property
+    def string_value(self):
+        &#39;&#39;&#39;Get the parameter data as a unicode string.&#39;&#39;&#39;
+        return self.dtypes.decode_string(self._data.bytes)
+
+    @property
+    def int8_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of 8-bit signed integers.&#39;&#39;&#39;
+        return self._data._as_array(self.dtypes.int8)
+
+    @property
+    def uint8_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of 8-bit unsigned integers.&#39;&#39;&#39;
+        return self._data._as_array(self.dtypes.uint8)
+
+    @property
+    def int16_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of 16-bit signed integers.&#39;&#39;&#39;
+        return self._data._as_array(self.dtypes.int16)
+
+    @property
+    def uint16_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of 16-bit unsigned integers.&#39;&#39;&#39;
+        return self._data._as_array(self.dtypes.uint16)
+
+    @property
+    def int32_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of 32-bit signed integers.&#39;&#39;&#39;
+        return self._data._as_array(self.dtypes.int32)
+
+    @property
+    def uint32_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of 32-bit unsigned integers.&#39;&#39;&#39;
+        return self._data._as_array(self.dtypes.uint32)
+
+    @property
+    def int64_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of 32-bit signed integers.&#39;&#39;&#39;
+        return self._data._as_array(self.dtypes.int64)
+
+    @property
+    def uint64_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of 32-bit unsigned integers.&#39;&#39;&#39;
+        return self._data._as_array(self.dtypes.uint64)
+
+    @property
+    def float32_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of 32-bit floats.&#39;&#39;&#39;
+        # Convert float data if not IEEE processor
+        if self.dtypes.is_dec:
+            # _as_array but for DEC
+            if not self.dimensions:
+                return [self.float_value]
+            return DEC_to_IEEE_BYTES(self._data.bytes).reshape(self.dimensions[::-1])  # Reverse fortran format
+        else:  # is_ieee or is_mips
+            return self._data._as_array(self.dtypes.float32)
+
+    @property
+    def float64_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of 64-bit floats.&#39;&#39;&#39;
+        # Convert float data if not IEEE processor
+        if self.dtypes.is_dec:
+            raise ValueError(&#39;Unable to convert bytes encoded in a 64 bit floating point DEC format.&#39;)
+        else:  # is_ieee or is_mips
+            return self._data._as_array(self.dtypes.float64)
+
+    @property
+    def float_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of 32 or 64 bit floats.&#39;&#39;&#39;
+        # Convert float data if not IEEE processor
+        if self.bytes_per_element == 4:
+            return self.float32_array
+        elif self.bytes_per_element == 8:
+            return self.float64_array
+        else:
+            raise TypeError(&#34;Parsing parameter bytes to an array with %i bit &#34; % self.bytes_per_element +
+                            &#34;floating-point precission is not unsupported.&#34;)
+
+    @property
+    def int_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of integer values.&#39;&#39;&#39;
+        # Convert float data if not IEEE processor
+        if self.bytes_per_element == 1:
+            return self.int8_array
+        elif self.bytes_per_element == 2:
+            return self.int16_array
+        elif self.bytes_per_element == 4:
+            return self.int32_array
+        elif self.bytes_per_element == 8:
+            return self.int64_array
+        else:
+            raise TypeError(&#34;Parsing parameter bytes to an array with %i bit integer values is not unsupported.&#34; %
+                            self.bytes_per_element)
+
+    @property
+    def uint_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of integer values.&#39;&#39;&#39;
+        # Convert float data if not IEEE processor
+        if self.bytes_per_element == 1:
+            return self.uint8_array
+        elif self.bytes_per_element == 2:
+            return self.uint16_array
+        elif self.bytes_per_element == 4:
+            return self.uint32_array
+        elif self.bytes_per_element == 8:
+            return self.uint64_array
+        else:
+            raise TypeError(&#34;Parsing parameter bytes to an array with %i bit integer values is not unsupported.&#34; %
+                            self.bytes_per_element)
+
+    @property
+    def bytes_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of raw byte strings.&#39;&#39;&#39;
+        # Decode different dimensions
+        if len(self.dimensions) == 0:
+            return np.array([])
+        elif len(self.dimensions) == 1:
+            return np.array(self._data.bytes)
+        else:
+            # Convert Fortran shape (data in memory is identical, shape is transposed)
+            word_len = self.dimensions[0]
+            dims = self.dimensions[1:][::-1]  # Identical to: [:0:-1]
+            byte_steps = np.cumprod(self.dimensions[:-1])[::-1]
+            # Generate mult-dimensional array and parse byte words
+            byte_arr = np.empty(dims, dtype=object)
+            for i in np.ndindex(*dims):
+                # Calculate byte offset as sum of each array index times the byte step of each dimension.
+                off = np.sum(np.multiply(i, byte_steps))
+                byte_arr[i] = self._data.bytes[off:off+word_len]
+            return byte_arr
+
+    @property
+    def string_array(self):
+        &#39;&#39;&#39;Get the parameter data as a python array of unicode strings.&#39;&#39;&#39;
+        # Decode different dimensions
+        if len(self.dimensions) == 0:
+            return np.array([])
+        elif len(self.dimensions) == 1:
+            return np.array([self.string_value])
+        else:
+            # Parse byte sequences
+            byte_arr = self.bytes_array
+            # Decode sequences
+            for i in np.ndindex(byte_arr.shape):
+                byte_arr[i] = self.dtypes.decode_string(byte_arr[i])
+            return byte_arr
+
+    @property
+    def any_value(self):
+        &#39;&#39;&#39; Get the parameter data as a value of &#39;traditional type&#39;.
+
+        Traditional types are defined in the Parameter section in the [user manual].
+
+        Returns
+        -------
+        value : int, float, or str
+            Depending on the `bytes_per_element` field, a traditional type can
+            be a either a signed byte, signed short, 32-bit float, or a string.
+
+        [user manual]: https://www.c3d.org/docs/C3D_User_Guide.pdf
+        &#39;&#39;&#39;
+        if self.bytes_per_element &gt;= 4:
+            return self.float_value
+        elif self.bytes_per_element &gt;= 2:
+            return self.int16_value
+        elif self.bytes_per_element == -1:
+            return self.string_value
+        else:
+            return self.int8_value
+
+    @property
+    def any_array(self):
+        &#39;&#39;&#39; Get the parameter data as an array of &#39;traditional type&#39;.
+
+        Traditional types are defined in the Parameter section in the [user manual].
+
+        Returns
+        -------
+        value : array
+            Depending on the `bytes_per_element` field, a traditional type can
+            be a either a signed byte, signed short, 32-bit float, or a string.
+
+        [user manual]: https://www.c3d.org/docs/C3D_User_Guide.pdf
+        &#39;&#39;&#39;
+        if self.bytes_per_element &gt;= 4:
+            return self.float_array
+        elif self.bytes_per_element &gt;= 2:
+            return self.int16_array
+        elif self.bytes_per_element == -1:
+            return self.string_array
+        else:
+            return self.int8_array
+
+    @property
+    def _as_any_uint(self):
+        &#39;&#39;&#39; Attempt to parse the parameter data as any unsigned integer format.
+            Checks if the integer is stored as a floating point value.
+
+            Can be used to read &#39;POINT:FRAMES&#39; or &#39;POINT:LONG_FRAMES&#39;
+            when not accessed through `c3d.manager.Manager.last_frame`.
+        &#39;&#39;&#39;
+        if self.bytes_per_element &gt;= 4:
+            # Check if float value representation is an integer
+            value = self.float_value
+            if float(value).is_integer():
+                return int(value)
+            return self.uint32_value
+        elif self.bytes_per_element &gt;= 2:
+            return self.uint16_value
+        else:
+            return self.uint8_value
+
+
+class Param(ParamReadonly):
+    &#39;&#39;&#39; Wrapper exposing both readable and writable attributes of a `c3d.parameter.ParamData` entry.
+    &#39;&#39;&#39;
+    def __init__(self, data):
+        super(Param, self).__init__(data)
+
+    def readonly(self):
+        &#39;&#39;&#39; Returns a readonly `c3d.parameter.ParamReadonly` instance. &#39;&#39;&#39;
+        return ParamReadonly(self._data)
+
+    @property
+    def bytes(self) -&gt; bytes:
+        &#39;&#39;&#39; Get or set the parameter bytes. &#39;&#39;&#39;
+        return self._data.bytes
+
+    @bytes.setter
+    def bytes(self, value):
+        self._data.bytes = value</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="c3d.parameter.Param"><code class="flex name class">
+<span>class <span class="ident">Param</span></span>
+<span>(</span><span>data)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Wrapper exposing both readable and writable attributes of a <code><a title="c3d.parameter.ParamData" href="#c3d.parameter.ParamData">ParamData</a></code> entry.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Param(ParamReadonly):
+    &#39;&#39;&#39; Wrapper exposing both readable and writable attributes of a `c3d.parameter.ParamData` entry.
+    &#39;&#39;&#39;
+    def __init__(self, data):
+        super(Param, self).__init__(data)
+
+    def readonly(self):
+        &#39;&#39;&#39; Returns a readonly `c3d.parameter.ParamReadonly` instance. &#39;&#39;&#39;
+        return ParamReadonly(self._data)
+
+    @property
+    def bytes(self) -&gt; bytes:
+        &#39;&#39;&#39; Get or set the parameter bytes. &#39;&#39;&#39;
+        return self._data.bytes
+
+    @bytes.setter
+    def bytes(self, value):
+        self._data.bytes = value</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="c3d.parameter.ParamReadonly" href="#c3d.parameter.ParamReadonly">ParamReadonly</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="c3d.parameter.Param.bytes"><code class="name">var <span class="ident">bytes</span> : bytes</code></dt>
+<dd>
+<div class="desc"><p>Get or set the parameter bytes.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def bytes(self) -&gt; bytes:
+    &#39;&#39;&#39; Get or set the parameter bytes. &#39;&#39;&#39;
+    return self._data.bytes</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="c3d.parameter.Param.readonly"><code class="name flex">
+<span>def <span class="ident">readonly</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns a readonly <code><a title="c3d.parameter.ParamReadonly" href="#c3d.parameter.ParamReadonly">ParamReadonly</a></code> instance.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def readonly(self):
+    &#39;&#39;&#39; Returns a readonly `c3d.parameter.ParamReadonly` instance. &#39;&#39;&#39;
+    return ParamReadonly(self._data)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="c3d.parameter.ParamReadonly" href="#c3d.parameter.ParamReadonly">ParamReadonly</a></b></code>:
+<ul class="hlist">
+<li><code><a title="c3d.parameter.ParamReadonly.any_array" href="#c3d.parameter.ParamReadonly.any_array">any_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.any_value" href="#c3d.parameter.ParamReadonly.any_value">any_value</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.binary_size" href="#c3d.parameter.ParamReadonly.binary_size">binary_size</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.bytes_array" href="#c3d.parameter.ParamReadonly.bytes_array">bytes_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.bytes_per_element" href="#c3d.parameter.ParamReadonly.bytes_per_element">bytes_per_element</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.bytes_value" href="#c3d.parameter.ParamReadonly.bytes_value">bytes_value</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.desc" href="#c3d.parameter.ParamReadonly.desc">desc</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.dimensions" href="#c3d.parameter.ParamReadonly.dimensions">dimensions</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.dtypes" href="#c3d.parameter.ParamReadonly.dtypes">dtypes</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.float32_array" href="#c3d.parameter.ParamReadonly.float32_array">float32_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.float64_array" href="#c3d.parameter.ParamReadonly.float64_array">float64_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.float_array" href="#c3d.parameter.ParamReadonly.float_array">float_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.float_value" href="#c3d.parameter.ParamReadonly.float_value">float_value</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.int16_array" href="#c3d.parameter.ParamReadonly.int16_array">int16_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.int16_value" href="#c3d.parameter.ParamReadonly.int16_value">int16_value</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.int32_array" href="#c3d.parameter.ParamReadonly.int32_array">int32_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.int32_value" href="#c3d.parameter.ParamReadonly.int32_value">int32_value</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.int64_array" href="#c3d.parameter.ParamReadonly.int64_array">int64_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.int8_array" href="#c3d.parameter.ParamReadonly.int8_array">int8_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.int8_value" href="#c3d.parameter.ParamReadonly.int8_value">int8_value</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.int_array" href="#c3d.parameter.ParamReadonly.int_array">int_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.int_value" href="#c3d.parameter.ParamReadonly.int_value">int_value</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.name" href="#c3d.parameter.ParamReadonly.name">name</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.num_elements" href="#c3d.parameter.ParamReadonly.num_elements">num_elements</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.string_array" href="#c3d.parameter.ParamReadonly.string_array">string_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.string_value" href="#c3d.parameter.ParamReadonly.string_value">string_value</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.total_bytes" href="#c3d.parameter.ParamReadonly.total_bytes">total_bytes</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.uint16_array" href="#c3d.parameter.ParamReadonly.uint16_array">uint16_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.uint16_value" href="#c3d.parameter.ParamReadonly.uint16_value">uint16_value</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.uint32_array" href="#c3d.parameter.ParamReadonly.uint32_array">uint32_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.uint32_value" href="#c3d.parameter.ParamReadonly.uint32_value">uint32_value</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.uint64_array" href="#c3d.parameter.ParamReadonly.uint64_array">uint64_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.uint8_array" href="#c3d.parameter.ParamReadonly.uint8_array">uint8_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.uint8_value" href="#c3d.parameter.ParamReadonly.uint8_value">uint8_value</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.uint_array" href="#c3d.parameter.ParamReadonly.uint_array">uint_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.uint_value" href="#c3d.parameter.ParamReadonly.uint_value">uint_value</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="c3d.parameter.ParamData"><code class="flex name class">
+<span>class <span class="ident">ParamData</span></span>
+<span>(</span><span>name, dtype, desc='', bytes_per_element=1, dimensions=None, bytes=b'', handle=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>A class representing a single named parameter from a C3D file.</p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of this parameter.</dd>
+<dt><strong><code>dtype</code></strong> :&ensp;<code>DataTypes</code></dt>
+<dd>Reference to the DataTypes object associated with the file.</dd>
+<dt><strong><code>desc</code></strong> :&ensp;<code>str</code></dt>
+<dd>Brief description of this parameter.</dd>
+<dt><strong><code>bytes_per_element</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>For array data, this describes the size of each element of data. For
+string data (including arrays of strings), this should be -1.</dd>
+<dt><strong><code>dimensions</code></strong> :&ensp;<code>list</code> of <code>int</code></dt>
+<dd>For array data, this describes the dimensions of the array, stored in
+column-major (Fortran) order. For arrays of strings, the dimensions here will be
+the number of columns (length of each string) followed by the number of
+rows (number of strings).</dd>
+<dt><strong><code>bytes</code></strong> :&ensp;<code>str</code></dt>
+<dd>Raw data for this parameter.</dd>
+</dl>
+<p>Set up a new parameter, only the name is required.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ParamData(object):
+    &#39;&#39;&#39;A class representing a single named parameter from a C3D file.
+
+    Attributes
+    ----------
+    name : str
+        Name of this parameter.
+    dtype: DataTypes
+        Reference to the DataTypes object associated with the file.
+    desc : str
+        Brief description of this parameter.
+    bytes_per_element : int, optional
+        For array data, this describes the size of each element of data. For
+        string data (including arrays of strings), this should be -1.
+    dimensions : list of int
+        For array data, this describes the dimensions of the array, stored in
+        column-major (Fortran) order. For arrays of strings, the dimensions here will be
+        the number of columns (length of each string) followed by the number of
+        rows (number of strings).
+    bytes : str
+        Raw data for this parameter.
+    &#39;&#39;&#39;
+
+    def __init__(self,
+                 name,
+                 dtype,
+                 desc=&#39;&#39;,
+                 bytes_per_element=1,
+                 dimensions=None,
+                 bytes=b&#39;&#39;,
+                 handle=None):
+        &#39;&#39;&#39;Set up a new parameter, only the name is required.&#39;&#39;&#39;
+        self.name = name
+        self.dtypes = dtype
+        self.desc = desc
+        self.bytes_per_element = bytes_per_element
+        self.dimensions = dimensions or []
+        self.bytes = bytes
+        if handle:
+            self.read(handle)
+
+    def __repr__(self):
+        return &#39;&lt;Param: {}&gt;&#39;.format(self.desc)
+
+    @property
+    def num_elements(self) -&gt; int:
+        &#39;&#39;&#39;Return the number of elements in this parameter&#39;s array value.&#39;&#39;&#39;
+        e = 1
+        for d in self.dimensions:
+            e *= d
+        return e
+
+    @property
+    def total_bytes(self) -&gt; int:
+        &#39;&#39;&#39;Return the number of bytes used for storing this parameter&#39;s data.&#39;&#39;&#39;
+        return self.num_elements * abs(self.bytes_per_element)
+
+    @property
+    def binary_size(self) -&gt; int:
+        &#39;&#39;&#39;Return the number of bytes needed to store this parameter.&#39;&#39;&#39;
+        return (
+            1 +  # group_id
+            2 +  # next offset marker
+            1 + len(self.name.encode(&#39;utf-8&#39;)) +  # size of name and name bytes
+            1 +  # data size
+            # size of dimensions and dimension bytes
+            1 + len(self.dimensions) +
+            self.total_bytes +  # data
+            1 + len(self.desc.encode(&#39;utf-8&#39;))  # size of desc and desc bytes
+        )
+
+    def write(self, group_id, handle):
+        &#39;&#39;&#39;Write binary data for this parameter to a file handle.
+
+        Parameters
+        ----------
+        group_id : int
+            The numerical ID of the group that holds this parameter.
+        handle : file handle
+            An open, writable, binary file handle.
+        &#39;&#39;&#39;
+        name = self.name.encode(&#39;utf-8&#39;)
+        handle.write(struct.pack(&#39;bb&#39;, len(name), group_id))
+        handle.write(name)
+        handle.write(struct.pack(&#39;&lt;h&#39;, self.binary_size - 2 - len(name)))
+        handle.write(struct.pack(&#39;b&#39;, self.bytes_per_element))
+        handle.write(struct.pack(&#39;B&#39;, len(self.dimensions)))
+        handle.write(struct.pack(&#39;B&#39; * len(self.dimensions), *self.dimensions))
+        if self.bytes is not None and len(self.bytes) &gt; 0:
+            handle.write(self.bytes)
+        desc = self.desc.encode(&#39;utf-8&#39;)
+        handle.write(struct.pack(&#39;B&#39;, len(desc)))
+        handle.write(desc)
+
+    def read(self, handle):
+        &#39;&#39;&#39;Read binary data for this parameter from a file handle.
+
+        This reads exactly enough data from the current position in the file to
+        initialize the parameter.
+        &#39;&#39;&#39;
+        self.bytes_per_element, = struct.unpack(&#39;b&#39;, handle.read(1))
+        dims, = struct.unpack(&#39;B&#39;, handle.read(1))
+        self.dimensions = [struct.unpack(&#39;B&#39;, handle.read(1))[
+            0] for _ in range(dims)]
+        self.bytes = b&#39;&#39;
+        if self.total_bytes:
+            self.bytes = handle.read(self.total_bytes)
+        desc_size, = struct.unpack(&#39;B&#39;, handle.read(1))
+        self.desc = desc_size and self.dtypes.decode_string(handle.read(desc_size)) or &#39;&#39;
+
+    def _as(self, dtype):
+        &#39;&#39;&#39;Unpack the raw bytes of this param using the given struct format.&#39;&#39;&#39;
+        return np.frombuffer(self.bytes, count=1, dtype=dtype)[0]
+
+    def _as_array(self, dtype, copy=True):
+        &#39;&#39;&#39;Unpack the raw bytes of this param using the given data format.&#39;&#39;&#39;
+        if not self.dimensions:
+            return [self._as(dtype)]
+        elems = np.frombuffer(self.bytes, dtype=dtype)
+        # Reverse shape as the shape is defined in fortran format
+        view = elems.reshape(self.dimensions[::-1])
+        if copy:
+            return view.copy()
+        return view</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="c3d.parameter.ParamData.binary_size"><code class="name">var <span class="ident">binary_size</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Return the number of bytes needed to store this parameter.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def binary_size(self) -&gt; int:
+    &#39;&#39;&#39;Return the number of bytes needed to store this parameter.&#39;&#39;&#39;
+    return (
+        1 +  # group_id
+        2 +  # next offset marker
+        1 + len(self.name.encode(&#39;utf-8&#39;)) +  # size of name and name bytes
+        1 +  # data size
+        # size of dimensions and dimension bytes
+        1 + len(self.dimensions) +
+        self.total_bytes +  # data
+        1 + len(self.desc.encode(&#39;utf-8&#39;))  # size of desc and desc bytes
+    )</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamData.num_elements"><code class="name">var <span class="ident">num_elements</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Return the number of elements in this parameter's array value.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def num_elements(self) -&gt; int:
+    &#39;&#39;&#39;Return the number of elements in this parameter&#39;s array value.&#39;&#39;&#39;
+    e = 1
+    for d in self.dimensions:
+        e *= d
+    return e</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamData.total_bytes"><code class="name">var <span class="ident">total_bytes</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Return the number of bytes used for storing this parameter's data.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def total_bytes(self) -&gt; int:
+    &#39;&#39;&#39;Return the number of bytes used for storing this parameter&#39;s data.&#39;&#39;&#39;
+    return self.num_elements * abs(self.bytes_per_element)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="c3d.parameter.ParamData.read"><code class="name flex">
+<span>def <span class="ident">read</span></span>(<span>self, handle)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Read binary data for this parameter from a file handle.</p>
+<p>This reads exactly enough data from the current position in the file to
+initialize the parameter.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def read(self, handle):
+    &#39;&#39;&#39;Read binary data for this parameter from a file handle.
+
+    This reads exactly enough data from the current position in the file to
+    initialize the parameter.
+    &#39;&#39;&#39;
+    self.bytes_per_element, = struct.unpack(&#39;b&#39;, handle.read(1))
+    dims, = struct.unpack(&#39;B&#39;, handle.read(1))
+    self.dimensions = [struct.unpack(&#39;B&#39;, handle.read(1))[
+        0] for _ in range(dims)]
+    self.bytes = b&#39;&#39;
+    if self.total_bytes:
+        self.bytes = handle.read(self.total_bytes)
+    desc_size, = struct.unpack(&#39;B&#39;, handle.read(1))
+    self.desc = desc_size and self.dtypes.decode_string(handle.read(desc_size)) or &#39;&#39;</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamData.write"><code class="name flex">
+<span>def <span class="ident">write</span></span>(<span>self, group_id, handle)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Write binary data for this parameter to a file handle.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>group_id</code></strong> :&ensp;<code>int</code></dt>
+<dd>The numerical ID of the group that holds this parameter.</dd>
+<dt><strong><code>handle</code></strong> :&ensp;<code>file handle</code></dt>
+<dd>An open, writable, binary file handle.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def write(self, group_id, handle):
+    &#39;&#39;&#39;Write binary data for this parameter to a file handle.
+
+    Parameters
+    ----------
+    group_id : int
+        The numerical ID of the group that holds this parameter.
+    handle : file handle
+        An open, writable, binary file handle.
+    &#39;&#39;&#39;
+    name = self.name.encode(&#39;utf-8&#39;)
+    handle.write(struct.pack(&#39;bb&#39;, len(name), group_id))
+    handle.write(name)
+    handle.write(struct.pack(&#39;&lt;h&#39;, self.binary_size - 2 - len(name)))
+    handle.write(struct.pack(&#39;b&#39;, self.bytes_per_element))
+    handle.write(struct.pack(&#39;B&#39;, len(self.dimensions)))
+    handle.write(struct.pack(&#39;B&#39; * len(self.dimensions), *self.dimensions))
+    if self.bytes is not None and len(self.bytes) &gt; 0:
+        handle.write(self.bytes)
+    desc = self.desc.encode(&#39;utf-8&#39;)
+    handle.write(struct.pack(&#39;B&#39;, len(desc)))
+    handle.write(desc)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="c3d.parameter.ParamReadonly"><code class="flex name class">
+<span>class <span class="ident">ParamReadonly</span></span>
+<span>(</span><span>data)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Wrapper exposing readonly attributes of a <code><a title="c3d.parameter.ParamData" href="#c3d.parameter.ParamData">ParamData</a></code> entry.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ParamReadonly(object):
+    &#39;&#39;&#39; Wrapper exposing readonly attributes of a `c3d.parameter.ParamData` entry.
+    &#39;&#39;&#39;
+
+    def __init__(self, data):
+        self._data = data
+
+    def __eq__(self, other):
+        return self._data is other._data
+
+    @property
+    def name(self) -&gt; str:
+        &#39;&#39;&#39; Get the parameter name. &#39;&#39;&#39;
+        return self._data.name
+
+    @property
+    def desc(self) -&gt; str:
+        &#39;&#39;&#39; Get the parameter descriptor. &#39;&#39;&#39;
+        return self._data.desc
+
+    @property
+    def dtypes(self):
+        &#39;&#39;&#39; Convenience accessor to the `c3d.dtypes.DataTypes` instance associated with the parameter. &#39;&#39;&#39;
+        return self._data.dtypes
+
+    @property
+    def dimensions(self) -&gt; (int, ...):
+        &#39;&#39;&#39; Shape of the parameter data (Fortran format). &#39;&#39;&#39;
+        return self._data.dimensions
+
+    @property
+    def num_elements(self) -&gt; int:
+        &#39;&#39;&#39;Return the number of elements in this parameter&#39;s array value.&#39;&#39;&#39;
+        return self._data.num_elements
+
+    @property
+    def bytes_per_element(self) -&gt; int:
+        &#39;&#39;&#39;Return the number of bytes used to store each data element.&#39;&#39;&#39;
+        return self._data.bytes_per_element
+
+    @property
+    def total_bytes(self) -&gt; int:
+        &#39;&#39;&#39;Return the number of bytes used for storing this parameter&#39;s data.&#39;&#39;&#39;
+        return self._data.total_bytes
+
+    @property
+    def binary_size(self) -&gt; int:
+        &#39;&#39;&#39;Return the number of bytes needed to store this parameter.&#39;&#39;&#39;
+        return self._data.binary_size
+
+    @property
+    def int8_value(self):
+        &#39;&#39;&#39;Get the parameter data as an 8-bit signed integer.&#39;&#39;&#39;
+        return self._data._as(self.dtypes.int8)
+
+    @property
+    def uint8_value(self):
+        &#39;&#39;&#39;Get the parameter data as an 8-bit unsigned integer.&#39;&#39;&#39;
+        return self._data._as(self.dtypes.uint8)
+
+    @property
+    def int16_value(self):
+        &#39;&#39;&#39;Get the parameter data as a 16-bit signed integer.&#39;&#39;&#39;
+        return self._data._as(self.dtypes.int16)
+
+    @property
+    def uint16_value(self):
+        &#39;&#39;&#39;Get the parameter data as a 16-bit unsigned integer.&#39;&#39;&#39;
+        return self._data._as(self.dtypes.uint16)
+
+    @property
+    def int32_value(self):
+        &#39;&#39;&#39;Get the parameter data as a 32-bit signed integer.&#39;&#39;&#39;
+        return self._data._as(self.dtypes.int32)
+
+    @property
+    def uint32_value(self):
+        &#39;&#39;&#39;Get the parameter data as a 32-bit unsigned integer.&#39;&#39;&#39;
+        return self._data._as(self.dtypes.uint32)
+
+    @property
+    def uint_value(self):
+        &#39;&#39;&#39; Get the parameter data as a unsigned integer of appropriate type. &#39;&#39;&#39;
+        if self.bytes_per_element &gt;= 4:
+            return self.uint32_value
+        elif self.bytes_per_element &gt;= 2:
+            return self.uint16_value
+        else:
+            return self.uint8_value
+
+    @property
+    def int_value(self):
+        &#39;&#39;&#39; Get the parameter data as a signed integer of appropriate type. &#39;&#39;&#39;
+        if self.bytes_per_element &gt;= 4:
+            return self.int32_value
+        elif self.bytes_per_element &gt;= 2:
+            return self.int16_value
+        else:
+            return self.int8_value
+
+    @property
+    def float_value(self):
+        &#39;&#39;&#39;Get the parameter data as a floating point value of appropriate type.&#39;&#39;&#39;
+        if self.bytes_per_element &gt; 4:
+            if self.dtypes.is_dec:
+                raise AttributeError(&#34;64 bit DEC floating point is not supported.&#34;)
+            # 64-bit floating point is not a standard
+            return self._data._as(self.dtypes.float64)
+        elif self.bytes_per_element == 4:
+            if self.dtypes.is_dec:
+                return DEC_to_IEEE(self._data._as(np.uint32))
+            else:  # is_mips or is_ieee
+                return self._data._as(self.dtypes.float32)
+        else:
+            raise AttributeError(&#34;Only 32 and 64 bit floating point is supported.&#34;)
+
+    @property
+    def bytes_value(self) -&gt; bytes:
+        &#39;&#39;&#39;Get the raw byte string.&#39;&#39;&#39;
+        return self._data.bytes
+
+    @property
+    def string_value(self):
+        &#39;&#39;&#39;Get the parameter data as a unicode string.&#39;&#39;&#39;
+        return self.dtypes.decode_string(self._data.bytes)
+
+    @property
+    def int8_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of 8-bit signed integers.&#39;&#39;&#39;
+        return self._data._as_array(self.dtypes.int8)
+
+    @property
+    def uint8_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of 8-bit unsigned integers.&#39;&#39;&#39;
+        return self._data._as_array(self.dtypes.uint8)
+
+    @property
+    def int16_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of 16-bit signed integers.&#39;&#39;&#39;
+        return self._data._as_array(self.dtypes.int16)
+
+    @property
+    def uint16_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of 16-bit unsigned integers.&#39;&#39;&#39;
+        return self._data._as_array(self.dtypes.uint16)
+
+    @property
+    def int32_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of 32-bit signed integers.&#39;&#39;&#39;
+        return self._data._as_array(self.dtypes.int32)
+
+    @property
+    def uint32_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of 32-bit unsigned integers.&#39;&#39;&#39;
+        return self._data._as_array(self.dtypes.uint32)
+
+    @property
+    def int64_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of 32-bit signed integers.&#39;&#39;&#39;
+        return self._data._as_array(self.dtypes.int64)
+
+    @property
+    def uint64_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of 32-bit unsigned integers.&#39;&#39;&#39;
+        return self._data._as_array(self.dtypes.uint64)
+
+    @property
+    def float32_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of 32-bit floats.&#39;&#39;&#39;
+        # Convert float data if not IEEE processor
+        if self.dtypes.is_dec:
+            # _as_array but for DEC
+            if not self.dimensions:
+                return [self.float_value]
+            return DEC_to_IEEE_BYTES(self._data.bytes).reshape(self.dimensions[::-1])  # Reverse fortran format
+        else:  # is_ieee or is_mips
+            return self._data._as_array(self.dtypes.float32)
+
+    @property
+    def float64_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of 64-bit floats.&#39;&#39;&#39;
+        # Convert float data if not IEEE processor
+        if self.dtypes.is_dec:
+            raise ValueError(&#39;Unable to convert bytes encoded in a 64 bit floating point DEC format.&#39;)
+        else:  # is_ieee or is_mips
+            return self._data._as_array(self.dtypes.float64)
+
+    @property
+    def float_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of 32 or 64 bit floats.&#39;&#39;&#39;
+        # Convert float data if not IEEE processor
+        if self.bytes_per_element == 4:
+            return self.float32_array
+        elif self.bytes_per_element == 8:
+            return self.float64_array
+        else:
+            raise TypeError(&#34;Parsing parameter bytes to an array with %i bit &#34; % self.bytes_per_element +
+                            &#34;floating-point precission is not unsupported.&#34;)
+
+    @property
+    def int_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of integer values.&#39;&#39;&#39;
+        # Convert float data if not IEEE processor
+        if self.bytes_per_element == 1:
+            return self.int8_array
+        elif self.bytes_per_element == 2:
+            return self.int16_array
+        elif self.bytes_per_element == 4:
+            return self.int32_array
+        elif self.bytes_per_element == 8:
+            return self.int64_array
+        else:
+            raise TypeError(&#34;Parsing parameter bytes to an array with %i bit integer values is not unsupported.&#34; %
+                            self.bytes_per_element)
+
+    @property
+    def uint_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of integer values.&#39;&#39;&#39;
+        # Convert float data if not IEEE processor
+        if self.bytes_per_element == 1:
+            return self.uint8_array
+        elif self.bytes_per_element == 2:
+            return self.uint16_array
+        elif self.bytes_per_element == 4:
+            return self.uint32_array
+        elif self.bytes_per_element == 8:
+            return self.uint64_array
+        else:
+            raise TypeError(&#34;Parsing parameter bytes to an array with %i bit integer values is not unsupported.&#34; %
+                            self.bytes_per_element)
+
+    @property
+    def bytes_array(self):
+        &#39;&#39;&#39;Get the parameter data as an array of raw byte strings.&#39;&#39;&#39;
+        # Decode different dimensions
+        if len(self.dimensions) == 0:
+            return np.array([])
+        elif len(self.dimensions) == 1:
+            return np.array(self._data.bytes)
+        else:
+            # Convert Fortran shape (data in memory is identical, shape is transposed)
+            word_len = self.dimensions[0]
+            dims = self.dimensions[1:][::-1]  # Identical to: [:0:-1]
+            byte_steps = np.cumprod(self.dimensions[:-1])[::-1]
+            # Generate mult-dimensional array and parse byte words
+            byte_arr = np.empty(dims, dtype=object)
+            for i in np.ndindex(*dims):
+                # Calculate byte offset as sum of each array index times the byte step of each dimension.
+                off = np.sum(np.multiply(i, byte_steps))
+                byte_arr[i] = self._data.bytes[off:off+word_len]
+            return byte_arr
+
+    @property
+    def string_array(self):
+        &#39;&#39;&#39;Get the parameter data as a python array of unicode strings.&#39;&#39;&#39;
+        # Decode different dimensions
+        if len(self.dimensions) == 0:
+            return np.array([])
+        elif len(self.dimensions) == 1:
+            return np.array([self.string_value])
+        else:
+            # Parse byte sequences
+            byte_arr = self.bytes_array
+            # Decode sequences
+            for i in np.ndindex(byte_arr.shape):
+                byte_arr[i] = self.dtypes.decode_string(byte_arr[i])
+            return byte_arr
+
+    @property
+    def any_value(self):
+        &#39;&#39;&#39; Get the parameter data as a value of &#39;traditional type&#39;.
+
+        Traditional types are defined in the Parameter section in the [user manual].
+
+        Returns
+        -------
+        value : int, float, or str
+            Depending on the `bytes_per_element` field, a traditional type can
+            be a either a signed byte, signed short, 32-bit float, or a string.
+
+        [user manual]: https://www.c3d.org/docs/C3D_User_Guide.pdf
+        &#39;&#39;&#39;
+        if self.bytes_per_element &gt;= 4:
+            return self.float_value
+        elif self.bytes_per_element &gt;= 2:
+            return self.int16_value
+        elif self.bytes_per_element == -1:
+            return self.string_value
+        else:
+            return self.int8_value
+
+    @property
+    def any_array(self):
+        &#39;&#39;&#39; Get the parameter data as an array of &#39;traditional type&#39;.
+
+        Traditional types are defined in the Parameter section in the [user manual].
+
+        Returns
+        -------
+        value : array
+            Depending on the `bytes_per_element` field, a traditional type can
+            be a either a signed byte, signed short, 32-bit float, or a string.
+
+        [user manual]: https://www.c3d.org/docs/C3D_User_Guide.pdf
+        &#39;&#39;&#39;
+        if self.bytes_per_element &gt;= 4:
+            return self.float_array
+        elif self.bytes_per_element &gt;= 2:
+            return self.int16_array
+        elif self.bytes_per_element == -1:
+            return self.string_array
+        else:
+            return self.int8_array
+
+    @property
+    def _as_any_uint(self):
+        &#39;&#39;&#39; Attempt to parse the parameter data as any unsigned integer format.
+            Checks if the integer is stored as a floating point value.
+
+            Can be used to read &#39;POINT:FRAMES&#39; or &#39;POINT:LONG_FRAMES&#39;
+            when not accessed through `c3d.manager.Manager.last_frame`.
+        &#39;&#39;&#39;
+        if self.bytes_per_element &gt;= 4:
+            # Check if float value representation is an integer
+            value = self.float_value
+            if float(value).is_integer():
+                return int(value)
+            return self.uint32_value
+        elif self.bytes_per_element &gt;= 2:
+            return self.uint16_value
+        else:
+            return self.uint8_value</code></pre>
+</details>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="c3d.parameter.Param" href="#c3d.parameter.Param">Param</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="c3d.parameter.ParamReadonly.any_array"><code class="name">var <span class="ident">any_array</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as an array of 'traditional type'.</p>
+<p>Traditional types are defined in the Parameter section in the <a href="https://www.c3d.org/docs/C3D_User_Guide.pdf">user manual</a>.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>value</code></strong> :&ensp;<code>array</code></dt>
+<dd>Depending on the <code>bytes_per_element</code> field, a traditional type can
+be a either a signed byte, signed short, 32-bit float, or a string.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def any_array(self):
+    &#39;&#39;&#39; Get the parameter data as an array of &#39;traditional type&#39;.
+
+    Traditional types are defined in the Parameter section in the [user manual].
+
+    Returns
+    -------
+    value : array
+        Depending on the `bytes_per_element` field, a traditional type can
+        be a either a signed byte, signed short, 32-bit float, or a string.
+
+    [user manual]: https://www.c3d.org/docs/C3D_User_Guide.pdf
+    &#39;&#39;&#39;
+    if self.bytes_per_element &gt;= 4:
+        return self.float_array
+    elif self.bytes_per_element &gt;= 2:
+        return self.int16_array
+    elif self.bytes_per_element == -1:
+        return self.string_array
+    else:
+        return self.int8_array</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.any_value"><code class="name">var <span class="ident">any_value</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as a value of 'traditional type'.</p>
+<p>Traditional types are defined in the Parameter section in the <a href="https://www.c3d.org/docs/C3D_User_Guide.pdf">user manual</a>.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>value</code></strong> :&ensp;<code>int, float,</code> or <code>str</code></dt>
+<dd>Depending on the <code>bytes_per_element</code> field, a traditional type can
+be a either a signed byte, signed short, 32-bit float, or a string.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def any_value(self):
+    &#39;&#39;&#39; Get the parameter data as a value of &#39;traditional type&#39;.
+
+    Traditional types are defined in the Parameter section in the [user manual].
+
+    Returns
+    -------
+    value : int, float, or str
+        Depending on the `bytes_per_element` field, a traditional type can
+        be a either a signed byte, signed short, 32-bit float, or a string.
+
+    [user manual]: https://www.c3d.org/docs/C3D_User_Guide.pdf
+    &#39;&#39;&#39;
+    if self.bytes_per_element &gt;= 4:
+        return self.float_value
+    elif self.bytes_per_element &gt;= 2:
+        return self.int16_value
+    elif self.bytes_per_element == -1:
+        return self.string_value
+    else:
+        return self.int8_value</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.binary_size"><code class="name">var <span class="ident">binary_size</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Return the number of bytes needed to store this parameter.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def binary_size(self) -&gt; int:
+    &#39;&#39;&#39;Return the number of bytes needed to store this parameter.&#39;&#39;&#39;
+    return self._data.binary_size</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.bytes_array"><code class="name">var <span class="ident">bytes_array</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as an array of raw byte strings.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def bytes_array(self):
+    &#39;&#39;&#39;Get the parameter data as an array of raw byte strings.&#39;&#39;&#39;
+    # Decode different dimensions
+    if len(self.dimensions) == 0:
+        return np.array([])
+    elif len(self.dimensions) == 1:
+        return np.array(self._data.bytes)
+    else:
+        # Convert Fortran shape (data in memory is identical, shape is transposed)
+        word_len = self.dimensions[0]
+        dims = self.dimensions[1:][::-1]  # Identical to: [:0:-1]
+        byte_steps = np.cumprod(self.dimensions[:-1])[::-1]
+        # Generate mult-dimensional array and parse byte words
+        byte_arr = np.empty(dims, dtype=object)
+        for i in np.ndindex(*dims):
+            # Calculate byte offset as sum of each array index times the byte step of each dimension.
+            off = np.sum(np.multiply(i, byte_steps))
+            byte_arr[i] = self._data.bytes[off:off+word_len]
+        return byte_arr</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.bytes_per_element"><code class="name">var <span class="ident">bytes_per_element</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Return the number of bytes used to store each data element.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def bytes_per_element(self) -&gt; int:
+    &#39;&#39;&#39;Return the number of bytes used to store each data element.&#39;&#39;&#39;
+    return self._data.bytes_per_element</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.bytes_value"><code class="name">var <span class="ident">bytes_value</span> : bytes</code></dt>
+<dd>
+<div class="desc"><p>Get the raw byte string.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def bytes_value(self) -&gt; bytes:
+    &#39;&#39;&#39;Get the raw byte string.&#39;&#39;&#39;
+    return self._data.bytes</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.desc"><code class="name">var <span class="ident">desc</span> : str</code></dt>
+<dd>
+<div class="desc"><p>Get the parameter descriptor.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def desc(self) -&gt; str:
+    &#39;&#39;&#39; Get the parameter descriptor. &#39;&#39;&#39;
+    return self._data.desc</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.dimensions"><code class="name">var <span class="ident">dimensions</span> : (<class 'int'>, Ellipsis)</code></dt>
+<dd>
+<div class="desc"><p>Shape of the parameter data (Fortran format).</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def dimensions(self) -&gt; (int, ...):
+    &#39;&#39;&#39; Shape of the parameter data (Fortran format). &#39;&#39;&#39;
+    return self._data.dimensions</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.dtypes"><code class="name">var <span class="ident">dtypes</span></code></dt>
+<dd>
+<div class="desc"><p>Convenience accessor to the <code><a title="c3d.dtypes.DataTypes" href="dtypes.html#c3d.dtypes.DataTypes">DataTypes</a></code> instance associated with the parameter.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def dtypes(self):
+    &#39;&#39;&#39; Convenience accessor to the `c3d.dtypes.DataTypes` instance associated with the parameter. &#39;&#39;&#39;
+    return self._data.dtypes</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.float32_array"><code class="name">var <span class="ident">float32_array</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as an array of 32-bit floats.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def float32_array(self):
+    &#39;&#39;&#39;Get the parameter data as an array of 32-bit floats.&#39;&#39;&#39;
+    # Convert float data if not IEEE processor
+    if self.dtypes.is_dec:
+        # _as_array but for DEC
+        if not self.dimensions:
+            return [self.float_value]
+        return DEC_to_IEEE_BYTES(self._data.bytes).reshape(self.dimensions[::-1])  # Reverse fortran format
+    else:  # is_ieee or is_mips
+        return self._data._as_array(self.dtypes.float32)</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.float64_array"><code class="name">var <span class="ident">float64_array</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as an array of 64-bit floats.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def float64_array(self):
+    &#39;&#39;&#39;Get the parameter data as an array of 64-bit floats.&#39;&#39;&#39;
+    # Convert float data if not IEEE processor
+    if self.dtypes.is_dec:
+        raise ValueError(&#39;Unable to convert bytes encoded in a 64 bit floating point DEC format.&#39;)
+    else:  # is_ieee or is_mips
+        return self._data._as_array(self.dtypes.float64)</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.float_array"><code class="name">var <span class="ident">float_array</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as an array of 32 or 64 bit floats.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def float_array(self):
+    &#39;&#39;&#39;Get the parameter data as an array of 32 or 64 bit floats.&#39;&#39;&#39;
+    # Convert float data if not IEEE processor
+    if self.bytes_per_element == 4:
+        return self.float32_array
+    elif self.bytes_per_element == 8:
+        return self.float64_array
+    else:
+        raise TypeError(&#34;Parsing parameter bytes to an array with %i bit &#34; % self.bytes_per_element +
+                        &#34;floating-point precission is not unsupported.&#34;)</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.float_value"><code class="name">var <span class="ident">float_value</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as a floating point value of appropriate type.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def float_value(self):
+    &#39;&#39;&#39;Get the parameter data as a floating point value of appropriate type.&#39;&#39;&#39;
+    if self.bytes_per_element &gt; 4:
+        if self.dtypes.is_dec:
+            raise AttributeError(&#34;64 bit DEC floating point is not supported.&#34;)
+        # 64-bit floating point is not a standard
+        return self._data._as(self.dtypes.float64)
+    elif self.bytes_per_element == 4:
+        if self.dtypes.is_dec:
+            return DEC_to_IEEE(self._data._as(np.uint32))
+        else:  # is_mips or is_ieee
+            return self._data._as(self.dtypes.float32)
+    else:
+        raise AttributeError(&#34;Only 32 and 64 bit floating point is supported.&#34;)</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.int16_array"><code class="name">var <span class="ident">int16_array</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as an array of 16-bit signed integers.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def int16_array(self):
+    &#39;&#39;&#39;Get the parameter data as an array of 16-bit signed integers.&#39;&#39;&#39;
+    return self._data._as_array(self.dtypes.int16)</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.int16_value"><code class="name">var <span class="ident">int16_value</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as a 16-bit signed integer.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def int16_value(self):
+    &#39;&#39;&#39;Get the parameter data as a 16-bit signed integer.&#39;&#39;&#39;
+    return self._data._as(self.dtypes.int16)</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.int32_array"><code class="name">var <span class="ident">int32_array</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as an array of 32-bit signed integers.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def int32_array(self):
+    &#39;&#39;&#39;Get the parameter data as an array of 32-bit signed integers.&#39;&#39;&#39;
+    return self._data._as_array(self.dtypes.int32)</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.int32_value"><code class="name">var <span class="ident">int32_value</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as a 32-bit signed integer.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def int32_value(self):
+    &#39;&#39;&#39;Get the parameter data as a 32-bit signed integer.&#39;&#39;&#39;
+    return self._data._as(self.dtypes.int32)</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.int64_array"><code class="name">var <span class="ident">int64_array</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as an array of 32-bit signed integers.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def int64_array(self):
+    &#39;&#39;&#39;Get the parameter data as an array of 32-bit signed integers.&#39;&#39;&#39;
+    return self._data._as_array(self.dtypes.int64)</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.int8_array"><code class="name">var <span class="ident">int8_array</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as an array of 8-bit signed integers.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def int8_array(self):
+    &#39;&#39;&#39;Get the parameter data as an array of 8-bit signed integers.&#39;&#39;&#39;
+    return self._data._as_array(self.dtypes.int8)</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.int8_value"><code class="name">var <span class="ident">int8_value</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as an 8-bit signed integer.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def int8_value(self):
+    &#39;&#39;&#39;Get the parameter data as an 8-bit signed integer.&#39;&#39;&#39;
+    return self._data._as(self.dtypes.int8)</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.int_array"><code class="name">var <span class="ident">int_array</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as an array of integer values.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def int_array(self):
+    &#39;&#39;&#39;Get the parameter data as an array of integer values.&#39;&#39;&#39;
+    # Convert float data if not IEEE processor
+    if self.bytes_per_element == 1:
+        return self.int8_array
+    elif self.bytes_per_element == 2:
+        return self.int16_array
+    elif self.bytes_per_element == 4:
+        return self.int32_array
+    elif self.bytes_per_element == 8:
+        return self.int64_array
+    else:
+        raise TypeError(&#34;Parsing parameter bytes to an array with %i bit integer values is not unsupported.&#34; %
+                        self.bytes_per_element)</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.int_value"><code class="name">var <span class="ident">int_value</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as a signed integer of appropriate type.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def int_value(self):
+    &#39;&#39;&#39; Get the parameter data as a signed integer of appropriate type. &#39;&#39;&#39;
+    if self.bytes_per_element &gt;= 4:
+        return self.int32_value
+    elif self.bytes_per_element &gt;= 2:
+        return self.int16_value
+    else:
+        return self.int8_value</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.name"><code class="name">var <span class="ident">name</span> : str</code></dt>
+<dd>
+<div class="desc"><p>Get the parameter name.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def name(self) -&gt; str:
+    &#39;&#39;&#39; Get the parameter name. &#39;&#39;&#39;
+    return self._data.name</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.num_elements"><code class="name">var <span class="ident">num_elements</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Return the number of elements in this parameter's array value.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def num_elements(self) -&gt; int:
+    &#39;&#39;&#39;Return the number of elements in this parameter&#39;s array value.&#39;&#39;&#39;
+    return self._data.num_elements</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.string_array"><code class="name">var <span class="ident">string_array</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as a python array of unicode strings.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def string_array(self):
+    &#39;&#39;&#39;Get the parameter data as a python array of unicode strings.&#39;&#39;&#39;
+    # Decode different dimensions
+    if len(self.dimensions) == 0:
+        return np.array([])
+    elif len(self.dimensions) == 1:
+        return np.array([self.string_value])
+    else:
+        # Parse byte sequences
+        byte_arr = self.bytes_array
+        # Decode sequences
+        for i in np.ndindex(byte_arr.shape):
+            byte_arr[i] = self.dtypes.decode_string(byte_arr[i])
+        return byte_arr</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.string_value"><code class="name">var <span class="ident">string_value</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as a unicode string.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def string_value(self):
+    &#39;&#39;&#39;Get the parameter data as a unicode string.&#39;&#39;&#39;
+    return self.dtypes.decode_string(self._data.bytes)</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.total_bytes"><code class="name">var <span class="ident">total_bytes</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Return the number of bytes used for storing this parameter's data.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def total_bytes(self) -&gt; int:
+    &#39;&#39;&#39;Return the number of bytes used for storing this parameter&#39;s data.&#39;&#39;&#39;
+    return self._data.total_bytes</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.uint16_array"><code class="name">var <span class="ident">uint16_array</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as an array of 16-bit unsigned integers.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def uint16_array(self):
+    &#39;&#39;&#39;Get the parameter data as an array of 16-bit unsigned integers.&#39;&#39;&#39;
+    return self._data._as_array(self.dtypes.uint16)</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.uint16_value"><code class="name">var <span class="ident">uint16_value</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as a 16-bit unsigned integer.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def uint16_value(self):
+    &#39;&#39;&#39;Get the parameter data as a 16-bit unsigned integer.&#39;&#39;&#39;
+    return self._data._as(self.dtypes.uint16)</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.uint32_array"><code class="name">var <span class="ident">uint32_array</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as an array of 32-bit unsigned integers.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def uint32_array(self):
+    &#39;&#39;&#39;Get the parameter data as an array of 32-bit unsigned integers.&#39;&#39;&#39;
+    return self._data._as_array(self.dtypes.uint32)</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.uint32_value"><code class="name">var <span class="ident">uint32_value</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as a 32-bit unsigned integer.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def uint32_value(self):
+    &#39;&#39;&#39;Get the parameter data as a 32-bit unsigned integer.&#39;&#39;&#39;
+    return self._data._as(self.dtypes.uint32)</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.uint64_array"><code class="name">var <span class="ident">uint64_array</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as an array of 32-bit unsigned integers.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def uint64_array(self):
+    &#39;&#39;&#39;Get the parameter data as an array of 32-bit unsigned integers.&#39;&#39;&#39;
+    return self._data._as_array(self.dtypes.uint64)</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.uint8_array"><code class="name">var <span class="ident">uint8_array</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as an array of 8-bit unsigned integers.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def uint8_array(self):
+    &#39;&#39;&#39;Get the parameter data as an array of 8-bit unsigned integers.&#39;&#39;&#39;
+    return self._data._as_array(self.dtypes.uint8)</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.uint8_value"><code class="name">var <span class="ident">uint8_value</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as an 8-bit unsigned integer.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def uint8_value(self):
+    &#39;&#39;&#39;Get the parameter data as an 8-bit unsigned integer.&#39;&#39;&#39;
+    return self._data._as(self.dtypes.uint8)</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.uint_array"><code class="name">var <span class="ident">uint_array</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as an array of integer values.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def uint_array(self):
+    &#39;&#39;&#39;Get the parameter data as an array of integer values.&#39;&#39;&#39;
+    # Convert float data if not IEEE processor
+    if self.bytes_per_element == 1:
+        return self.uint8_array
+    elif self.bytes_per_element == 2:
+        return self.uint16_array
+    elif self.bytes_per_element == 4:
+        return self.uint32_array
+    elif self.bytes_per_element == 8:
+        return self.uint64_array
+    else:
+        raise TypeError(&#34;Parsing parameter bytes to an array with %i bit integer values is not unsupported.&#34; %
+                        self.bytes_per_element)</code></pre>
+</details>
+</dd>
+<dt id="c3d.parameter.ParamReadonly.uint_value"><code class="name">var <span class="ident">uint_value</span></code></dt>
+<dd>
+<div class="desc"><p>Get the parameter data as a unsigned integer of appropriate type.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def uint_value(self):
+    &#39;&#39;&#39; Get the parameter data as a unsigned integer of appropriate type. &#39;&#39;&#39;
+    if self.bytes_per_element &gt;= 4:
+        return self.uint32_value
+    elif self.bytes_per_element &gt;= 2:
+        return self.uint16_value
+    else:
+        return self.uint8_value</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="c3d" href="index.html">c3d</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="c3d.parameter.Param" href="#c3d.parameter.Param">Param</a></code></h4>
+<ul class="">
+<li><code><a title="c3d.parameter.Param.bytes" href="#c3d.parameter.Param.bytes">bytes</a></code></li>
+<li><code><a title="c3d.parameter.Param.readonly" href="#c3d.parameter.Param.readonly">readonly</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="c3d.parameter.ParamData" href="#c3d.parameter.ParamData">ParamData</a></code></h4>
+<ul class="">
+<li><code><a title="c3d.parameter.ParamData.binary_size" href="#c3d.parameter.ParamData.binary_size">binary_size</a></code></li>
+<li><code><a title="c3d.parameter.ParamData.num_elements" href="#c3d.parameter.ParamData.num_elements">num_elements</a></code></li>
+<li><code><a title="c3d.parameter.ParamData.read" href="#c3d.parameter.ParamData.read">read</a></code></li>
+<li><code><a title="c3d.parameter.ParamData.total_bytes" href="#c3d.parameter.ParamData.total_bytes">total_bytes</a></code></li>
+<li><code><a title="c3d.parameter.ParamData.write" href="#c3d.parameter.ParamData.write">write</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="c3d.parameter.ParamReadonly" href="#c3d.parameter.ParamReadonly">ParamReadonly</a></code></h4>
+<ul class="two-column">
+<li><code><a title="c3d.parameter.ParamReadonly.any_array" href="#c3d.parameter.ParamReadonly.any_array">any_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.any_value" href="#c3d.parameter.ParamReadonly.any_value">any_value</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.binary_size" href="#c3d.parameter.ParamReadonly.binary_size">binary_size</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.bytes_array" href="#c3d.parameter.ParamReadonly.bytes_array">bytes_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.bytes_per_element" href="#c3d.parameter.ParamReadonly.bytes_per_element">bytes_per_element</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.bytes_value" href="#c3d.parameter.ParamReadonly.bytes_value">bytes_value</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.desc" href="#c3d.parameter.ParamReadonly.desc">desc</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.dimensions" href="#c3d.parameter.ParamReadonly.dimensions">dimensions</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.dtypes" href="#c3d.parameter.ParamReadonly.dtypes">dtypes</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.float32_array" href="#c3d.parameter.ParamReadonly.float32_array">float32_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.float64_array" href="#c3d.parameter.ParamReadonly.float64_array">float64_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.float_array" href="#c3d.parameter.ParamReadonly.float_array">float_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.float_value" href="#c3d.parameter.ParamReadonly.float_value">float_value</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.int16_array" href="#c3d.parameter.ParamReadonly.int16_array">int16_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.int16_value" href="#c3d.parameter.ParamReadonly.int16_value">int16_value</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.int32_array" href="#c3d.parameter.ParamReadonly.int32_array">int32_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.int32_value" href="#c3d.parameter.ParamReadonly.int32_value">int32_value</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.int64_array" href="#c3d.parameter.ParamReadonly.int64_array">int64_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.int8_array" href="#c3d.parameter.ParamReadonly.int8_array">int8_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.int8_value" href="#c3d.parameter.ParamReadonly.int8_value">int8_value</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.int_array" href="#c3d.parameter.ParamReadonly.int_array">int_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.int_value" href="#c3d.parameter.ParamReadonly.int_value">int_value</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.name" href="#c3d.parameter.ParamReadonly.name">name</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.num_elements" href="#c3d.parameter.ParamReadonly.num_elements">num_elements</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.string_array" href="#c3d.parameter.ParamReadonly.string_array">string_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.string_value" href="#c3d.parameter.ParamReadonly.string_value">string_value</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.total_bytes" href="#c3d.parameter.ParamReadonly.total_bytes">total_bytes</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.uint16_array" href="#c3d.parameter.ParamReadonly.uint16_array">uint16_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.uint16_value" href="#c3d.parameter.ParamReadonly.uint16_value">uint16_value</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.uint32_array" href="#c3d.parameter.ParamReadonly.uint32_array">uint32_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.uint32_value" href="#c3d.parameter.ParamReadonly.uint32_value">uint32_value</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.uint64_array" href="#c3d.parameter.ParamReadonly.uint64_array">uint64_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.uint8_array" href="#c3d.parameter.ParamReadonly.uint8_array">uint8_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.uint8_value" href="#c3d.parameter.ParamReadonly.uint8_value">uint8_value</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.uint_array" href="#c3d.parameter.ParamReadonly.uint_array">uint_array</a></code></li>
+<li><code><a title="c3d.parameter.ParamReadonly.uint_value" href="#c3d.parameter.ParamReadonly.uint_value">uint_value</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+</footer>
+</body>
+</html>
