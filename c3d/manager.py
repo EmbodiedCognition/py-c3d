@@ -342,16 +342,15 @@ class Manager(object):
 
     @property
     def last_frame(self) -> int:
-        ''' Trial frame corresponding to the last frame recorded in the data (inclusive). '''
-        # Number of frames can be represented in many formats, first check if valid header values
-        #if self.header.first_frame < self.header.last_frame and self.header.last_frame != 65535:
-        #    return self.header.last_frame
-
-        # Try different parameters where the frame can be encoded
+        ''' Trial frame corresponding to the last frame recorded in the data (inclusive).
+        '''
+        # Number of frames can be represented in many formats.
+        # Start of by  different parameters where the frame can be encoded
         hlf = self.header.last_frame
         param = self.get('TRIAL:ACTUAL_END_FIELD')
         if param is not None:
             # Encoded as 2 16 bit words (rather then 1 32 bit word)
+            # Manual refer to parsing the parameter as 2 16-bit words, but its equivalent to an uint32
             # words = param.uint16_array
             # end_frame[1] = words[0] + words[1] * 65536
             end_frame = param.uint32_value
