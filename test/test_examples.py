@@ -46,5 +46,6 @@ class Examples(Base):
         # Raises 'FileNotFound' if the file was not generated
         os.remove(path)
 
+
 if __name__ == '__main__':
     unittest.main()

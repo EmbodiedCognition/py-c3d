@@ -6,7 +6,7 @@ from c3d.parameter import ParamData, ParamReadonly
 
 
 def genByteWordArr(word, shape):
-    '''    Generate a multi-dimensional byte array from a specific word.
+    ''' Generate a multi-dimensional byte array from a specific word.
     '''
     arr = np.array(word)
     for d in shape[::-1]:
@@ -15,7 +15,7 @@ def genByteWordArr(word, shape):
 
 
 def genRndByteArr(wordlen, shape, pad):
-    '''    Generate a multi-dimensional byte array with random data.
+    ''' Generate a multi-dimensional byte array with random data.
     '''
     tot_len = wordlen + pad*wordlen
     arr = np.empty(shape, dtype=np.dtype('S'+str(tot_len)))
@@ -28,16 +28,17 @@ def genRndByteArr(wordlen, shape, pad):
 
 
 def genRndFloatArr(shape, rnd, range=(-1e6, 1e6)):
-    '''    Generate a multi-dimensional array of 32 bit floating point data.
+    ''' Generate a multi-dimensional array of 32 bit floating point data.
     '''
     return rnd.uniform(range[0], range[1], shape)
+
 
 def make_param(*args, **kwargs):
     return ParamReadonly(ParamData(*args, **kwargs))
 
 
 class ParameterValueTest(unittest.TestCase):
-    '''    Test read Parameter arrays
+    ''' Test read Parameter arrays
     '''
 
     RANGE_8_BIT = (-127, 127)
@@ -53,7 +54,7 @@ class ParameterValueTest(unittest.TestCase):
         self.dtypes = DataTypes(PROCESSOR_INTEL)
 
     def test_a_param_float32(self):
-        '''    Verify a single 32 bit floating point value is parsed correctly
+        ''' Verify a single 32 bit floating point value is parsed correctly
         '''
         for i in range(ParameterValueTest.TEST_ITERATIONS):
             value = np.float32(self.rnd.uniform(*ParameterValueTest.RANGE_32_BIT))
@@ -64,7 +65,7 @@ class ParameterValueTest(unittest.TestCase):
                 (value_out, value)
 
     def test_b_param_int32(self):
-        '''    Verify a single 32 bit integer value is parsed correctly
+        ''' Verify a single 32 bit integer value is parsed correctly
         '''
         for i in range(ParameterValueTest.TEST_ITERATIONS):
             value = np.int32(self.rnd.uniform(*ParameterValueTest.RANGE_32_BIT))
@@ -75,7 +76,7 @@ class ParameterValueTest(unittest.TestCase):
                 (value_out, value)
 
     def test_b_param_uint32(self):
-        '''    Verify a single 32 bit unsigned integer value is parsed correctly
+        ''' Verify a single 32 bit unsigned integer value is parsed correctly
         '''
         for i in range(ParameterValueTest.TEST_ITERATIONS):
             value = np.uint32(self.rnd.uniform(*ParameterValueTest.RANGE_32_UNSIGNED_BIT))
@@ -86,7 +87,7 @@ class ParameterValueTest(unittest.TestCase):
                 (value_out, value)
 
     def test_b_param_int16(self):
-        '''    Verify a single 16 bit integer value is parsed correctly
+        ''' Verify a single 16 bit integer value is parsed correctly
         '''
         for i in range(ParameterValueTest.TEST_ITERATIONS):
             value = np.int16(self.rnd.uniform(*ParameterValueTest.RANGE_16_BIT))
@@ -97,7 +98,7 @@ class ParameterValueTest(unittest.TestCase):
                 (value_out, value)
 
     def test_b_param_uint16(self):
-        '''    Verify a single 16 bit unsigned integer value is parsed correctly
+        ''' Verify a single 16 bit unsigned integer value is parsed correctly
         '''
         for i in range(ParameterValueTest.TEST_ITERATIONS):
             value = np.uint16(self.rnd.uniform(*ParameterValueTest.RANGE_16_UNSIGNED_BIT))
@@ -108,7 +109,7 @@ class ParameterValueTest(unittest.TestCase):
                 (value_out, value)
 
     def test_b_param_int8(self):
-        '''    Verify a single 8 bit integer value is parsed correctly
+        ''' Verify a single 8 bit integer value is parsed correctly
         '''
         for i in range(ParameterValueTest.TEST_ITERATIONS):
             value = np.int8(self.rnd.uniform(*ParameterValueTest.RANGE_8_BIT))
@@ -119,7 +120,7 @@ class ParameterValueTest(unittest.TestCase):
                 (value_out, value)
 
     def test_b_param_uint8(self):
-        '''    Verify a single 8 bit unsigned integer value is parsed correctly
+        ''' Verify a single 8 bit unsigned integer value is parsed correctly
         '''
         for i in range(ParameterValueTest.TEST_ITERATIONS):
             value = np.uint8(self.rnd.uniform(*ParameterValueTest.RANGE_8_UNSIGNED_BIT))
@@ -131,7 +132,7 @@ class ParameterValueTest(unittest.TestCase):
 
 
 class ParameterArrayTest(unittest.TestCase):
-    '''    Test read Parameter arrays
+    ''' Test read Parameter arrays
     '''
 
     SHAPES = [[7, 6, 5], [7, 5, 3], [7, 3], [19]]
@@ -141,7 +142,7 @@ class ParameterArrayTest(unittest.TestCase):
         self.dtypes = DataTypes(PROCESSOR_INTEL)
 
     def test_a_parse_float32_array(self):
-        '''    Verify array of 32 bit floating point values are parsed correctly
+        ''' Verify array of 32 bit floating point values are parsed correctly
         '''
         flt_range = (-1e6, 1e6)
 
@@ -153,7 +154,7 @@ class ParameterArrayTest(unittest.TestCase):
             assert np.all(arr.T == arr_out), 'Value mismatch when reading float array'
 
     def test_b_parse_float64_array(self):
-        '''    Verify array of 64 bit floating point values are parsed correctly
+        ''' Verify array of 64 bit floating point values are parsed correctly
         '''
         flt_range = (-1e6, 1e6)
 
@@ -165,7 +166,7 @@ class ParameterArrayTest(unittest.TestCase):
             assert np.all(arr.T == arr_out), 'Value mismatch when reading float array'
 
     def test_c_parse_int32_array(self):
-        '''    Verify array of 32 bit integer values are parsed correctly
+        ''' Verify array of 32 bit integer values are parsed correctly
         '''
         flt_range = (-1e6, 1e6)
 
@@ -177,7 +178,7 @@ class ParameterArrayTest(unittest.TestCase):
             assert np.all(arr.T == arr_out), 'Value mismatch when reading int32 array'
 
     def test_d_parse_uint32_array(self):
-        '''    Verify array of 32 bit unsigned integer values are parsed correctly
+        ''' Verify array of 32 bit unsigned integer values are parsed correctly
         '''
         flt_range = (0, 1e6)
 
@@ -189,7 +190,7 @@ class ParameterArrayTest(unittest.TestCase):
             assert np.all(arr.T == arr_out), 'Value mismatch when reading uint32 array'
 
     def test_e_parse_int16_array(self):
-        '''    Verify array of 16 bit integer values are parsed correctly
+        ''' Verify array of 16 bit integer values are parsed correctly
         '''
         flt_range = (-1e4, 1e4)
 
@@ -201,7 +202,7 @@ class ParameterArrayTest(unittest.TestCase):
             assert np.all(arr.T == arr_out), 'Value mismatch when reading int32 array'
 
     def test_f_parse_uint16_array(self):
-        '''    Verify array of 16 bit unsigned integer values are parsed correctly
+        ''' Verify array of 16 bit unsigned integer values are parsed correctly
         '''
         flt_range = (0, 1e4)
 
@@ -213,7 +214,7 @@ class ParameterArrayTest(unittest.TestCase):
             assert np.all(arr.T == arr_out), 'Value mismatch when reading uint32 array'
 
     def test_g_parse_int8_array(self):
-        '''    Verify array of 8 bit integer values are parsed correctly
+        ''' Verify array of 8 bit integer values are parsed correctly
         '''
         flt_range = (-127, 127)
 
@@ -225,7 +226,7 @@ class ParameterArrayTest(unittest.TestCase):
             assert np.all(arr.T == arr_out), 'Value mismatch when reading int32 array'
 
     def test_h_parse_uint8_array(self):
-        '''    Verify array of 8 bit unsigned integer values are parsed correctly
+        ''' Verify array of 8 bit unsigned integer values are parsed correctly
         '''
         flt_range = (0, 255)
 
@@ -237,7 +238,7 @@ class ParameterArrayTest(unittest.TestCase):
             assert np.all(arr.T == arr_out), 'Value mismatch when reading uint32 array'
 
     def test_i_parse_byte_array(self):
-        '''    Verify byte arrays are parsed correctly
+        ''' Verify byte arrays are parsed correctly
         '''
         word = b'WRIST'
 
@@ -269,7 +270,7 @@ class ParameterArrayTest(unittest.TestCase):
             assert np.all(arr[i[::-1]] == arr_out[i]), "Mismatch in 'bytes_array' converted value at index %s" % str(i)
 
     def test_j_parse_string_array(self):
-        '''    Verify repeated word arrays are parsed correctly
+        ''' Verify repeated word arrays are parsed correctly
         '''
         word = b'ANCLE'
 
@@ -307,7 +308,7 @@ class ParameterArrayTest(unittest.TestCase):
                 "Mismatch in 'string_array' converted value at index %s" % str(i)
 
     def test_k_parse_random_string_array(self):
-        '''    Verify random word arrays are parsed correctly
+        ''' Verify random word arrays are parsed correctly
         '''
         ##
         # RND

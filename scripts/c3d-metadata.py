@@ -15,7 +15,7 @@ except ModuleNotFoundError:
 
 parser = argparse.ArgumentParser(description='Display C3D group and parameter information.')
 parser.add_argument('input', default='-', metavar='FILE', nargs='+',
-                help='process C3D data from this input FILE')
+                    help='process C3D data from this input FILE')
 
 
 def print_metadata(reader):
