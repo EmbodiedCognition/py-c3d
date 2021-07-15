@@ -12,11 +12,8 @@ import argparse
 import collections
 import contextlib
 import numpy as np
-try:
-    import pyglet
-    from pyglet.gl import *
-except ModuleNotFoundError as e:
-    sys.stdout.write("View requires pyglet to be installed. Install pyglet through the command 'pip insall pyglet'")
+import pyglet
+from pyglet.gl import *
 
 parser = argparse.ArgumentParser(description='A simple OpenGL viewer for C3D files.')
 parser.add_argument('inputs', nargs='+', metavar='FILE', help='show these c3d files')
