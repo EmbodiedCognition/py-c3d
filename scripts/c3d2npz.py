@@ -9,6 +9,7 @@ import argparse
 import logging
 import gzip
 import numpy as np
+import sys
 from tempfile import TemporaryFile
 try:
     import c3d
