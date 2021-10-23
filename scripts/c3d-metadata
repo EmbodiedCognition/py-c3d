@@ -29,10 +29,9 @@ def print_param_value(name, value):
 
 def print_param_array(name, p):
     arr = []
-    width = p.total_bytes // p.dimensions[0]
-    if width == 2:
+    if p.bytes_per_element == 2:
         arr = p.int16_array
-    elif width == 4:
+    elif p.bytes_per_element == 4:
         arr = p.float_array
     elif p.bytes_per_element == -1:
         return print_param_value(name, p.bytes)
