@@ -23,6 +23,10 @@ def print_metadata(reader):
                 print_param(g, p)
 
 
+def print_param_value(name, value):
+    print(name, '=', value)
+
+
 def print_param(g, p):
     print('{0.name}.{1.name}: {1.total_bytes}B {1.dimensions}'.format(g, p))
 
@@ -44,6 +48,8 @@ def print_param(g, p):
             arr = p.int16_array
         elif width == 4:
             arr = p.float_array
+        elif p.bytes_per_element == -1:
+            return print_param_value('{0.name}.{1.name}'.format(g, p), p.bytes)
         else:
             arr = p.int8_array
         for r, v in enumerate(arr):
