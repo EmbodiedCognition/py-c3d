@@ -3,6 +3,7 @@
 '''Display C3D group and parameter information.'''
 
 from __future__ import print_function
+from itertools import product
 
 import c3d
 import argparse
@@ -27,17 +28,19 @@ def print_param_value(name, value):
     print(name, '=', value)
 
 
-def print_param_array(name, p):
+def print_param_array(name, p, offset_in_elements):
     arr = []
+    start = offset_in_elements
+    end = offset_in_elements + p.dimensions[0]
     if p.bytes_per_element == 2:
         arr = p.int16_array
     elif p.bytes_per_element == 4:
         arr = p.float_array
     elif p.bytes_per_element == -1:
-        return print_param_value(name, p.bytes)
+        return print_param_value(name, p.bytes[start:end])
     else:
         arr = p.int8_array
-    for r, v in enumerate(arr):
+    for r, v in enumerate(arr.flatten()[start:end]):
         print('{0}[{1}] = {2}'.format(name, r, v))
 
 
@@ -57,13 +60,14 @@ def print_param(g, p):
         print_param_value(name, val)
 
     if len(p.dimensions) == 1 and p.dimensions[0] > 0:
-        return print_param_array(name, p)
+        return print_param_array(name, p, 0)
 
-    if len(p.dimensions) == 2:
-        C, R = p.dimensions
-        for r in range(R):
-            print('{0}[{1}] = {2}'.format(
-                name, r, repr(p.bytes[r * C:(r+1) * C])))
+    if len(p.dimensions) >= 2:
+        offset = 0
+        for coordinate in product(*map(range, reversed(p.dimensions[1:]))):
+            subscript = ''.join(["[{0}]".format(x) for x in coordinate])
+            print_param_array(name + subscript, p, offset)
+            offset += p.dimensions[0]
 
 
 def main(args):
