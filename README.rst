@@ -15,9 +15,7 @@ Install with pip::
 Or if you'd like to use the bleeding-edge version, just clone the github
 repository and build and install using the normal Python setup process::
 
-    git clone https://github.com/EmbodiedCognition/py-c3d
-    cd py-c3d
-    python setup.py install
+    pip install git+https://github.com/EmbodiedCognition/py-c3d
 
 Usage
 -----
@@ -28,6 +26,11 @@ Tools
 This package includes a script for converting C3D motion data to CSV format
 (``c3d2csv``) and an OpenGL-based visualization tool for observing the motion
 described by a C3D file (``c3d-viewer``).
+
+Note for the viewer you need to install `pyglet`.
+This can be done by installing the gui extra of py-c3d:
+
+    pip install "c3d[gui]"
 
 Library
 ~~~~~~~
@@ -48,6 +51,17 @@ You can also get and set metadata fields using the library; see the `package
 documentation`_ for more details.
 
 .. _package documentation: http://c3d.readthedocs.org
+
+Developer Install
+~~~~~~~~~~~~~~~~~
+
+To work on `c3d`, first install `poetry <https://python-poetry.org>`_ and then run:
+
+    git clone https://github.com/EmbodiedCognition/py-c3d
+    cd py-c3d
+    poetry install
+
+This will create a new virtual environment with all the required dependency and `c3d` in develop mode.
 
 Tests
 ~~~~~
