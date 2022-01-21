@@ -44,7 +44,8 @@ def convert(filename, args, sep, end):
             output.close()
 
 
-def main(args):
+def main():
+    args = parser.parse_args()
     sep = args.sep.replace('\\t', '\t').replace('TAB', '\t')
     end = args.end.replace(
         '\\r', '\r').replace('CR', '\r').replace(
@@ -52,6 +53,5 @@ def main(args):
     for filename in args.input:
         convert(filename, args, sep, end)
 
-
 if __name__ == '__main__':
-    main(parser.parse_args())
+    main()
