@@ -1,7 +1,7 @@
 import io
 import os
+import shutil
 import tempfile
-import urllib
 import urllib.request
 import zipfile
 
@@ -18,8 +18,8 @@ ZIPS = (
 )
 
 
-class Zipload():
-
+class Zipload:
+    @staticmethod
     def download():
         if not os.path.isdir(TEMP):
             os.makedirs(TEMP)
@@ -27,12 +27,16 @@ class Zipload():
             fn = os.path.join(TEMP, target)
             if not os.path.isfile(fn):
                 print('Downloading: ', url)
-                try:
-                    urllib.urlretrieve(url, fn)
-                except AttributeError:  # python 3
-                    urllib.request.urlretrieve(url, fn)
+                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) '
+                                                                         'AppleWebKit/537.36 (KHTML, like Gecko) '
+                                                                         'Chrome/51.0.2704.103 Safari/537.36',
+                                                           'Accept': 'text/html,application/xhtml+xml,application/xml;'
+                                                                     'q=0.9,*/*;q=0.8'})
+                with urllib.request.urlopen(req) as response, open(fn, 'wb') as out_file:
+                    shutil.copyfileobj(response, out_file)
                 print('... Complete')
 
+    @staticmethod
     def extract(zf):
         out_path = os.path.join(TEMP, os.path.basename(zf)[:-4])
 
@@ -45,11 +49,13 @@ class Zipload():
                 print('Extracted:', fpath)
                 zip.extract(zf, path=out_path)
 
+    @staticmethod
     def _c3ds(zf):
         with zipfile.ZipFile(os.path.join(TEMP, zf)) as z:
             return [i for i in z.filelist
                     if i.filename.lower().endswith('.c3d')]
 
+    @staticmethod
     def _get(zf, fn):
         with zipfile.ZipFile(os.path.join(TEMP, zf)) as z:
             return io.BytesIO(z.open(fn).read())
