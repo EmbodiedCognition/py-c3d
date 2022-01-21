@@ -13,6 +13,12 @@ classifiers=[
         'Topic :: Scientific/Engineering',
 ]
 
+[tool.poetry.scripts]
+c3d2csv = 'scripts.c3d2csv:main()'
+c3d2npz = 'scripts.c3d2npz:main()'
+c3d-metatdata = 'scripts.c3d_metatdata:main()'
+c3d-viewer = 'scripts.c3d_viewer:main()'
+
 [tool.poetry.dependencies]
 python = "^3.7"
 numpy = "^1"

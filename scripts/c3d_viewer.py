@@ -237,7 +237,8 @@ class Viewer(pyglet.window.Window):
         pyglet.app.run()
 
 
-def main(args):
+def main():
+    args = parser.parse_args()
     for filename in args.inputs:
         try:
             Viewer(c3d.Reader(open(filename, 'rb'))).mainloop()
@@ -246,4 +247,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    main(parser.parse_args())
+    main()

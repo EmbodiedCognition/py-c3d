@@ -69,7 +69,8 @@ def print_param(g, p):
             offset += p.dimensions[0]
 
 
-def main(args):
+def main():
+    args = parser.parse_args()
     for filename in args.input:
         try:
             if filename == '-':
@@ -84,4 +85,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    main(parser.parse_args())
+    main()
