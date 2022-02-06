@@ -181,11 +181,12 @@ def DEC_to_IEEE_BYTES(bytes):
     # See comments in DEC_to_IEEE() for DEC format definition
 
     # Reshuffle
-    bytes = memoryview(bytes)
-    reshuffled = np.empty(len(bytes), dtype=np.dtype('B'))
-    reshuffled[::4] = bytes[2::4]
+    byte_type = np.dtype('B')
+    bytes = np.frombuffer(bytes, dtype=byte_type) #  == memoryview(bytes)
+    reshuffled = np.empty(len(bytes), dtype=byte_type)
+    reshuffled[0::4] = bytes[2::4]
     reshuffled[1::4] = bytes[3::4]
-    reshuffled[2::4] = bytes[::4]
+    reshuffled[2::4] = bytes[0::4]
     # Decrement exponent by 2, if exp. > 1
     reshuffled[3::4] = bytes[1::4] + (np.bitwise_and(bytes[1::4], 0x7f) == 0) - 1
 
@@ -623,12 +624,12 @@ class Param(object):
         '''Unpack the raw bytes of this param using the given data format.'''
         assert self.dimensions, \
             '{}: cannot get value as {} array!'.format(self.name, dtype)
-        elems = np.frombuffer(self.bytes, dtype=dtype)
+        buffer_view = np.frombuffer(self.bytes, dtype=dtype)
         # Reverse shape as the shape is defined in fortran format
-        view = elems.reshape(self.dimensions[::-1])
+        buffer_view = buffer_view.reshape(self.dimensions[::-1])
         if copy:
-            return view.copy()
-        return view
+            return buffer_view.copy()
+        return buffer_view
 
     def _as_any(self, dtype):
         '''Unpack the raw bytes of this param as either array or single value.'''
