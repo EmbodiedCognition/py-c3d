@@ -1458,6 +1458,7 @@ class Manager(object):
         param = self.get('TRIAL:ACTUAL_START_FIELD')
         if param is not None:
             # ACTUAL_START_FIELD is encoded in two 16 byte words...
+            # return param.uint32_value
             words = param.uint16_array
             return words[0] + words[1] * 65535
         return self.header.first_frame
@@ -1472,10 +1473,10 @@ class Manager(object):
         param = self.get('TRIAL:ACTUAL_END_FIELD')
         if param is not None:
             # Encoded as 2 16 bit words (rather then 1 32 bit word)
-            # Manual refer to parsing the parameter as 2 16-bit words, but its equivalent to an uint32
-            # words = param.uint16_array
-            # end_frame = words[0] + words[1] * 65536
-            end_frame = param.uint32_value
+            # Manual refer to parsing the parameter as 2 16-bit words, generally equivalent to an uint32
+            # end_frame = param.uint32_value
+            words = param.uint16_array
+            end_frame = words[0] + words[1] * 65536
             if hlf <= end_frame:
                 return end_frame
         param = self.get('POINT:LONG_FRAMES')
