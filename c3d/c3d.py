@@ -2049,7 +2049,9 @@ class Writer(Manager):
     @analog_rate.setter
     def analog_rate(self, value):
         if self.point_rate <= 0:
-            raise ValueError("Invalid point rate of %i, set a valid frame/point rate in the header before setting the analog rate.")
+            raise ValueError(
+                "Invalid point rate %f. " % self.point_rate +
+                "Ensure a valid value in either the header frame rate or point rate parameter before setting the analog rate.")
         per_frame_rate = value / self.point_rate
         if not float(per_frame_rate).is_integer():
             raise ValueError("Analog rate must be a multiple of the point rate.")
