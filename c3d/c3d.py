@@ -1960,15 +1960,16 @@ class Writer(Manager):
         '''
         self._dtypes = DataTypes(PROCESSOR_INTEL) # Always write INTEL format
         super(Writer, self).__init__()
-
-        # Custom properties
-        self._point_units = point_units
+        self._frames = []
 
         # Header properties
         self._header.frame_rate = np.float32(point_rate)
         self._header.scale_factor = np.float32(point_scale)
-        self.analog_rate = analog_rate
-        self._frames = []
+        self.analog_rate = analog_rate        
+
+        # Custom properties
+        self._point_units = point_units
+        self.set_analog_general_scale(gen_scale)
 
     @staticmethod
     def from_reader(reader, conversion=None):
