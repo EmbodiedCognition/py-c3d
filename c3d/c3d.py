@@ -1462,29 +1462,41 @@ class Manager(object):
         return self.header.first_frame
 
     @property
-    def last_frame(self):
-        # Number of frames can be represented in many formats, first check if valid header values
-        if self.header.first_frame < self.header.last_frame and self.header.last_frame != 65535:
-            return self.header.last_frame
-
-        # Check different parameter options where the frame can be encoded
-        end_frame = [self.header.last_frame, 0.0, 0.0, 0.0]
+    def last_frame(self) -> int:
+        ''' Trial frame corresponding to the last frame recorded in the data (inclusive).
+        '''
+        # Number of frames can be represented in many formats.
+        # Start of by  different parameters where the frame can be encoded
+        hlf = self.header.last_frame
         param = self.get('TRIAL:ACTUAL_END_FIELD')
         if param is not None:
             # Encoded as 2 16 bit words (rather then 1 32 bit word)
-            words = param.uint16_array
-            end_frame[1] = words[0] + words[1] * 65536
-            #end_frame[1] = param.uint32_value
+            # Manual refer to parsing the parameter as 2 16-bit words, but its equivalent to an uint32
+            # words = param.uint16_array
+            # end_frame = words[0] + words[1] * 65536
+            end_frame = param.uint32_value
+            if hlf <= end_frame:
+                return end_frame
         param = self.get('POINT:LONG_FRAMES')
         if param is not None:
-            # Encoded as float
-            end_frame[2] = int(param.float_value)
+            # 'Should be' encoded as float
+            if param.bytes_per_element >= 4:
+                end_frame = int(param.float_value)
+            else:
+                end_frame = param.uint16_value
+            if hlf <= end_frame:
+                return end_frame
         param = self.get('POINT:FRAMES')
         if param is not None:
             # Can be encoded either as 32 bit float or 16 bit uint
-            end_frame[3] = param._as_integer_value
-        # Return the largest of the all (queue bad reading...)
-        return int(np.max(end_frame))
+            if param.bytes_per_element == 4:
+                end_frame = int(param.float_value)
+            else:
+                end_frame = param.uint16_value
+            if hlf <= end_frame:
+                return end_frame
+        # Return header value by default
+        return hlf
 
     def get_screen_axis(self):
         ''' Set the X_SCREEN and Y_SCREEN parameters in the POINT group.
@@ -1753,7 +1765,7 @@ class Reader(Manager):
             if check_nan:
                 is_nan = ~np.all(np.isfinite(points[:, :4]), axis=1)
                 points[is_nan, :3] = 0.0
-                invalid &= is_nan
+                invalid |= is_nan
             # Update discarded - sign
             points[invalid, 3] = -1
 
@@ -1963,7 +1975,7 @@ class Writer(Manager):
             Source to copy.
         conversion : str
             Conversion mode, None is equivalent to the default mode. Supported modes are:
-                'consume'       - (Default) Reader object will be consumed and explicitly deleted.
+                'convert'       - (Default) Convert the Reader to a Writer instance and explicitly delete the Reader.
                 'copy'          - Reader objects will be deep copied.
                 'copy_metadata' - Similar to 'copy' but only copies metadata and not point and analog frame data.
                 'copy_shallow'  - Similar to 'copy' but group parameters are not copied.
@@ -1985,7 +1997,7 @@ class Writer(Manager):
         is_header_only = conversion == 'copy_header'
         is_meta_copy = conversion == 'copy_metadata'
         is_meta_only = is_header_only or is_meta_copy
-        is_consume = conversion == 'consume' or conversion is None
+        is_consume = conversion == 'convert' or conversion is None
         is_shallow_copy = conversion == 'shallow_copy' or is_header_only
         is_deep_copy = conversion == 'copy' or is_meta_copy
         # Verify mode
