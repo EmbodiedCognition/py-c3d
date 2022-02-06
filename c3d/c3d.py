@@ -2048,8 +2048,11 @@ class Writer(Manager):
 
     @analog_rate.setter
     def analog_rate(self, value):
+        if self.point_rate <= 0:
+            raise ValueError("Invalid point rate of %i, set a valid frame/point rate in the header before setting the analog rate.")
         per_frame_rate = value / self.point_rate
-        assert float(per_frame_rate).is_integer(), "Analog rate must be a multiple of the point rate."
+        if not float(per_frame_rate).is_integer():
+            raise ValueError("Analog rate must be a multiple of the point rate.")
         self._header.analog_per_frame = np.uint16(per_frame_rate)
 
     @property
