@@ -39,7 +39,9 @@ def convert(filename, args):
     if filename != '-':
         input.close()
 
-def main(args):
+
+def main():
+    args = parser.parse_args()
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
     for filename in args.input:
@@ -47,4 +49,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    main(parser.parse_args())
+    main()

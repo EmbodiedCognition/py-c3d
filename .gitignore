@@ -39,6 +39,16 @@ docs/_build
 
 # vscode
 .vscode/
+.vs/
 
 # mypy
 .mypy_cache/
+
+# PyCharm
+.idea
+
+# local venv
+.venv
+
+# Poetry lock file, as we are developing a library we do not need to commit it
+poetry.lock
