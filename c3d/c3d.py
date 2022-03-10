@@ -1115,7 +1115,18 @@ class Manager(object):
             raise KeyError(group_id)
         name = name.upper()
         if name in self._groups:
-            raise KeyError(name)
+            #In some cases group name is not unique (though c3d spec requires that).
+            #To allow using such files we auto-generate new name. 
+            #Notice that refering to this group's parameters later with the original name will fail.
+            i = 1
+            new_name = name + str(i)
+            while new_name in self._groups:
+                i += 1
+                new_name = name + str(i)
+            warnings.warn('Repeated group name %s modified to %s' % (name, new_name))
+            name = new_name
+            #raise KeyError(name)
+
         group = self._groups[name] = self._groups[group_id] = Group(self._dtypes, name, desc)
         return group
 
