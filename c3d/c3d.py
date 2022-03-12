@@ -1084,7 +1084,7 @@ class Manager(object):
         else:
             warnings.warn('No analog data found in file.')
 
-    def add_group(self, group_id, name, desc, rename_duplicated_groups = False):
+    def add_group(self, group_id, name, desc, rename_duplicated_groups=False):
         '''Add a new parameter group.
 
         Parameters
