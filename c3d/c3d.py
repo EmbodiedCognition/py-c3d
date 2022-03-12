@@ -1084,7 +1084,7 @@ class Manager(object):
         else:
             warnings.warn('No analog data found in file.')
 
-    def add_group(self, group_id, name, desc):
+    def add_group(self, group_id, name, desc, rename_duplicated_groups = False):
         '''Add a new parameter group.
 
         Parameters
@@ -1093,8 +1093,16 @@ class Manager(object):
             The numeric ID for a group to check or create.
         name : str, optional
             If a group is created, assign this name to the group.
+            The name will be turned to upper case letters.
         desc : str, optional
             If a group is created, assign this description to the group.
+        rename_duplicated_groups : bool
+            If True, when adding a group with a name that already exists, the group will be renamed to 
+            `{name}{group_id}`.
+            The original group will not be renamed.
+            In general, having multiple groups with the same name is against the c3d specification.
+            This option only exists to handle edge cases where files are not created according to the spec and still 
+            need to be imported.
 
         Returns
         -------
@@ -1114,18 +1122,13 @@ class Manager(object):
         if group_id in self._groups:
             raise KeyError(group_id)
         name = name.upper()
-        if name in self._groups:
+        if rename_duplicated_groups is True and name in self._groups:
             # In some cases group name is not unique (though c3d spec requires that).
             # To allow using such files we auto-generate new name. 
             # Notice that referring to this group's parameters later with the original name will fail.
-            i = 1
-            new_name = name + str(i)
-            while new_name in self._groups:
-                i += 1
-                new_name = name + str(i)
+            new_name = name + str(group_id)
             warnings.warn(f'Repeated group name {name} modified to {new_name}')
             name = new_name
-            #raise KeyError(name)
 
         group = self._groups[name] = self._groups[group_id] = Group(self._dtypes, name, desc)
         return group
@@ -1448,7 +1451,9 @@ class Reader(Manager):
                     self.rename_group(group, name)
                     group.desc = desc
                 else:
-                    self.add_group(group_id, name, desc)
+                    # We allow duplicated group names here, even though it is against the c3d spec.
+                    # The groups will be renamed.
+                    self.add_group(group_id, name, desc, rename_duplicated_groups=True)
 
         self._check_metadata()
 
