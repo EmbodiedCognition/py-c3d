@@ -136,6 +136,22 @@ class TestGroupAccessors(Base):
         ref.verify_add_group(100)
         ref.verify_remove_all_using_numeric()
 
+    def test_Manager_add_group_duplicated_names(self):
+        '''Check that groups with the same name can be added if the option is enabled.'''
+        reader = c3d.Reader(Zipload._get(self.ZIP, self.INTEL_REAL))
+        ref = GroupSample(reader)
+        test_name = "TEST_NAME"
+        ref.manager.add_group(ref.max_key + 1, test_name, '')
+
+        # Test default
+        with self.assertRaises(KeyError):
+            ref.manager.add_group(ref.max_key + 2, test_name, '')
+
+        # Test with option on
+        new_id = ref.max_key + 2
+        ref.manager.add_group(new_id, test_name, '', rename_duplicated_groups=True)
+        self.assertEqual(ref.manager._groups[new_id].name, test_name.upper() + str(new_id))
+
     def test_Manager_removing_group_from_numeric(self):
         '''Test if removing groups acts as intended.'''
         reader = c3d.Reader(Zipload._get(self.ZIP, self.INTEL_REAL))
