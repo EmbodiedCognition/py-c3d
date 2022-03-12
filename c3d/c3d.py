@@ -1120,15 +1120,18 @@ class Manager(object):
             raise ValueError('Expected Group name key to be string, was %s.' % type(name))
         group_id = int(group_id) # Assert python int
         if group_id in self._groups:
-            raise KeyError(group_id)
+            raise KeyError('Group with numerical key {} already exists'.format(group_id))
         name = name.upper()
-        if rename_duplicated_groups is True and name in self._groups:
-            # In some cases group name is not unique (though c3d spec requires that).
-            # To allow using such files we auto-generate new name. 
-            # Notice that referring to this group's parameters later with the original name will fail.
-            new_name = name + str(group_id)
-            warnings.warn(f'Repeated group name {name} modified to {new_name}')
-            name = new_name
+        if name in self._groups:
+            if rename_duplicated_groups is True:
+                # In some cases group name is not unique (though c3d spec requires that).
+                # To allow using such files we auto-generate new name.
+                # Notice that referring to this group's parameters later with the original name will fail.
+                new_name = name + str(group_id)
+                warnings.warn(f'Repeated group name {name} modified to {new_name}')
+                name = new_name
+            else:
+                raise KeyError(f'A group with the name {name} already exists.')
 
         group = self._groups[name] = self._groups[group_id] = Group(self._dtypes, name, desc)
         return group
