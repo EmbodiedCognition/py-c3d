@@ -617,11 +617,11 @@ class Param(object):
         self.desc = desc_size and self._dtypes.decode_string(handle.read(desc_size)) or ''
 
     def _as(self, dtype):
-        '''Unpack the raw bytes of this param using the given struct format.'''
+        '''Unpack the raw bytes of this param as a single value of the given data type.'''
         return np.frombuffer(self.bytes, count=1, dtype=dtype)[0]
 
     def _as_array(self, dtype, copy=True):
-        '''Unpack the raw bytes of this param using the given data format.'''
+        '''Unpack the raw bytes of this param as an array of the given data type.'''
         assert self.dimensions, \
             '{}: cannot get value as {} array!'.format(self.name, dtype)
         buffer_view = np.frombuffer(self.bytes, dtype=dtype)
@@ -632,7 +632,7 @@ class Param(object):
         return buffer_view
 
     def _as_any(self, dtype):
-        '''Unpack the raw bytes of this param as either array or single value.'''
+        '''Unpack the raw bytes of this param as either an array or single value of the given data type.'''
         if 0 in self.dimensions[:]: 		# Check if any dimension is 0 (empty buffer)
             return [] 						# Buffer is empty
 
@@ -785,8 +785,9 @@ class Param(object):
         elif self.bytes_per_element == 8:
             return self.float64_array
         else:
-            raise TypeError("Parsing parameter bytes to an array with %i bit " % self.bytes_per_element +
-                            "floating-point precission is not unsupported.")
+            raise TypeError(
+                "Parsing parameter bytes to an array with {} bit floating-point precission is not supported.".format(
+                self.bytes_per_element))
 
     @property
     def int_array(self):
@@ -801,8 +802,8 @@ class Param(object):
         elif self.bytes_per_element == 8:
             return self.int64_array
         else:
-            raise TypeError("Parsing parameter bytes to an array with %i bit integer values is not unsupported." %
-                            self.bytes_per_element)
+            raise TypeError("Parsing parameter bytes to an array with {} bit integer values is not unsupported.".format(
+                            self.bytes_per_element))
 
     @property
     def uint_array(self):
@@ -817,8 +818,9 @@ class Param(object):
         elif self.bytes_per_element == 8:
             return self.uint64_array
         else:
-            raise TypeError("Parsing parameter bytes to an array with %i bit integer values is not unsupported." %
-                            self.bytes_per_element)
+            raise TypeError(
+                "Parsing parameter bytes to an array with {} bit integer values is not unsupported.".format(
+                self.bytes_per_element))
 
     @property
     def bytes_array(self):
@@ -904,7 +906,7 @@ class Group(object):
         if value is None or isinstance(value, str):
             self._name = value
         else:
-            raise TypeError('Expected group name to be string, was %s.' % type(value))
+            raise TypeError('Expected group name to be string, was {}.'.format(type(value)))
 
     @property
     def desc(self):
@@ -925,7 +927,8 @@ class Group(object):
         elif isinstance(value, str) or value is None:
             self._desc = value
         else:
-            raise TypeError('Expected descriptor to be python string, bytes or None, was %s.' % type(value))
+            raise TypeError(
+                'Expected descriptor to be python string, bytes or None, was {}.'.format(type(value)))
 
     def param_items(self):
         ''' Acquire iterator for paramater key-entry pairs. '''
@@ -1240,15 +1243,15 @@ class Manager(object):
             Name or numerical key already exist (attempt to overwrite existing data).
         '''
         if not is_integer(group_id):
-            raise TypeError('Expected Group numerical key to be integer, was %s.' % type(group_id))
+            raise TypeError('Expected Group numerical key to be integer, was {}.'.format(type(group_id)))
         if not (isinstance(name, str) or name is None):
-            raise TypeError('Expected Group name key to be string, was %s.' % type(name))
+            raise TypeError('Expected Group name key to be string, was {}.'.format(type(name)))
         group_id = int(group_id) # Asserts python int
         if group_id in self._groups:
             raise KeyError('Group with numerical key {} already exists'.format(group_id))
         name = name.upper()
         if name in self._groups:
-            raise KeyError('No group matched name key {}'.format(name))
+            raise KeyError(name)
         group = self._groups[name] = self._groups[group_id] = Group(self._dtypes, name, desc)
         return group
 
@@ -1288,11 +1291,11 @@ class Manager(object):
             # Aquire instance using id
             grp = self._groups.get(group_id, None)
             if grp is None:
-                raise KeyError('No group found matching the identifier: %s' % str(group_id))
+                raise KeyError('No group found matching the identifier: {}'.format(group_id))
         if new_group_id in self._groups:
             if new_group_id == group_id:
                 return
-            raise ValueError('Key %s for group %s already exist.' % (str(new_group_id), grp.name))
+            raise ValueError('Key {} for the group {} already exist.'.format(new_group_id, grp.name))
 
         # Clear old id
         if isinstance(new_group_id, (str, bytes)):
@@ -1303,7 +1306,7 @@ class Manager(object):
             new_group_id = int(new_group_id) # Ensure python int
             del self._groups[group_id]
         else:
-            raise KeyError('Invalid group identifier of type: %s' % str(type(new_group_id)))
+            raise KeyError('Invalid group identifier of type: {}'.format(type(new_group_id)))
         # Update
         self._groups[new_group_id] = grp
 
@@ -1438,6 +1441,31 @@ class Manager(object):
         '''
         has_analog = self.analog_used > 0
         return int(self.frame_count * self.analog_per_frame) * has_analog
+    
+    @property
+    def analog_format(self):
+        ''' Format for non-float (integer) analog data as defined by the'ANALOG:FORMAT' parameter.
+
+            Valid values are 'SIGNED' or 'UNSIGNED' indicating that analog data 
+            is stored as signed or unsigned 16 bit integers. Defaults to 'SIGNED'
+            if the parameter does not exist as defined in the standard.
+        '''
+        param = self.get('ANALOG:FORMAT')
+        if param is not None:
+            return param.string_value.strip().upper()
+        return 'SIGNED'
+    
+    @property
+    def analog_format_unsigned(self):
+        ''' True if analog data stored on integer form should be treated as unsigned (rather then signed).
+        '''
+        return self.analog_format == 'UNSIGNED'
+    
+    @property
+    def analog_resolution(self):
+        ''' Bit resolution the analog samples are recorded at (it 'should' not affect how the data is stored).
+            Values mentioned in the standard are 12, 14, or 16 bit resolution, with 16 bit defined as standard. 
+        '''
 
     @property
     def point_labels(self):
@@ -1521,7 +1549,10 @@ class Manager(object):
         analog_offsets = np.zeros((self.analog_used), int)
         param = self.get('ANALOG:OFFSET')
         if param is not None and param.num_elements > 0:
-            analog_offsets[:] = param.int16_array[:self.analog_used]
+            if self.analog_format_unsigned:
+                analog_offsets[:] = param.uint16_array[:self.analog_used]
+            else:
+                analog_offsets[:] = param.int16_array[:self.analog_used]
 
         # Scale factors
         analog_scales = np.ones((self.analog_used), float)
@@ -1638,7 +1669,7 @@ class Reader(Manager):
 
     def read_frames(self, copy=True, analog_transform=True, camera_sum=False, check_nan=True):
         '''Iterate over the data frames from our C3D file handle.
-
+        
         Parameters
         ----------
         copy : bool
@@ -1647,18 +1678,24 @@ class Reader(Manager):
             return a unique data buffer for each frame. Set this to False if you
             consume frames as you iterate over them, or True if you store them
             for later.
-
+        analog_transform : bool, default=True
+            If True, ANALOG:SCALE, ANALOG:GEN_SCALE, and ANALOG:OFFSET transforms
+            defined in the file will be applied to the analog channels.
+        check_nan : bool, default=True
+            If True, X,Y,Z point coordinate channels will be checked for NaN values, replacing occurences with 0. 
+            Samples containing NaN values are also marked as invalid (residual channel value is set to -1).
+        camera_sum : bool, default=False
+            Camera flag bits will be summed, converting the fifth column to a camera visibility counter.
         Returns
         -------
         frames : sequence of (frame number, points, analog)
             This method generates a sequence of (frame number, points, analog)
             tuples, one tuple per frame. The first element of each tuple is the
-            frame number. The second is a numpy array of parsed, 5D point data
-            and the third element of each tuple is a numpy array of analog
-            values that were recorded during the frame. (Often the analog data
-            are sampled at a higher frequency than the 3D point data, resulting
-            in multiple analog frames per frame of point data.)
-
+            frame number. The second is a numpy array of parsed, 5D point data.
+            Third element of each tuple is a numpy array of analog
+            values that were recorded during the frame. It is common for the analog data
+            to be sampled at a higher frequency than the 3D point data, resulting
+            in multiple analog frames per frame of point data.
             The first three columns in the returned point data are the (x, y, z)
             coordinates of the observed motion capture point. The fourth column
             is an estimate of the error for this particular point, and the fifth
@@ -1677,20 +1714,13 @@ class Reader(Manager):
             point_word_bytes = 2
         points = np.zeros((self.point_used, 5), np.float32)
 
-        # TODO: handle ANALOG:BITS parameter here!
-        p = self.get('ANALOG:FORMAT')
-        analog_unsigned = p and p.string_value.strip().upper() == 'UNSIGNED'
         if is_float:
+            # Note*: Floating point is 'always' defined for both analog and point data, according to the standard.
             analog_dtype = self._dtypes.float32
             analog_word_bytes = 4
-        elif analog_unsigned:
-            # Note*: Floating point is 'always' defined for both analog and point data, according to the standard.
+        elif self.analog_format_unsigned:
             analog_dtype = self._dtypes.uint16
             analog_word_bytes = 2
-            # Verify BITS parameter for analog
-            p = self.get('ANALOG:BITS')
-            if p and p._as_integer_value / 8 != analog_word_bytes:
-                raise NotImplementedError('Analog data using {} bits is not supported.'.format(p._as_integer_value))
         else:
             analog_dtype = self._dtypes.int16
             analog_word_bytes = 2
@@ -1973,21 +2003,28 @@ class Writer(Manager):
 
     @staticmethod
     def from_reader(reader, conversion=None):
-        '''
-        source : 'class' Manager
-            Source to copy.
+        ''' Convert a `c3d.reader.Reader` to a persistent `c3d.writer.Writer` instance.
+
+        Parameters
+        ----------
+        source : `c3d.reader.Reader`
+            Source to copy data from.
         conversion : str
             Conversion mode, None is equivalent to the default mode. Supported modes are:
-                'convert'       - (Default) Convert the Reader to a Writer instance and explicitly delete the Reader.
+                'convert'       - (Default) Convert the Reader to a Writer
+                                  instance, explicitly deleting the Reader.
                 'copy'          - Reader objects will be deep copied.
-                'copy_metadata' - Similar to 'copy' but only copies metadata and not point and analog frame data.
-                'copy_shallow'  - Similar to 'copy' but group parameters are not copied.
-                'copy_header'   - Similar to 'copy_shallow' but only the header is copied (frame data is not copied).
+                'copy_metadata' - Similar to 'copy' but only copies metadata and
+                                  not point and analog frame data.
+                'copy_shallow'  - Similar to 'copy' but group parameters are
+                                  not copied.
+                'copy_header'   - Similar to 'copy_shallow' but only the
+                                  header is copied (frame data is not copied).
 
         Returns
         -------
-        param : :class:`Writer`
-            A writeable and persistent representation of the 'Reader' object.
+        param : `c3d.writer.Writer`
+            A writeable and persistent representation of the `c3d.reader.Reader` object.
 
         Raises
         ------
@@ -2006,12 +2043,12 @@ class Writer(Manager):
         # Verify mode
         if not (is_consume or is_shallow_copy or is_deep_copy):
             raise ValueError(
-                "Unknown mode argument %s. Supported modes are: 'consume', 'copy', or 'shallow_copy'".format(
+                "Unknown mode argument {}. Supported modes are: 'consume', 'copy', or 'shallow_copy'".format(
                 conversion))
         if not reader._dtypes.is_ieee and not is_shallow_copy:
             # Can't copy/consume non-Intel files due to the uncertainty of converting parameter data.
             raise ValueError(
-                "File was read in %s format and only 'shallow_copy' mode is supported for non Intel files!".format(
+                "File was read in {} format and only 'shallow_copy' mode is supported for non Intel files!".format(
                 reader._dtypes.proc_type))
 
         if is_consume:
@@ -2053,11 +2090,11 @@ class Writer(Manager):
     def analog_rate(self, value):
         if self.point_rate <= 0:
             raise ValueError(
-                "Invalid point rate %f. " % self.point_rate +
-                "Ensure a valid value in either the header frame rate or point rate parameter before setting the analog rate.")
+                "Invalid point rate {}. ".format(self.point_rate)
+                + "Ensure a valid value is set in either the header frame rate or point rate parameter before setting the analog rate.")
         per_frame_rate = value / self.point_rate
         if not float(per_frame_rate).is_integer():
-            raise ValueError("Analog rate must be a multiple of the point rate.")
+            raise ValueError("Analog rate must be an integer multiple of the point rate.")
         self._header.analog_per_frame = np.uint16(per_frame_rate)
 
     @property
