@@ -1545,7 +1545,7 @@ class Manager(object):
     def get_analog_transform_parameters(self):
         ''' Parse analog data transform parameters.
         '''
-        # Offsets
+        # Offsets (return as 32-bit to ensure integer overflow is avoided)
         analog_offsets = np.zeros((self.analog_used), int)
         param = self.get('ANALOG:OFFSET')
         if param is not None and param.num_elements > 0:
