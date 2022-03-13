@@ -1463,9 +1463,17 @@ class Manager(object):
     
     @property
     def analog_resolution(self):
-        ''' Bit resolution the analog samples are recorded at (it 'should' not affect how the data is stored).
-            Values mentioned in the standard are 12, 14, or 16 bit resolution, with 16 bit defined as standard. 
+        ''' Bit resolution the analog samples are recorded at.
+
+            Reads the 'ANALOG:BITS' parameter to determine the resolution. Valid values mentioned in the standard 
+            are 12, 14, or 16 bit resolution, with 16 bit defined as standard. Note that the BITS parameter 'should'
+            not affect how analog data is stored in the file, rather it is information for how to interpret the data.
         '''
+        param = self.get('ANALOG:BITS')
+        if param is not None:
+            return param.int32_value
+        return 'SIGNED'
+
 
     @property
     def point_labels(self):
