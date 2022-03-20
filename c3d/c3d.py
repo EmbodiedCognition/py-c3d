@@ -1218,17 +1218,25 @@ class Manager(object):
         else:
             warnings.warn('No analog data found in file.')
 
-    def add_group(self, group_id, name, desc):
+    def add_group(self, group_id, name, desc, rename_duplicated_groups=False):
         '''Add a new parameter group.
 
         Parameters
         ----------
         group_id : int
             The numeric ID for a group to check or create.
-        name : str, optional
+        name : str
             If a group is created, assign this name to the group.
+            The name will be turned to upper case letters.
         desc : str, optional
             If a group is created, assign this description to the group.
+        rename_duplicated_groups : bool
+            If True, when adding a group with a name that already exists, the group will be renamed to
+            `{name}{group_id}`.
+            The original group will not be renamed.
+            In general, having multiple groups with the same name is against the c3d specification.
+            This option only exists to handle edge cases where files are not created according to the spec and still
+            need to be imported.
 
         Returns
         -------
@@ -1244,14 +1252,23 @@ class Manager(object):
         '''
         if not is_integer(group_id):
             raise TypeError('Expected Group numerical key to be integer, was {}.'.format(type(group_id)))
-        if not (isinstance(name, str) or name is None):
+        if not isinstance(name, str):
             raise TypeError('Expected Group name key to be string, was {}.'.format(type(name)))
         group_id = int(group_id) # Asserts python int
         if group_id in self._groups:
             raise KeyError('Group with numerical key {} already exists'.format(group_id))
         name = name.upper()
         if name in self._groups:
-            raise KeyError(name)
+            if rename_duplicated_groups is True:
+                # In some cases group name is not unique (though c3d spec requires that).
+                # To allow using such files we auto-generate new name.
+                # Notice that referring to this group's parameters later with the original name will fail.
+                new_name = name + str(group_id)
+                warnings.warn(f'Repeated group name {name} modified to {new_name}')
+                name = new_name
+            else:
+                raise KeyError(f'A group with the name {name} already exists.')
+
         group = self._groups[name] = self._groups[group_id] = Group(self._dtypes, name, desc)
         return group
 
@@ -1441,12 +1458,12 @@ class Manager(object):
         '''
         has_analog = self.analog_used > 0
         return int(self.frame_count * self.analog_per_frame) * has_analog
-    
+
     @property
     def analog_format(self):
         ''' Format for non-float (integer) analog data as defined by the'ANALOG:FORMAT' parameter.
 
-            Valid values are 'SIGNED' or 'UNSIGNED' indicating that analog data 
+            Valid values are 'SIGNED' or 'UNSIGNED' indicating that analog data
             is stored as signed or unsigned 16 bit integers. Defaults to 'SIGNED'
             if the parameter does not exist as defined in the standard.
         '''
@@ -1454,18 +1471,18 @@ class Manager(object):
         if param is not None:
             return param.string_value.strip().upper()
         return 'SIGNED'
-    
+
     @property
     def analog_format_unsigned(self):
         ''' True if analog data stored on integer form should be treated as unsigned (rather then signed).
         '''
         return self.analog_format == 'UNSIGNED'
-    
+
     @property
     def analog_resolution(self):
         ''' Bit resolution the analog samples are recorded at.
 
-            Reads the 'ANALOG:BITS' parameter to determine the resolution. Valid values mentioned in the standard 
+            Reads the 'ANALOG:BITS' parameter to determine the resolution. Valid values mentioned in the standard
             are 12, 14, or 16 bit resolution, with 16 bit defined as standard. Note that the BITS parameter 'should'
             not affect how analog data is stored in the file, rather it is information for how to interpret the data.
         '''
@@ -1671,13 +1688,15 @@ class Reader(Manager):
                     self.rename_group(group, name)  # Inserts name key
                     group.desc = desc
                 else:
-                    self.add_group(group_id, name, desc)
+                    # We allow duplicated group names here, even though it is against the c3d spec.
+                    # The groups will be renamed.
+                    self.add_group(group_id, name, desc, rename_duplicated_groups=True)
 
         self._check_metadata()
 
     def read_frames(self, copy=True, analog_transform=True, camera_sum=False, check_nan=True):
         '''Iterate over the data frames from our C3D file handle.
-        
+
         Parameters
         ----------
         copy : bool
@@ -1690,7 +1709,7 @@ class Reader(Manager):
             If True, ANALOG:SCALE, ANALOG:GEN_SCALE, and ANALOG:OFFSET transforms
             defined in the file will be applied to the analog channels.
         check_nan : bool, default=True
-            If True, X,Y,Z point coordinate channels will be checked for NaN values, replacing occurences with 0. 
+            If True, X,Y,Z point coordinate channels will be checked for NaN values, replacing occurences with 0.
             Samples containing NaN values are also marked as invalid (residual channel value is set to -1).
         camera_sum : bool, default=False
             Camera flag bits will be summed, converting the fifth column to a camera visibility counter.
@@ -2003,7 +2022,7 @@ class Writer(Manager):
         # Header properties
         self._header.frame_rate = np.float32(point_rate)
         self._header.scale_factor = np.float32(point_scale)
-        self.analog_rate = analog_rate        
+        self.analog_rate = analog_rate
 
         # Custom properties
         self._point_units = point_units
