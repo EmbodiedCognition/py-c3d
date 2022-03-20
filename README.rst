@@ -28,7 +28,7 @@ This package includes a script for converting C3D motion data to CSV format
 described by a C3D file (``c3d-viewer``).
 
 Note for the viewer you need to install `pyglet`.
-This can be done by installing the gui extra of py-c3d:
+This can be done by installing the gui extra of py-c3d::
 
     pip install "c3d[gui]"
 
@@ -55,7 +55,7 @@ documentation`_ for more details.
 Developer Install
 ~~~~~~~~~~~~~~~~~
 
-To work on `c3d`, first install `poetry <https://python-poetry.org>`_ and then run:
+To work on `c3d`, first install `poetry <https://python-poetry.org>`_ and then run::
 
     git clone https://github.com/EmbodiedCognition/py-c3d
     cd py-c3d
