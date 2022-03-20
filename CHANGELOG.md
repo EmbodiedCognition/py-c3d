@@ -1,4 +1,4 @@
-## [0.5.0] - 
+## [0.5.0] - 20.03.2022
 
 First version for which we keep changelogs.
 

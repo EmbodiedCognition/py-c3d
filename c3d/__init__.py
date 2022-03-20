@@ -3,4 +3,4 @@ from .c3d import Reader, Writer, DataTypes, Param, Group, PROCESSOR_INTEL, PROCE
 
 __all__ = ["Reader", "Writer", "DataTypes", "Param", "Group", "PROCESSOR_INTEL", "PROCESSOR_MIPS", "PROCESSOR_DEC"]
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
