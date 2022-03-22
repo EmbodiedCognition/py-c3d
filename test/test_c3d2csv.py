@@ -2,7 +2,7 @@ import unittest
 import os
 from test.zipload import Zipload
 from test.zipload import TEMP
-from scripts.c3d2csv import convert
+from c3d.scripts.c3d2csv import convert
 
 
 class Script_c3d2csv_Test(unittest.TestCase):

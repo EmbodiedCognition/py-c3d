@@ -1,3 +1,8 @@
+## [0.5.1] - 22.03.2022
+
+- Fixed installation issues due to maleformated pyproject.toml file
+- Scripts are now located withing the c3d folder to avoid packaging issues
+
 ## [0.5.0] - 20.03.2022
 
 First version for which we keep changelogs.
