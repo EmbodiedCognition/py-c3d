@@ -290,8 +290,8 @@ class Header(object):
         self.event_count = 0
 
         self.event_block = b''
-        self.event_timings = np.zeros(0, dtype=np.float32)
-        self.event_disp_flags = np.zeros(0, dtype=np.bool)
+        self.event_timings = np.zeros(0, dtype=float)
+        self.event_disp_flags = np.zeros(0, dtype=bool)
         self.event_labels = []
 
         if handle:
@@ -431,8 +431,8 @@ class Header(object):
             unpack_fmt = '<I'
 
         read_count = self.event_count
-        self.event_timings = np.zeros(read_count, dtype=np.float32)
-        self.event_disp_flags = np.zeros(read_count, dtype=np.bool)
+        self.event_timings = np.zeros(read_count, dtype=float)
+        self.event_disp_flags = np.zeros(read_count, dtype=bool)
         self.event_labels = np.empty(read_count, dtype=object)
         for i in range(read_count):
             ilong = i * 4
@@ -495,7 +495,7 @@ class Header(object):
         self.event_count = write_count
         # Update event block
         self.event_timings = event_timings[:write_count]
-        self.event_disp_flags = np.ones(write_count, dtype=np.bool)
+        self.event_disp_flags = np.ones(write_count, dtype=bool)
         self.event_labels = event_labels[:write_count]
         self.event_block = struct.pack(fmt,
                                        event_timings.tobytes(),
