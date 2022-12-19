@@ -2206,7 +2206,7 @@ class Writer(Manager):
             Insert the frame or sequence at the index (the first sequence frame will be inserted at give index).
             Note that the index should be relative to 0 rather then the frame number provided by read_frames()!
         '''
-        sh = np.shape(frames)
+        sh = np.array(frames, dtype=object).shape
         # Single frame
         if len(sh) != 2:
             frames = [frames]
@@ -2215,7 +2215,7 @@ class Writer(Manager):
         if sh[1] != 2:
             raise ValueError(
                 'Expected frame input to be sequence of point and analog pairs on form (-1, 2). ' +
-                '\Input was of shape {}.'.format(str(sh)))
+                'Input was of shape {}.'.format(str(sh)))
 
         if index is not None:
             self._frames[index:index] = frames
