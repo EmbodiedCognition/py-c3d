@@ -1494,7 +1494,13 @@ class Manager(object):
 
     @property
     def point_labels(self):
-        return self.get('POINT:LABELS').string_array
+        if self.header.point_count <= 255:
+            return self.get('POINT:LABELS').string_array
+        else:
+            labels = self.get('POINT:LABELS').string_array.tolist()
+            for i in range(2, int(np.ceil(1 + self.header.point_count/255))):
+                labels = labels + self.get(f'POINT:LABELS{i}').string_array.tolist()
+            return np.array(labels, dtype=object)
 
     @property
     def analog_labels(self):
