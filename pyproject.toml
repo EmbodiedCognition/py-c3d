@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "c3d"
-version = "0.5.1"
+version = "0.5.2"
 description = "A library for manipulating C3D binary files"
 authors = ["UT Vision, Cognition, and Action Lab"]
 maintainers = [
