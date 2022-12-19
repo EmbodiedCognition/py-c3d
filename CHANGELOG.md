@@ -1,3 +1,7 @@
+## [0.5.2] - 19.12.2022
+
+- Fixed numpy dtype deprecated warning (https://github.com/EmbodiedCognition/py-c3d/pull/50)
+
 ## [0.5.1] - 22.03.2022
 
 - Fixed installation issues due to maleformated pyproject.toml file
