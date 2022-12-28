@@ -2282,15 +2282,14 @@ class Writer(Manager):
                     return 1  # Empty iterable
             return 0
 
-        if len(frames) > 1:
-            depth = max(get_depth(frames[0]), get_depth(frames[1])) + 1
-        else:
-            try:
-                depth = max(get_depth(frames[0][0]), get_depth(frames[0][1])) + 2
-            except IndexError as e:
-                raise ValueError(
-                    'Expected frame input to be sequence of point and analog pairs on form (-1, 2). '
-                    'Input was of shape {}.'.format(str(np.array(frames, dtype=object).shape)))
+        # Attempt find for multi frame arguments
+        try:
+            depth = max(get_depth(frames[0][0]), get_depth(frames[0][1])) + 2
+        except IndexError as e:
+            depth = 0
+            if len(frames) == 2:
+                # Attempt find for single frame argument
+                depth = max(get_depth(frames[0]), get_depth(frames[1])) + 1
 
         if depth == 3:
             # Single frame

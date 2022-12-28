@@ -53,9 +53,14 @@ def create_dummy_writer(labels=None, frames=1):
                   'RTH1', 'RTH2', 'RTH3', 'RTH4', 'LTH1', 'LTH2', 'LTH3', 'LTH4'
                   ]
 
-    if frames > 0:
+    if frames == 1:
         for _ in range(frames):
             writer.add_frames((np.random.randn(len(labels), 5), ()))
+    elif frames > 1:
+        new_frames = []
+        for __ in range(5):
+            new_frames.append((np.random.randn(len(labels), 5), ()))
+        writer.add_frames(new_frames)
     
     writer.set_point_labels(labels)
     writer.set_analog_labels(None)
@@ -129,6 +134,19 @@ class GeneratedExamples(Base):
 
             for a, b in zip(labels, B.get('POINT.LABELS').string_array):
                 assert a == b, "Label missmatch"
+
+    def test_writing_multiple_point_frame(self):
+        """ Verify writing a file with a single frame.
+        """
+        writer = create_dummy_writer(frames=10)
+
+        tmp_path = os.path.join(TEMP, 'single-point-frame.c3d')
+        with open(tmp_path, 'wb') as h:
+            writer.write(h)
+
+        with open(tmp_path, 'rb') as handle:
+            B = c3d.Reader(handle)
+            verify.equal_headers("test_writing_multiple_point_frame", writer, B, "Original", "WriteRead", True, True)
                 
     def test_writing_analog_frames(self):
         """ Verify writing a file with a single frame.
@@ -139,8 +157,20 @@ class GeneratedExamples(Base):
                   ]
         writer = c3d.Writer(point_rate=12, analog_rate=36)
 
-        for i in range(5):
+        # Single frame input
+        for __ in range(5):
             writer.add_frames(((), np.random.randn(len(labels), writer.analog_per_frame),))
+        
+        # Twin frame input
+        new_frames = [((), np.random.randn(len(labels), writer.analog_per_frame),), 
+                      ((), np.random.randn(len(labels), writer.analog_per_frame),)]
+        writer.add_frames(new_frames)
+
+        # Multi frame input
+        new_frames = []
+        for __ in range(5):
+            new_frames.append(((), np.random.randn(len(labels), writer.analog_per_frame),))
+        writer.add_frames(new_frames)
         
         writer.set_point_labels(None)
         writer.set_analog_labels(labels)
@@ -153,6 +183,9 @@ class GeneratedExamples(Base):
             B = c3d.Reader(handle)
             
             verify.equal_headers("test_writing_single_point_frame", writer, B, "Original", "WriteRead", True, True)
+
+            assert B.analog_sample_count == 12 * writer.analog_per_frame, "Expected {} samples was {}".format(
+                B.analog_sample_count, 12 * writer.analog_per_frame)
 
             for a, b in zip(labels, B.get('ANALOG.LABELS').string_array):
                 assert a == b, "Label missmatch"
