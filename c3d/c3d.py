@@ -1433,7 +1433,10 @@ class Manager(object):
 
     @property
     def analog_used(self):
-        ''' Number of analog measurements, or channels, for each analog data sample.
+        ''' Number of analog measured variables, or channels, within a analog data sample/frame.
+
+        Does not account for the number of samples for each channel per point frame, 
+        see 'analog_per_frame' to find the total number of samples recorded per frame.
         '''
         try:
             return self.get_uint16('ANALOG:USED')
@@ -2273,6 +2276,17 @@ class Writer(Manager):
             raise ValueError(
                 'Expected frame input to be sequence of point and analog pairs on form (-1, 2). ' +
                 'Input was of shape {}.'.format(str(sh)))
+        
+        point_shape = np.shape(frames[0][0])
+        analog_shape = np.shape(frames[0][1])
+
+        if len(analog_shape) != 2 or analog_shape[0] != self.analog_used or analog_shape[1] != self.analog_per_frame:
+            raise ValueError("Expected analog frame to be a 2D array on form (analog_used, analog_per_frame), "
+                             "was on form %s" % str(analog_shape))
+                             
+        if len(point_shape) != 2 or point_shape[0] != self.point_used or point_shape[1] != 5:
+            raise ValueError("Expected point frame to be a 2D array on form (analog_used, 5), "
+                             "was on form %s" % str(point_shape))
 
         if index is not None:
             self._frames[index:index] = frames

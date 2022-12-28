@@ -80,7 +80,7 @@ class GeneratedExamples(Base):
                   ]
         writer = create_dummy_writer(labels)
 
-        tmp_path = os.path.join(TEMP, 'single-frame.c3d')
+        tmp_path = os.path.join(TEMP, 'single-point-frame.c3d')
         with open(tmp_path, 'wb') as h:
             writer.write(h)
 
@@ -99,17 +99,14 @@ class GeneratedExamples(Base):
                   'RSK1', 'RSK2', 'RSK3', 'RSK4', 'LSK1', 'LSK2', 'LSK3', 'LSK4',
                   'RTH1', 'RTH2', 'RTH3', 'RTH4', 'LTH1', 'LTH2', 'LTH3', 'LTH4'
                   ]
-        writer = create_dummy_writer(labels)
         writer = c3d.Writer(point_rate=12, analog_rate=36)
 
-        frames = 1
-        for _ in range(frames):
-            writer.add_frames(((), np.random.randn(len(labels), writer.analog_per_frame),))
+        writer.add_frames(((), np.random.randn(len(labels), writer.analog_per_frame),))
         
         writer.set_point_labels(None)
         writer.set_analog_labels(labels)
 
-        tmp_path = os.path.join(TEMP, 'single-frame.c3d')
+        tmp_path = os.path.join(TEMP, 'single-analog-frame.c3d')
         with open(tmp_path, 'wb') as h:
             writer.write(h)
 
@@ -121,6 +118,14 @@ class GeneratedExamples(Base):
             for a, b in zip(labels, B.get('ANALOG.LABELS').string_array):
                 assert a == b, "Label missmatch"
         
+    def test_write_invalid_analog_frame_count(self):
+        """ Verify writing a file with a single frame.
+        """
+        writer = c3d.Writer(point_rate=12, analog_rate=36)
+
+        with self.assertRaises(ValueError):
+            writer.add_frames(((), np.random.randn(14, writer.analog_per_frame - 1),))
+
 
     def test_write_long_param(self):
         writer = create_dummy_writer()
