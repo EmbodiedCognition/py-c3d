@@ -1927,7 +1927,7 @@ class GroupEditable(Decorator):
         elem_per_dim = np.prod(dimensions[:-1])
 
         for index in range(num_param):
-            name_param = name if index == 0 else "%s%i" % (name, index + 1)
+            name_param = name if index == 0 else "{}{}".format(name, index + 1)
             # Determine the byte array for the partial parameter
             first_byte = elem_per_dim * 255 * index
             last_byte = first_byte + elem_per_dim * 255
@@ -1984,7 +1984,7 @@ class GroupEditable(Decorator):
         '''
         if len(dimensions) == 0:
             if not is_iterable(data):
-                raise ValueError("Expected bytes or strings, was %s" % str(type(data)))
+                raise ValueError("Expected bytes or strings, was {}".format(str(type(data))))
             if isinstance(data, str):
                 # Single string entry
                 dimensions = (len(data), )
@@ -2318,8 +2318,8 @@ class Writer(Manager):
         # Verify frame rate matches for analog
         if len(analog_frame) and analog_shape[1] != self.analog_per_frame:
             raise ValueError("Expected analog frame to be a 2D array with the second "
-                             "dimension matching the analog_frame_rate / point_frame_rate = "
-                             "%i, was %i" % (self.analog_per_frame, analog_shape[1]))
+                             "dimension matching the analog_frame_rate / point_frame_rate = " +
+                             "{}, was {}".format(self.analog_per_frame, analog_shape[1]))
 
         # Verify frames added matches existing
         if len(self._frames):
@@ -2328,13 +2328,13 @@ class Writer(Manager):
                 analog_shape = np.shape(analog_frame)
                 if len(analog_shape) != 2 or analog_shape[0] != self.analog_used:
                     raise ValueError("Expected analog frame to be a 2D array on form (analog_used, analog_per_frame), "
-                                    "was on form %s" % str(analog_shape))
+                                    "was on form {}".format(str(analog_shape)))
                                 
             if len(point_frame):
                 # If there are a point frame included, verify shape
                 if len(point_shape) != 2 or point_shape[0] != self.point_used or point_shape[1] != 5:
-                    raise ValueError("Expected point frame to be a 2D array on form "
-                                    "(%i, 5), was on form %s" % (self.point_used, str(point_shape)))
+                    raise ValueError("Expected point frame to be a 2D array on form " +
+                                    "({}, 5), was on form {}".format(self.point_used, str(point_shape)))
         else:
             # Define the count in the header
             self._header.point_count = point_shape[0]
