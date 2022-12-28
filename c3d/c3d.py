@@ -1162,19 +1162,19 @@ class Manager(object):
     def _check_metadata(self):
         ''' Ensure that the metadata in our file is self-consistent. '''
         assert self._header.point_count == self.point_used, (
-            'inconsistent point count! {} header != {} POINT:USED'.format(
+            'Inconsistent point count, {} header != {} POINT:USED'.format(
                 self._header.point_count,
                 self.point_used,
             ))
 
         assert self._header.scale_factor == self.point_scale, (
-            'inconsistent scale factor! {} header != {} POINT:SCALE'.format(
+            'Inconsistent scale factor, {} header != {} POINT:SCALE'.format(
                 self._header.scale_factor,
                 self.point_scale,
             ))
 
         assert self._header.frame_rate == self.point_rate, (
-            'inconsistent frame rate! {} header != {} POINT:RATE'.format(
+            'Inconsistent frame rate, {} header != {} POINT:RATE'.format(
                 self._header.frame_rate,
                 self.point_rate,
             ))
@@ -1184,7 +1184,7 @@ class Manager(object):
         else:
             ratio = 0
         assert self._header.analog_per_frame == ratio, (
-            'inconsistent analog rate! {} header != {} analog-fps / {} point-fps'.format(
+            'Inconsistent analog rate, {} header != {} analog-fps / {} point-fps'.format(
                 self._header.analog_per_frame,
                 self.analog_rate,
                 self.point_rate,
@@ -1192,7 +1192,7 @@ class Manager(object):
 
         count = self.analog_used * self._header.analog_per_frame
         assert self._header.analog_count == count, (
-            'inconsistent analog count! {} header != {} analog used * {} per-frame'.format(
+            'Inconsistent analog count, {} header != {} analog used * {} per-frame'.format(
                 self._header.analog_count,
                 self.analog_used,
                 self._header.analog_per_frame,
@@ -1201,7 +1201,7 @@ class Manager(object):
         try:
             start = self.get_uint16('POINT:DATA_START')
             if self._header.data_block != start:
-                warnings.warn('inconsistent data block! {} header != {} POINT:DATA_START'.format(
+                warnings.warn('Inconsistent data block, {} header != {} POINT:DATA_START'.format(
                     self._header.data_block, start))
         except AttributeError:
             warnings.warn('''no pointer available in POINT:DATA_START indicating the start of the data block, using
@@ -2360,11 +2360,11 @@ class Writer(Manager):
         '''
         if is_iterable(values):
             data = np.array([v for v in values], dtype=np.int16)
-            self.analog_group.set_array('OFFSET', 'Analog channel offsets', data)
         elif values is None:
-            self.analog_group.set_empty_array('OFFSET', 'Analog channel offsets', 2)
+            data = np.zeros((self.analog_used, ), dtype=np.int16)
         else:
             raise ValueError('Expected iterable containing analog data offsets.')
+        self.analog_group.set_array('OFFSET', 'Analog channel offsets', data)
 
     def set_start_frame(self, frame=1):
         ''' Set the 'TRIAL:ACTUAL_START_FIELD' parameter and header.first_frame entry.
@@ -2434,6 +2434,7 @@ class Writer(Manager):
 
         # POINT group
         group = self.point_group
+        self._header.point_count = np.uint16(ppf)
         group.set('USED', 'Number of point samples', 2, '<H', ppf)
         group.set('FRAMES', 'Total frame count', 2, '<H', min(UINT16_MAX, nframes))
         if nframes >= UINT16_MAX:
@@ -2454,6 +2455,7 @@ class Writer(Manager):
 
         # ANALOG group
         group = self.analog_group
+        self._header.analog_count = np.uint16(np.prod(np.shape(analog)))
         group.set('USED', 'Analog channel count', 2, '<H', apf)
         group.set('RATE', 'Analog samples per second', 4, '<f', np.float32(self.analog_rate))
         if 'GEN_SCALE' not in group:
@@ -2474,9 +2476,6 @@ class Writer(Manager):
         blocks = self.parameter_blocks()
         self.get('POINT:DATA_START').bytes = struct.pack('<H', 2 + blocks)
         self._header.data_block = np.uint16(2 + blocks)
-        self._header.point_count = np.uint16(ppf)
-        self._header.analog_count = np.uint16(np.prod(np.shape(analog)))
-
         self._write_metadata(handle)
         self._write_frames(handle)
 
@@ -2538,12 +2537,14 @@ class Writer(Manager):
 
         for points, analog in self._frames:
             # Transform point data
-            valid = points[:, 3] >= 0.0
-            raw[~valid, 3] = -1
-            raw[valid, :3] = points[valid, :3] / point_scale
-            raw[valid, 3] = np.bitwise_or(np.rint(points[valid, 3] / scale_mag).astype(np.uint8),
-                                          (points[valid, 4].astype(np.uint16) << 8),
-                                          dtype=np.uint16)
+            if self.point_used:
+                # If not empty
+                valid = points[:, 3] >= 0.0
+                raw[~valid, 3] = -1
+                raw[valid, :3] = points[valid, :3] / point_scale
+                raw[valid, 3] = np.bitwise_or(np.rint(points[valid, 3] / scale_mag).astype(np.uint8),
+                                            (points[valid, 4].astype(np.uint16) << 8),
+                                            dtype=np.uint16)
 
             # Transform analog data
             analog = analog * analog_scales_inv + analog_offsets
@@ -2553,4 +2554,5 @@ class Writer(Manager):
             analog = analog.astype(point_dtype)
             handle.write(raw.tobytes())
             handle.write(analog.tobytes())
+        
         self._pad_block(handle)

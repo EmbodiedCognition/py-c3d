@@ -59,12 +59,6 @@ class GeneratedExamples(Base):
         """ Verify no frames generates a runtime error (illegal to write empty file).
         """
         writer = c3d.Writer(point_rate=200)
-        #for _ in range(1):
-        #    writer.add_frames((np.random.randn(24, 5), ()))
-        #writer.set_point_labels(['RFT1', 'RFT2', 'RFT3', 'RFT4', 'LFT1', 'LFT2', 'LFT3', 'LFT4',
-        #                        'RSK1', 'RSK2', 'RSK3', 'RSK4', 'LSK1', 'LSK2', 'LSK3', 'LSK4',
-        #                        'RTH1', 'RTH2', 'RTH3', 'RTH4', 'LTH1', 'LTH2', 'LTH3', 'LTH4'
-        #                        ])
         writer.set_point_labels(None)
         writer.set_analog_labels(None)
 
@@ -77,7 +71,7 @@ class GeneratedExamples(Base):
         except RuntimeError as e:
             pass  # RuntimeError writing empty file
         
-    def test_writing_single_frame(self):
+    def test_writing_single_point_frame(self):
         """ Verify writing a file with a single frame.
         """
         labels = ['RFT1', 'RFT2', 'RFT3', 'RFT4', 'LFT1', 'LFT2', 'LFT3', 'LFT4',
@@ -93,9 +87,38 @@ class GeneratedExamples(Base):
         with open(tmp_path, 'rb') as handle:
             B = c3d.Reader(handle)
             
-            verify.equal_headers("test_writing_single_frame", writer, B, "Original", "WriteRead", True, True)
+            verify.equal_headers("test_writing_single_point_frame", writer, B, "Original", "WriteRead", True, True)
 
             for a, b in zip(labels, B.get('POINT.LABELS').string_array):
+                assert a == b, "Label missmatch"
+                
+    def test_writing_analog_frames(self):
+        """ Verify writing a file with a single frame.
+        """
+        labels = ['RFT1', 'RFT2', 'RFT3', 'RFT4', 'LFT1', 'LFT2', 'LFT3', 'LFT4',
+                  'RSK1', 'RSK2', 'RSK3', 'RSK4', 'LSK1', 'LSK2', 'LSK3', 'LSK4',
+                  'RTH1', 'RTH2', 'RTH3', 'RTH4', 'LTH1', 'LTH2', 'LTH3', 'LTH4'
+                  ]
+        writer = create_dummy_writer(labels)
+        writer = c3d.Writer(point_rate=12, analog_rate=36)
+
+        frames = 1
+        for _ in range(frames):
+            writer.add_frames(((), np.random.randn(len(labels), writer.analog_per_frame),))
+        
+        writer.set_point_labels(None)
+        writer.set_analog_labels(labels)
+
+        tmp_path = os.path.join(TEMP, 'single-frame.c3d')
+        with open(tmp_path, 'wb') as h:
+            writer.write(h)
+
+        with open(tmp_path, 'rb') as handle:
+            B = c3d.Reader(handle)
+            
+            verify.equal_headers("test_writing_single_point_frame", writer, B, "Original", "WriteRead", True, True)
+
+            for a, b in zip(labels, B.get('ANALOG.LABELS').string_array):
                 assert a == b, "Label missmatch"
         
 
