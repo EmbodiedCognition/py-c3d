@@ -9,6 +9,9 @@ import numpy as np
 from test.base import Base
 from test.zipload import Zipload, TEMP
 
+# Run all examples on all copy tests
+MINIMAL_TEST = True
+
 
 def verify_read_write(zip, file_path, proc_type='INTEL', real=True, cpy_mode='copy'):
     ''' Compare read write ouput to original read file.
@@ -224,10 +227,14 @@ class Sample00(Base):
         print('----------------------------')
         print('Shallow-copy')
         print('----------------------------')
-        folder, files = self.zip_files[-1]
-        print('{} | Validating...'.format(folder))
-        for file in files:
-            verify_read_write(self.ZIP, '{}/{}'.format(folder, file), cpy_mode='shallow_copy')
+        if MINIMAL_TEST:
+            zip_files = [self.zip_files[-1]]
+        else:
+            zip_files = self.zip_files
+        for folder, files in zip_files:
+            print('{} | Validating...'.format(folder))
+            for file in files:
+                verify_read_write(self.ZIP, '{}/{}'.format(folder, file), cpy_mode='shallow_copy')
         print('... OK')
         print('DONE')
         
@@ -238,10 +245,14 @@ class Sample00(Base):
         print('----------------------------')
         print('Convert')
         print('----------------------------')
-        folder, files = self.zip_files[-1]
-        print('{} | Validating...'.format(folder))
-        for file in files:
-            verify_read_write(self.ZIP, '{}/{}'.format(folder, file), cpy_mode='convert')
+        if MINIMAL_TEST:
+            zip_files = [self.zip_files[-1]]
+        else:
+            zip_files = self.zip_files
+        for folder, files in zip_files:
+            print('{} | Validating...'.format(folder))
+            for file in files:
+                verify_read_write(self.ZIP, '{}/{}'.format(folder, file), cpy_mode='convert')
         print('... OK')
         print('DONE')
         
@@ -252,12 +263,36 @@ class Sample00(Base):
         print('----------------------------')
         print('copy_header')
         print('----------------------------')
-        folder, files = self.zip_files[-1]
-        print('{} | Validating...'.format(folder))
-        for file in files:
-            A = c3d.Reader(Zipload._get(self.ZIP, '{}/{}'.format(folder, file)))
-            writer = A.to_writer('copy_header')
-            verify.equal_headers('test_read_write_header_examples', A, writer, 'Original', 'Writer Copy', True, True)
+        if MINIMAL_TEST:
+            zip_files = [self.zip_files[-1]]
+        else:
+            zip_files = self.zip_files
+        for folder, files in zip_files:
+            print('{} | Validating...'.format(folder))
+            for file in files:
+                A = c3d.Reader(Zipload._get(self.ZIP, '{}/{}'.format(folder, file)))
+                writer = A.to_writer('copy_header')
+                verify.equal_headers('test_read_write_header_examples', A, writer, 'Original', 'Writer Copy', True, True)
+        print('... OK')
+        print('DONE')
+
+    def test_read_write_copy_metadata_examples(self):
+        ''' Compare data written by a 'copy_metadata' only `Writer` to data in the original file
+        '''
+
+        print('----------------------------')
+        print('copy_metadata')
+        print('----------------------------')
+        if MINIMAL_TEST:
+            zip_files = [self.zip_files[-1]]
+        else:
+            zip_files = self.zip_files
+        for folder, files in zip_files:
+            print('{} | Validating...'.format(folder))
+            for file in files:
+                A = c3d.Reader(Zipload._get(self.ZIP, '{}/{}'.format(folder, file)))
+                writer = A.to_writer('copy_metadata')
+                verify.equal_headers('test_read_write_copy_metadata_examples', A, writer, 'Original', 'Writer Copy', True, True)
         print('... OK')
         print('DONE')
 

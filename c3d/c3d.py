@@ -451,7 +451,7 @@ class Header(object):
         '''
         return zip(self.event_timings[self.event_disp_flags], self.event_labels[self.event_disp_flags])
 
-    def encode_events(self, events):
+    def encode_events(self, events, long_event_labels=True):
         ''' Encode event data in the event block.
 
         Parameters
@@ -1500,11 +1500,17 @@ class Manager(object):
 
     @property
     def point_labels(self):
-        return self.get('POINT:LABELS').string_array
+        grp = self.get('POINT:LABELS')
+        if grp is None:
+            return None
+        return grp.string_array
 
     @property
     def analog_labels(self):
-        return self.get('ANALOG:LABELS').string_array
+        grp = self.get('ANALOG:LABELS')
+        if grp is None:
+            return None
+        return grp.string_array
 
     @property
     def frame_count(self):
@@ -2102,8 +2108,8 @@ class Writer(Manager):
                 'copy'          - Reader objects will be deep copied.
                 'copy_metadata' - Similar to 'copy' but only copies metadata and
                                   not point and analog frame data.
-                'copy_shallow'  - Similar to 'copy' but group parameters are
-                                  not copied.
+                'copy_shallow'  - Similar to 'copy' but group parameters are not copied. 
+                                  Usefull for stripping away parameter meta data.
                 'copy_header'   - Similar to 'copy_shallow' but only the
                                   header is copied (frame data is not copied).
 
@@ -2340,7 +2346,7 @@ class Writer(Manager):
         labels = np.ravel(labels)
         # Get longest label name
         label_max_size = 0
-        label_max_size = max(label_max_size, np.max([len(label) for label in labels]))
+        label_max_size = max(label_max_size, np.max([0] + [len(label) for label in labels]))
         label_str = ''.join(label.ljust(label_max_size) for label in labels)
         return label_str, label_max_size
 
