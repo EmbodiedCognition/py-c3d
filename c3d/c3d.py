@@ -477,17 +477,18 @@ class Header(object):
         event_disp_flags = np.zeros(18, dtype=np.uint8)
         event_labels = np.empty(18, dtype=object)
         label_bytes = bytearray(18 * 4)
-        for i, (time, label) in enumerate(events):
-            if i > 17:
+        write_count = 0 # Initiate counter in-case events is an empty iterator
+        for time, label in events:
+            if write_count == 18:
                 # Don't raise Error, header events are rarely used.
                 warnings.warn('Maximum of 18 events can be encoded in the header, skipping remaining events.')
                 break
 
-            event_timings[i] = time
-            event_labels[i] = label
-            label_bytes[i * 4:(i + 1) * 4] = label.encode('utf-8')
+            event_timings[write_count] = time
+            event_labels[write_count] = label
+            label_bytes[write_count * 4:(write_count + 1) * 4] = label.encode('utf-8')
+            write_count += 1
 
-        write_count = min(i + 1, 18)
         event_disp_flags[:write_count] = 1
 
         # Update event headers in self
@@ -557,6 +558,7 @@ class Param(object):
         e = 1
         for d in self.dimensions:
             e *= d
+        assert e == np.prod(self.dimensions), f"{self.dimensions}, {e}, {np.prod(self.dimensions)}"
         return e
 
     @property
@@ -613,6 +615,7 @@ class Param(object):
         self.bytes = b''
         if self.total_bytes:
             self.bytes = handle.read(self.total_bytes)
+
         desc_size, = struct.unpack('B', handle.read(1))
         self.desc = desc_size and self._dtypes.decode_string(handle.read(desc_size)) or ''
 
@@ -1881,11 +1884,48 @@ class Reader(Manager):
 class GroupEditable(Decorator):
     ''' Group instance decorator providing convenience functions for Writer editing.
     '''
-    def __init__(self, group):
+    def __init__(self, group: Group):
         super(GroupEditable, self).__init__(group)
 
     def __contains__(self, key):
         return key in self._decoratee
+
+    @property
+    def group(self) -> Group:
+        return self._decoratee
+        
+    def add_param(self, name, desc='', bytes_per_element=1, bytes=b'', dimensions=None):
+        """ Decorate the raw Group.add_param() function to split the inputs if the leading dimension is > 255.
+        """
+        # Dimension must fit in a 8 bit unsigned int
+        if len(dimensions) == 0 or dimensions[-1] < 255:
+            # Forward
+            self.group.add_param(name,
+                                 desc=desc,
+                                 bytes_per_element=bytes_per_element,
+                                 bytes=bytes,
+                                 dimensions=dimensions)
+            return
+
+        # Split the parameter into partial group parameters
+        num_param =  int((dimensions[-1] - 1) / 255) + 1  # ceil(dim / 255)
+        elem_per_dim = np.prod(dimensions[:-1])
+
+        for index in range(num_param):
+            name_param = name if index == 0 else "%s%i" % (name, index + 1)
+            # Determine the byte array for the partial parameter
+            first_byte = elem_per_dim * 255 * index
+            last_byte = first_byte + elem_per_dim * 255
+            bytes_param = bytes[first_byte:last_byte]
+            # Determine shape
+            dimensions_param = dimensions.copy()
+            dimensions_param[-1] = min(255, dimensions_param[-1] - index * 255)
+            self.group.add_param(name_param,
+                                 desc=desc,
+                                 bytes_per_element=bytes_per_element,
+                                 bytes=bytes_param,
+                                 dimensions=dimensions_param)
+
     #
     #   Add decorator functions (throws on overwrite)
     #
@@ -1913,7 +1953,7 @@ class GroupEditable(Decorator):
         '''
         if not isinstance(data, np.ndarray):
             if dtype is not None:
-                raise ValueError('Must specify dtype when passning non-numpy array type.')
+                raise ValueError('Must specify dtype when passing non-numpy array type.')
             data = np.array(data, dtype=dtype)
         elif dtype is None:
             dtype = data.dtype
@@ -1927,17 +1967,33 @@ class GroupEditable(Decorator):
     def add_str(self, name, desc, data, *dimensions):
         ''' Add a string parameter.
         '''
+        if len(dimensions) == 0:
+            if not is_iterable(data):
+                raise ValueError("Expected bytes or strings, was %s" % str(type(data)))
+            if isinstance(data, str):
+                # Single string entry
+                dimensions = (len(data), )
+            else:
+                # List of string entries
+                label_str, label_max_size = Writer.pack_labels(data)
+                dimensions = (label_max_size, len(data))
+                data = label_str
+        elif not isinstance(data, str):
+            raise ValueError("Expected input to be an encodable string matching the dimension input")
+
         self.add_param(name,
                        desc=desc,
                        bytes_per_element=-1,
                        bytes=data.encode('utf-8'),
                        dimensions=list(dimensions))
 
-    def add_empty_array(self, name, desc, bpe):
+    def add_empty_array(self, name, desc, bytes_per_element=0):
         ''' Add an empty parameter block.
         '''
-        self.add_param(name, desc=desc,
-                       bytes_per_element=bpe, dimensions=[0])
+        self.add_param(name,
+                       desc=desc,
+                       bytes_per_element=bytes_per_element,
+                       dimensions=[0])
 
     #
     #   Set decorator functions (overwrites)
@@ -2064,6 +2120,7 @@ class Writer(Manager):
         is_header_only = conversion == 'copy_header'
         is_meta_copy = conversion == 'copy_metadata'
         is_meta_only = is_header_only or is_meta_copy
+
         is_consume = conversion == 'convert' or conversion is None
         is_shallow_copy = conversion == 'shallow_copy' or is_header_only
         is_deep_copy = conversion == 'copy' or is_meta_copy
@@ -2093,7 +2150,7 @@ class Writer(Manager):
             # Reformat header events
             writer._header.encode_events(writer._header.events)
 
-            # Transfer a minimal set parameters
+            # Transfer a minimal parameter set
             writer.set_start_frame(reader.first_frame)
             writer.set_point_labels(reader.point_labels)
             writer.set_analog_labels(reader.analog_labels)
@@ -2224,6 +2281,29 @@ class Writer(Manager):
 
     @staticmethod
     def pack_labels(labels):
+        ''' Static method used to pack and pad the set of `labels` strings before
+            passing the output into a `c3d.group.Group.add_str`.
+        Parameters
+        ----------
+        labels : iterable
+            List of strings to pack and pad into a single string suitable for encoding in a Parameter entry.
+        Example
+        -------
+        >>> labels = ['RFT1', 'RFT2', 'RFT3', 'LFT1', 'LFT2', 'LFT3']
+        >>> param_str, label_max_size = Writer.pack_labels(labels)
+        >>> writer.point_group.add_str('LABELS',
+                                    'Point labels.',
+                                    label_str,
+                                    label_max_size,
+                                    len(labels))
+        Returns
+        -------
+        param_str : str
+            String containing `labels` packed into a single variable where
+            each string is padded to match the longest `labels` string.
+        label_max_size : int
+            Number of bytes associated with the longest `label` string, all strings are padded to this length.
+        '''
         labels = np.ravel(labels)
         # Get longest label name
         label_max_size = 0
@@ -2234,14 +2314,20 @@ class Writer(Manager):
     def set_point_labels(self, labels):
         ''' Set point data labels.
         '''
-        label_str, label_max_size = Writer.pack_labels(labels)
-        self.point_group.add_str('LABELS', 'Point labels.', label_str, label_max_size, len(labels))
+        grp = self.point_group
+        if labels is None:
+            grp.add_empty_array('LABELS', 'Point labels.')
+        else:
+            grp.add_str('LABELS', 'Point labels.', labels)
 
     def set_analog_labels(self, labels):
         ''' Set analog data labels.
         '''
-        label_str, label_max_size = Writer.pack_labels(labels)
-        self.analog_group.add_str('LABELS', 'Analog labels.', label_str, label_max_size, len(labels))
+        grp = self.analog_group
+        if labels is None:
+            grp.add_empty_array('LABELS', 'Analog labels.')
+        else:
+            grp.add_str('LABELS', 'Analog labels.', labels)
 
     def set_analog_general_scale(self, value):
         ''' Set ANALOG:GEN_SCALE factor (uniform analog scale factor).
@@ -2389,7 +2475,7 @@ class Writer(Manager):
         self.get('POINT:DATA_START').bytes = struct.pack('<H', 2 + blocks)
         self._header.data_block = np.uint16(2 + blocks)
         self._header.point_count = np.uint16(ppf)
-        self._header.analog_count = np.uint16(np.prod(analog.shape))
+        self._header.analog_count = np.uint16(np.prod(np.shape(analog)))
 
         self._write_metadata(handle)
         self._write_frames(handle)
