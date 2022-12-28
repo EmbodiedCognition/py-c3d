@@ -451,7 +451,7 @@ class Header(object):
         '''
         return zip(self.event_timings[self.event_disp_flags], self.event_labels[self.event_disp_flags])
 
-    def encode_events(self, events, long_event_labels=True):
+    def encode_events(self, events):
         ''' Encode event data in the event block.
 
         Parameters
@@ -2266,27 +2266,49 @@ class Writer(Manager):
 
         Parameters
         ----------
-        frames : Single or sequence of (point, analog) pairs
+        frames : Single or sequence of (point, analog) pairs.
             A sequence or frame of frame data to add to the writer.
         index : int or None
             Insert the frame or sequence at the index (the first sequence frame will be inserted at give index).
             Note that the index should be relative to 0 rather then the frame number provided by read_frames()!
         '''
-        sh = np.array(frames, dtype=object).shape
-        # Single frame
-        if len(sh) != 2:
+        def get_depth(data):
+            """ Find the number of nested arrays.
+            """
+            if is_iterable(data):
+                try:
+                    return get_depth(next(iter(data))) + 1
+                except StopIteration as e:
+                    return 1  # Empty iterable
+            return 0
+
+        if len(frames) > 1:
+            depth = max(get_depth(frames[0]), get_depth(frames[1])) + 1
+        else:
+            try:
+                depth = max(get_depth(frames[0][0]), get_depth(frames[0][1])) + 2
+            except IndexError as e:
+                raise ValueError(
+                    'Expected frame input to be sequence of point and analog pairs on form (-1, 2). '
+                    'Input was of shape {}.'.format(str(np.array(frames, dtype=object).shape)))
+
+        if depth == 3:
+            # Single frame
             frames = [frames]
-            sh = np.shape(frames)
-        # Sequence of invalid shape
-        if sh[1] != 2:
+        elif depth < 3 or depth > 4:
             raise ValueError(
-                'Expected frame input to be sequence of point and analog pairs on form (-1, 2). ' +
-                'Input was of shape {}.'.format(str(sh)))
+                'Expected frame input to be sequence of point and analog data frame pairs on form (-1, 2). '
+                'Input was of shape {}.'.format(str(np.array(frames, dtype=object).shape)))
         
-        analog_frame = frames[0][1]
+        # Ensure data frames are numpy arrays
+        frames = [
+            (np.array(point), np.array(analog), ) for point, analog in frames
+            ]
+        
         point_frame = frames[0][0]
-        analog_shape = np.shape(analog_frame)
+        analog_frame = frames[0][1]
         point_shape = np.shape(point_frame)
+        analog_shape = np.shape(analog_frame)
 
         # Verify frame rate matches for analog
         if len(analog_frame) and analog_shape[1] != self.analog_per_frame:

@@ -79,6 +79,36 @@ class GeneratedExamples(Base):
         except RuntimeError as e:
             pass  # RuntimeError writing empty file
         
+    def test_error_adding_invalid_frames(self):
+        """ Verify no frames generates a runtime error (illegal to write empty file).
+        """
+        writer = c3d.Writer(point_rate=200)
+        writer.set_point_labels(None)
+        writer.set_analog_labels(None)
+
+        with self.assertRaises(ValueError):
+            writer.add_frames(((), ()),)
+            
+        with self.assertRaises(ValueError):
+            # Invalid, to few dims
+            writer.add_frames(np.random.randn(3, 5))
+
+        with self.assertRaises(ValueError):
+            # Invalid, expect first dim to contain 2 elements
+            writer.add_frames(np.random.randn(3, 13, 5))
+
+        with self.assertRaises(ValueError):
+            # Mismatch due to invalid second dim
+            writer.add_frames(np.random.randn(4, 3, 27, 5))
+            
+        with self.assertRaises(ValueError):
+            # Raise due to analog rate mismatch (invalid 4th dim)
+            writer.add_frames(np.random.randn(4, 2, 17, 5))
+
+        with self.assertRaises(ValueError):
+            # Raise due to extra dimensions
+            writer.add_frames(np.random.randn(5, 4, 2, 7, 5))
+        
     def test_writing_single_point_frame(self):
         """ Verify writing a file with a single frame.
         """
