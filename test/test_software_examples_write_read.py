@@ -13,6 +13,7 @@ from test.zipload import Zipload, TEMP
 def verify_read_write(zip, file_path, proc_type='INTEL', real=True, cpy_mode='copy'):
     ''' Compare read write ouput to original read file.
     '''
+    assert cpy_mode != 'copy_header', "Copy mode not supported for verification"
     A = c3d.Reader(Zipload._get(zip, file_path))
 
     if proc_type != 'INTEL':
@@ -31,8 +32,12 @@ def verify_read_write(zip, file_path, proc_type='INTEL', real=True, cpy_mode='co
 
     with open(tmp_path, 'rb') as handle:
         B = c3d.Reader(handle)
-        verify.equal_headers(test_id, A, B, aname, bname, real, real)
-        verify.data_is_equal(A, B, aname, bname)
+        if cpy_mode == 'convert':
+            # Compare writer instead
+            verify.equal_headers(test_id, writer, B, aname, bname, real, real)
+        else:
+            verify.equal_headers(test_id, A, B, aname, bname, real, real)
+            verify.data_is_equal(A, B, aname, bname)
 
 
 def create_dummy_writer(labels=None, frames=1):
@@ -101,7 +106,8 @@ class GeneratedExamples(Base):
                   ]
         writer = c3d.Writer(point_rate=12, analog_rate=36)
 
-        writer.add_frames(((), np.random.randn(len(labels), writer.analog_per_frame),))
+        for i in range(5):
+            writer.add_frames(((), np.random.randn(len(labels), writer.analog_per_frame),))
         
         writer.set_point_labels(None)
         writer.set_analog_labels(labels)
@@ -119,13 +125,38 @@ class GeneratedExamples(Base):
                 assert a == b, "Label missmatch"
         
     def test_write_invalid_analog_frame_count(self):
-        """ Verify writing a file with a single frame.
+        """ Verify error is thrown when passing a single analog frame with invalid frame rate.
         """
         writer = c3d.Writer(point_rate=12, analog_rate=36)
 
         with self.assertRaises(ValueError):
             writer.add_frames(((), np.random.randn(14, writer.analog_per_frame - 1),))
 
+    def test_write_mismatching_analog_frame_count(self):
+        """ Verify error is thrown when passing multiple analog frames with mismatching shapes.
+        """
+        writer = c3d.Writer(point_rate=12, analog_rate=36)
+
+        writer.add_frames(((), np.random.randn(14, writer.analog_per_frame),))
+        with self.assertRaises(ValueError):
+            writer.add_frames(((), np.random.randn(13, writer.analog_per_frame),))
+        with self.assertRaises(ValueError):
+            writer.add_frames(((), np.random.randn(13, writer.analog_per_frame - 1),))
+
+    def test_write_mismatching_frames(self):
+        """ Verify error is thrown when passing multiple frames with mismatching shapes.
+        """
+        writer = c3d.Writer(point_rate=12, analog_rate=36)
+
+        writer.add_frames((np.random.randn(6, 5), np.random.randn(14, writer.analog_per_frame),))
+        with self.assertRaises(ValueError):
+            writer.add_frames((np.random.randn(222, 5), np.random.randn(14, writer.analog_per_frame),))
+        with self.assertRaises(ValueError):
+            writer.add_frames((np.random.randn(5, 3), np.random.randn(14, writer.analog_per_frame),))
+        with self.assertRaises(ValueError):
+            writer.add_frames((np.random.randn(6, 5), np.random.randn(13, writer.analog_per_frame),))
+        with self.assertRaises(ValueError):
+            writer.add_frames((np.random.randn(6, 5), np.random.randn(13, writer.analog_per_frame - 1),))
 
     def test_write_long_param(self):
         writer = create_dummy_writer()
@@ -162,12 +193,12 @@ class Sample00(Base):
     ZIP = 'sample00.zip'
     zip_files = \
         [
-         #('Advanced Realtime Tracking GmbH', ['arthuman-sample.c3d', 'arthuman-sample-fingers.c3d']),
-         #('Codamotion', ['codamotion_gaitwands_19970212.c3d', 'codamotion_gaitwands_20150204.c3d']),
-         #('Cometa Systems', ['EMG Data Cometa.c3d']),
-         #('Innovative Sports Training', ['Gait with EMG.c3d', 'Static Pose.c3d']),
-         #('Motion Analysis Corporation', ['Sample_Jump2.c3d', 'Walk1.c3d']),
-         #('NexGen Ergonomics', ['test1.c3d']),
+         ('Advanced Realtime Tracking GmbH', ['arthuman-sample.c3d', 'arthuman-sample-fingers.c3d']),
+         ('Codamotion', ['codamotion_gaitwands_19970212.c3d', 'codamotion_gaitwands_20150204.c3d']),
+         ('Cometa Systems', ['EMG Data Cometa.c3d']),
+         ('Innovative Sports Training', ['Gait with EMG.c3d', 'Static Pose.c3d']),
+         ('Motion Analysis Corporation', ['Sample_Jump2.c3d', 'Walk1.c3d']),
+         ('NexGen Ergonomics', ['test1.c3d']),
          # Vicon files are weird, uses non-standard encodings. Walking01.c3d contain nan values.
          ('Vicon Motion Systems', ['pyCGM2 lower limb CGM24 Walking01.c3d', 'TableTennis.c3d']),
         ]
@@ -197,6 +228,36 @@ class Sample00(Base):
         print('{} | Validating...'.format(folder))
         for file in files:
             verify_read_write(self.ZIP, '{}/{}'.format(folder, file), cpy_mode='shallow_copy')
+        print('... OK')
+        print('DONE')
+        
+    def test_read_write_convert_examples(self):
+        ''' Compare data written by a 'convert' `Reader` to data in the original file
+        '''
+
+        print('----------------------------')
+        print('Convert')
+        print('----------------------------')
+        folder, files = self.zip_files[-1]
+        print('{} | Validating...'.format(folder))
+        for file in files:
+            verify_read_write(self.ZIP, '{}/{}'.format(folder, file), cpy_mode='convert')
+        print('... OK')
+        print('DONE')
+        
+    def test_read_write_header_examples(self):
+        ''' Compare data written by a 'copy_header' only `Writer` to data in the original file
+        '''
+
+        print('----------------------------')
+        print('copy_header')
+        print('----------------------------')
+        folder, files = self.zip_files[-1]
+        print('{} | Validating...'.format(folder))
+        for file in files:
+            A = c3d.Reader(Zipload._get(self.ZIP, '{}/{}'.format(folder, file)))
+            writer = A.to_writer('copy_header')
+            verify.equal_headers('test_read_write_header_examples', A, writer, 'Original', 'Writer Copy', True, True)
         print('... OK')
         print('DONE')
 

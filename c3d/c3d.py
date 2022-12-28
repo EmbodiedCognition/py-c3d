@@ -492,7 +492,7 @@ class Header(object):
         event_disp_flags[:write_count] = 1
 
         # Update event headers in self
-        self.long_event_labels = 0x3039 # Magic number
+        self.long_event_labels = True # Bool used instead of magic number 0x3039
         self.event_count = write_count
         # Update event block
         self.event_timings = event_timings[:write_count]
@@ -2140,10 +2140,7 @@ class Writer(Manager):
 
         if is_consume:
             writer._header = reader._header
-            reader._header = None
             writer._groups = reader._groups
-            reader._groups = None
-            del reader
         elif is_deep_copy:
             writer._header = copy.deepcopy(reader._header)
             writer._groups = copy.deepcopy(reader._groups)
@@ -2167,6 +2164,9 @@ class Writer(Manager):
             # Copy frames
             for (i, point, analog) in reader.read_frames(copy=True, camera_sum=False):
                 writer.add_frames((point, analog))
+        if is_consume:
+            del reader
+
         return writer
 
     @property
@@ -2277,16 +2277,35 @@ class Writer(Manager):
                 'Expected frame input to be sequence of point and analog pairs on form (-1, 2). ' +
                 'Input was of shape {}.'.format(str(sh)))
         
-        point_shape = np.shape(frames[0][0])
-        analog_shape = np.shape(frames[0][1])
+        analog_frame = frames[0][1]
+        point_frame = frames[0][0]
+        analog_shape = np.shape(analog_frame)
+        point_shape = np.shape(point_frame)
 
-        if len(analog_shape) != 2 or analog_shape[0] != self.analog_used or analog_shape[1] != self.analog_per_frame:
-            raise ValueError("Expected analog frame to be a 2D array on form (analog_used, analog_per_frame), "
-                             "was on form %s" % str(analog_shape))
-                             
-        if len(point_shape) != 2 or point_shape[0] != self.point_used or point_shape[1] != 5:
-            raise ValueError("Expected point frame to be a 2D array on form (analog_used, 5), "
-                             "was on form %s" % str(point_shape))
+        # Verify frame rate matches for analog
+        if len(analog_frame) and analog_shape[1] != self.analog_per_frame:
+            raise ValueError("Expected analog frame to be a 2D array with the second "
+                             "dimension matching the analog_frame_rate / point_frame_rate = "
+                             "%i, was %i" % (self.analog_per_frame, analog_shape[1]))
+
+        # Verify frames added matches existing
+        if len(self._frames):
+            if len(analog_frame):
+                # If there are a analog frame included, verify shape
+                analog_shape = np.shape(analog_frame)
+                if len(analog_shape) != 2 or analog_shape[0] != self.analog_used:
+                    raise ValueError("Expected analog frame to be a 2D array on form (analog_used, analog_per_frame), "
+                                    "was on form %s" % str(analog_shape))
+                                
+            if len(point_frame):
+                # If there are a point frame included, verify shape
+                if len(point_shape) != 2 or point_shape[0] != self.point_used or point_shape[1] != 5:
+                    raise ValueError("Expected point frame to be a 2D array on form "
+                                    "(%i, 5), was on form %s" % (self.point_used, str(point_shape)))
+        else:
+            # Define the count in the header
+            self._header.point_count = point_shape[0]
+            self._header.analog_count = analog_shape[0]
 
         if index is not None:
             self._frames[index:index] = frames
