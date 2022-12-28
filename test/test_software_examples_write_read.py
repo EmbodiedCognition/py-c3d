@@ -58,7 +58,7 @@ def create_dummy_writer(labels=None, frames=1):
             writer.add_frames((np.random.randn(len(labels), 5), ()))
     elif frames > 1:
         new_frames = []
-        for __ in range(5):
+        for __ in range(frames):
             new_frames.append((np.random.randn(len(labels), 5), ()))
         writer.add_frames(new_frames)
     
@@ -138,7 +138,8 @@ class GeneratedExamples(Base):
     def test_writing_multiple_point_frame(self):
         """ Verify writing a file with a single frame.
         """
-        writer = create_dummy_writer(frames=10)
+        num_frames = 11
+        writer = create_dummy_writer(frames=num_frames)
 
         tmp_path = os.path.join(TEMP, 'single-point-frame.c3d')
         with open(tmp_path, 'wb') as h:
@@ -146,6 +147,7 @@ class GeneratedExamples(Base):
 
         with open(tmp_path, 'rb') as handle:
             B = c3d.Reader(handle)
+            assert B.frame_count == num_frames, "Expected {} point frames was {}".format(num_frames, B.frame_count)
             verify.equal_headers("test_writing_multiple_point_frame", writer, B, "Original", "WriteRead", True, True)
                 
     def test_writing_analog_frames(self):
