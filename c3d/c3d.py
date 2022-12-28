@@ -985,7 +985,9 @@ class Group(object):
         name = name.upper()
         if name in self._params:
             raise KeyError('Parameter already exists with key {}'.format(name))
-        self._params[name] = Param(name, self._dtypes, **kwargs)
+        param = Param(name, self._dtypes, **kwargs)
+        self._params[name] = param
+        return param
 
     def remove_param(self, name):
         '''Remove the specified parameter.
@@ -1679,6 +1681,10 @@ class Reader(Manager):
                 # read the remaining bytes in the parameter section.
                 bytes = self._handle.read(endbyte - self._handle.tell())
             else:
+                if offset_to_next - 2 < -1:
+                    raise ValueError(
+                        "Corrupt file with invalid offset written to file. Attempted to read parameter "
+                        "with name {} and {} bytes".format(name, offset_to_next - 2))
                 bytes = self._handle.read(offset_to_next - 2)
             buf = io.BytesIO(bytes)
 
@@ -1927,13 +1933,13 @@ class GroupEditable(Decorator):
             last_byte = first_byte + elem_per_dim * 255
             bytes_param = bytes[first_byte:last_byte]
             # Determine shape
-            dimensions_param = dimensions.copy()
+            dimensions_param = list(dimensions)  # Create a list copy (assignable)
             dimensions_param[-1] = min(255, dimensions_param[-1] - index * 255)
-            self.group.add_param(name_param,
-                                 desc=desc,
-                                 bytes_per_element=bytes_per_element,
-                                 bytes=bytes_param,
-                                 dimensions=dimensions_param)
+            param = self.group.add_param(name_param,
+                                         desc=desc,
+                                         bytes_per_element=bytes_per_element,
+                                         bytes=bytes_param,
+                                         dimensions=dimensions_param)
 
     #
     #   Add decorator functions (throws on overwrite)
@@ -1970,7 +1976,7 @@ class GroupEditable(Decorator):
         self.add_param(name,
                        desc=desc,
                        bytes_per_element=dtype.itemsize,
-                       bytes=data,
+                       bytes=data.flatten(),
                        dimensions=data.shape)
 
     def add_str(self, name, desc, data, *dimensions):
@@ -2562,6 +2568,10 @@ class Writer(Manager):
         assert handle.tell() == 512
 
         # Groups
+        num_param_blocks = self.parameter_blocks()
+        if num_param_blocks > 255:
+            raise RuntimeError("To much data stored in parameter blocks. Maximum number of blocks is 255, "
+                               "current file contains {} blocks".format(num_param_blocks))
         handle.write(struct.pack(
             'BBBB', 0, 0, self.parameter_blocks(), PROCESSOR_INTEL))
         for group_id, group in self.group_listed():

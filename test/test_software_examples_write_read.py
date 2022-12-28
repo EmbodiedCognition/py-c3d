@@ -226,7 +226,7 @@ class GeneratedExamples(Base):
         with self.assertRaises(ValueError):
             writer.add_frames((np.random.randn(6, 5), np.random.randn(13, writer.analog_per_frame - 1),))
 
-    def test_write_long_param(self):
+    def test_write_long_str_param(self):
         writer = create_dummy_writer()
         grp = writer.add_group(66, "UnittestGroup", "Generated for unittest purposes")
         
@@ -239,22 +239,61 @@ class GeneratedExamples(Base):
 
         grp.add_str("LongString", "String spanning %i parameters." % num_param, data)
 
-        tmp_path = os.path.join(TEMP, 'long_parameter.c3d')
+        tmp_path = os.path.join(TEMP, 'long_str_parameter.c3d')
         with open(tmp_path, 'wb') as h:
             writer.write(h)
 
         with open(tmp_path, 'rb') as handle:
             B = c3d.Reader(handle)
             
-            verify.equal_headers("test_write_long_param", writer, B, "Original", "WriteRead", True, True)
+            verify.equal_headers("test_write_long_str_param", writer, B, "Original", "WriteRead", True, True)
 
+            str_index = 0
             for index in range(0, num_param):
                 postfix = "" if index == 0 else str(index + 1)
                 param_name = "UnittestGroup.LongString" + postfix
                 agrp = writer.get(param_name)
                 bgrp = B.get(param_name)
-                assert np.array_equal(agrp.string_array, bgrp.string_array), "Expected string data to match"
 
+                # Verify string parameter matches initial input and between read/write
+                read_data = bgrp.string_array
+                assert np.array_equal(agrp.string_array, read_data), "Expected string data to match"
+                assert np.array_equal(data[str_index:str_index + len(read_data)], read_data), "Expected string data to match"
+                str_index += len(read_data)
+
+    def test_write_long_float_param(self):
+        writer = create_dummy_writer()
+        grp = writer.add_group(66, "UnittestGroup", "Generated for unittest purposes")
+        
+        num_param = 10
+
+        data = np.random.randn(2, 2, 255 * num_param).astype(np.float32)
+        grp.add_array("LongFltArray", "Float array spanning {} parameters.".format(num_param), data)
+        # Fortran to C order for comparison
+        data = data.reshape(data.shape[::-1])
+
+        tmp_path = os.path.join(TEMP, 'long_flt_parameter.c3d')
+        with open(tmp_path, 'wb') as h:
+            writer.write(h)
+
+        with open(tmp_path, 'rb') as handle:
+            B = c3d.Reader(handle)
+            
+            verify.equal_headers("test_write_long_float_param", writer, B, "Original", "WriteRead", True, True)
+
+            prm_index = 0
+            for index in range(0, num_param):
+                postfix = "" if index == 0 else str(index + 1)
+                param_name = "UnittestGroup.LongFltArray" + postfix
+                agrp = writer.get(param_name)
+                bgrp = B.get(param_name)
+
+                # Verify string parameter matches initial input and between read/write
+                read_data = bgrp.float32_array
+                input_data = data[prm_index:prm_index + len(read_data)]
+                assert np.array_equal(agrp.float32_array, read_data), "Expected array to match between Reader and Writer"
+                assert np.array_equal(input_data, read_data), "Expected array data to match the input data"
+                prm_index += len(read_data)
 
 class Sample00(Base):
 
