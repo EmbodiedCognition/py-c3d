@@ -59,7 +59,7 @@ class ParamSample():
         for i in range(1, N):
             test_name = 'TEST_ADD_PARAM_%i' % i
             arr = self.rnd.uniform(*self.flt_range, size=self.shape).astype(np.float32)
-            self.group.add_param(test_name, bytes_per_element=4, dimensions=arr.shape, bytes=arr.T.tobytes())
+            self.group.add_param(test_name, bytes_per_element=4, dimensions=arr.shape, bytes_data=arr.T.tobytes())
             assert self.group.get(test_name) is not None, 'Added group does not exist.'
             self.assert_group_items()
 
