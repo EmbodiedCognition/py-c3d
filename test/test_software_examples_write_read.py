@@ -287,6 +287,7 @@ class GeneratedExamples(Base):
                 param_name = "UnittestGroup.LongFltArray" + postfix
                 agrp = writer.get(param_name)
                 bgrp = B.get(param_name)
+                assert bgrp is not None, "Parameter {} was not written to the file".format(param_name)
 
                 # Verify string parameter matches initial input and between read/write
                 read_data = bgrp.float32_array

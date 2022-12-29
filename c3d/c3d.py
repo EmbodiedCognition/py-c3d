@@ -525,7 +525,7 @@ class Param(object):
         column-major order. For arrays of strings, the dimensions here will be
         the number of columns (length of each string) followed by the number of
         rows (number of strings).
-    bytes : str
+    bytes_data : str
         Raw data for this parameter.
     handle :
         File handle positioned at the first byte of a .c3d parameter description.
@@ -537,7 +537,7 @@ class Param(object):
                  desc='',
                  bytes_per_element=1,
                  dimensions=None,
-                 bytes=b'',
+                 bytes_data=b'',
                  handle=None):
         '''Set up a new parameter, only the name is required.'''
         self.name = name
@@ -545,9 +545,11 @@ class Param(object):
         self.desc = desc
         self.bytes_per_element = bytes_per_element
         self.dimensions = dimensions or []
-        self.bytes = bytes
+        self.bytes_data = bytes_data
         if handle:
             self.read(handle)
+        elif not isinstance(bytes_data, bytes):
+            raise ValueError("Expected `bytes_data` input to be a bytes object.")
 
     def __repr__(self):
         return '<Param: {}>'.format(self.desc)
@@ -555,11 +557,7 @@ class Param(object):
     @property
     def num_elements(self):
         '''Return the number of elements in this parameter's array value.'''
-        e = 1
-        for d in self.dimensions:
-            e *= d
-        assert e == np.prod(self.dimensions), f"{self.dimensions}, {e}, {np.prod(self.dimensions)}"
-        return e
+        return int(np.prod(self.dimensions))
 
     @property
     def total_bytes(self):
@@ -596,8 +594,8 @@ class Param(object):
         handle.write(struct.pack('b', self.bytes_per_element))
         handle.write(struct.pack('B', len(self.dimensions)))
         handle.write(struct.pack('B' * len(self.dimensions), *self.dimensions))
-        if self.bytes is not None and len(self.bytes) > 0:
-            handle.write(self.bytes)
+        if self.bytes_data is not None and len(self.bytes_data) > 0:
+            handle.write(self.bytes_data)
         desc = self.desc.encode('utf-8')
         handle.write(struct.pack('B', len(desc)))
         handle.write(desc)
@@ -612,22 +610,22 @@ class Param(object):
         dims, = struct.unpack('B', handle.read(1))
         self.dimensions = [struct.unpack('B', handle.read(1))[
             0] for _ in range(dims)]
-        self.bytes = b''
+        self.bytes_data = b''
         if self.total_bytes:
-            self.bytes = handle.read(self.total_bytes)
+            self.bytes_data = handle.read(self.total_bytes)
 
         desc_size, = struct.unpack('B', handle.read(1))
         self.desc = desc_size and self._dtypes.decode_string(handle.read(desc_size)) or ''
 
     def _as(self, dtype):
         '''Unpack the raw bytes of this param as a single value of the given data type.'''
-        return np.frombuffer(self.bytes, count=1, dtype=dtype)[0]
+        return np.frombuffer(self.bytes_data, count=1, dtype=dtype)[0]
 
     def _as_array(self, dtype, copy=True):
         '''Unpack the raw bytes of this param as an array of the given data type.'''
         assert self.dimensions, \
             '{}: cannot get value as {} array!'.format(self.name, dtype)
-        buffer_view = np.frombuffer(self.bytes, dtype=dtype)
+        buffer_view = np.frombuffer(self.bytes_data, dtype=dtype)
         # Reverse shape as the shape is defined in fortran format
         buffer_view = buffer_view.reshape(self.dimensions[::-1])
         if copy:
@@ -711,12 +709,12 @@ class Param(object):
     @property
     def bytes_value(self):
         '''Get the param as a raw byte string.'''
-        return self.bytes
+        return self.bytes_data
 
     @property
     def string_value(self):
         '''Get the param as a unicode string.'''
-        return self._dtypes.decode_string(self.bytes)
+        return self._dtypes.decode_string(self.bytes_data)
 
     @property
     def int8_array(self):
@@ -766,7 +764,7 @@ class Param(object):
             # _as_array but for DEC
             assert self.dimensions, \
                 '{}: cannot get value as {} array!'.format(self.name, self._dtypes.float32)
-            return DEC_to_IEEE_BYTES(self.bytes).reshape(self.dimensions[::-1])  # Reverse fortran format
+            return DEC_to_IEEE_BYTES(self.bytes_data).reshape(self.dimensions[::-1])  # Reverse fortran format
         else:  # is_ieee or is_mips
             return self._as_array(self._dtypes.float32)
 
@@ -832,7 +830,7 @@ class Param(object):
         if len(self.dimensions) == 0:
             return np.array([])
         elif len(self.dimensions) == 1:
-            return np.array(self.bytes)
+            return np.array(self.bytes_data)
         else:
             # Convert Fortran shape (data in memory is identical, shape is transposed)
             word_len = self.dimensions[0]
@@ -843,7 +841,7 @@ class Param(object):
             for i in np.ndindex(*dims):
                 # Calculate byte offset as sum of each array index times the byte step of each dimension.
                 off = np.sum(np.multiply(i, byte_steps))
-                byte_arr[i] = self.bytes[off:off+word_len]
+                byte_arr[i] = self.bytes_data[off:off+word_len]
             return byte_arr
 
     @property
@@ -1909,16 +1907,18 @@ class GroupEditable(Decorator):
     def group(self) -> Group:
         return self._decoratee
         
-    def add_param(self, name, desc='', bytes_per_element=1, bytes=b'', dimensions=None):
+    def add_param(self, name, desc='', bytes_per_element=1, bytes_data=b'', dimensions=None):
         """ Decorate the raw Group.add_param() function to split the inputs if the leading dimension is > 255.
         """
+        if not isinstance(bytes_data, bytes):
+            raise ValueError("Expected `bytes_data` to be a bytes object was of type {}".format(type(bytes_data)))
         # Dimension must fit in a 8 bit unsigned int
         if len(dimensions) == 0 or dimensions[-1] < 255:
             # Forward
             self.group.add_param(name,
                                  desc=desc,
                                  bytes_per_element=bytes_per_element,
-                                 bytes=bytes,
+                                 bytes_data=bytes_data,
                                  dimensions=dimensions)
             return
 
@@ -1929,16 +1929,17 @@ class GroupEditable(Decorator):
         for index in range(num_param):
             name_param = name if index == 0 else "{}{}".format(name, index + 1)
             # Determine the byte array for the partial parameter
-            first_byte = elem_per_dim * 255 * index
-            last_byte = first_byte + elem_per_dim * 255
-            bytes_param = bytes[first_byte:last_byte]
+            abpe = abs(bytes_per_element)  # Take absolute for strings (bpe == -1)
+            first_byte = elem_per_dim * 255 * index * abpe
+            last_byte = first_byte + elem_per_dim * 255 * abpe
+            bytes_param = bytes_data[first_byte:last_byte]
             # Determine shape
             dimensions_param = list(dimensions)  # Create a list copy (assignable)
             dimensions_param[-1] = min(255, dimensions_param[-1] - index * 255)
             param = self.group.add_param(name_param,
                                          desc=desc,
                                          bytes_per_element=bytes_per_element,
-                                         bytes=bytes_param,
+                                         bytes_data=bytes_param,
                                          dimensions=dimensions_param)
 
     #
@@ -1955,7 +1956,7 @@ class GroupEditable(Decorator):
         self.add_param(name,
                        desc=desc,
                        bytes_per_element=bpe,
-                       bytes=data,
+                       bytes_data=data,
                        dimensions=list(dimensions))
 
     def add_array(self, name, desc, data, dtype=None):
@@ -1976,7 +1977,7 @@ class GroupEditable(Decorator):
         self.add_param(name,
                        desc=desc,
                        bytes_per_element=dtype.itemsize,
-                       bytes=data.flatten(),
+                       bytes_data=data.flatten().tobytes(),
                        dimensions=data.shape)
 
     def add_str(self, name, desc, data, *dimensions):
@@ -1999,7 +2000,7 @@ class GroupEditable(Decorator):
         self.add_param(name,
                        desc=desc,
                        bytes_per_element=-1,
-                       bytes=data.encode('utf-8'),
+                       bytes_data=data.encode('utf-8'),
                        dimensions=list(dimensions))
 
     def add_empty_array(self, name, desc, bytes_per_element=0):
@@ -2014,7 +2015,7 @@ class GroupEditable(Decorator):
     #   Set decorator functions (overwrites)
     #
     def set(self, name, *args, **kwargs):
-        ''' Add or overwrite a parameter with 'bytes' package formated in accordance with 'format'.
+        ''' Add or overwrite a parameter with 'bytes_data' package formated in accordance with 'format'.
         '''
         try:
             self.remove_param(name)
@@ -2540,7 +2541,7 @@ class Writer(Manager):
 
         # sync parameter information to header.
         blocks = self.parameter_blocks()
-        self.get('POINT:DATA_START').bytes = struct.pack('<H', 2 + blocks)
+        self.get('POINT:DATA_START').bytes_data = struct.pack('<H', 2 + blocks)
         self._header.data_block = np.uint16(2 + blocks)
         self._write_metadata(handle)
         self._write_frames(handle)
@@ -2573,7 +2574,7 @@ class Writer(Manager):
             raise RuntimeError("To much data stored in parameter blocks. Maximum number of blocks is 255, "
                                "current file contains {} blocks".format(num_param_blocks))
         handle.write(struct.pack(
-            'BBBB', 0, 0, self.parameter_blocks(), PROCESSOR_INTEL))
+            'BBBB', 0, 0, num_param_blocks, PROCESSOR_INTEL))
         for group_id, group in self.group_listed():
             group.write(group_id, handle)
 
