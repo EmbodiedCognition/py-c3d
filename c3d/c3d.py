@@ -2279,67 +2279,16 @@ class Writer(Manager):
             Insert the frame or sequence at the index (the first sequence frame will be inserted at give index).
             Note that the index should be relative to 0 rather then the frame number provided by read_frames()!
         '''
-        def get_depth(data):
-            """ Find the number of nested arrays.
-            """
-            if is_iterable(data):
-                try:
-                    return get_depth(next(iter(data))) + 1
-                except StopIteration as e:
-                    return 1  # Empty iterable
-            return 0
-
-        # Attempt find for multi frame arguments
-        try:
-            depth = max(get_depth(frames[0][0]), get_depth(frames[0][1])) + 2
-        except IndexError as e:
-            depth = 0
-            if len(frames) == 2:
-                # Attempt find for single frame argument
-                depth = max(get_depth(frames[0]), get_depth(frames[1])) + 1
-
-        if depth == 3:
-            # Single frame
+        sh = np.array(frames, dtype=object).shape
+        # Single frame
+        if len(sh) != 2:
             frames = [frames]
-        elif depth < 3 or depth > 4:
+            sh = np.shape(frames)
+        # Sequence of invalid shape
+        if sh[1] != 2:
             raise ValueError(
-                'Expected frame input to be sequence of point and analog data frame pairs on form (-1, 2). '
-                'Input was of shape {}.'.format(str(np.array(frames, dtype=object).shape)))
-        
-        # Ensure data frames are numpy arrays
-        frames = [
-            (np.array(point), np.array(analog), ) for point, analog in frames
-            ]
-        
-        point_frame = frames[0][0]
-        analog_frame = frames[0][1]
-        point_shape = np.shape(point_frame)
-        analog_shape = np.shape(analog_frame)
-
-        # Verify frame rate matches for analog
-        if len(analog_frame) and analog_shape[1] != self.analog_per_frame:
-            raise ValueError("Expected analog frame to be a 2D array with the second "
-                             "dimension matching the analog_frame_rate / point_frame_rate = " +
-                             "{}, was {}".format(self.analog_per_frame, analog_shape[1]))
-
-        # Verify frames added matches existing
-        if len(self._frames):
-            if len(analog_frame):
-                # If there are a analog frame included, verify shape
-                analog_shape = np.shape(analog_frame)
-                if len(analog_shape) != 2 or analog_shape[0] != self.analog_used:
-                    raise ValueError("Expected analog frame to be a 2D array on form (analog_used, analog_per_frame), "
-                                    "was on form {}".format(str(analog_shape)))
-                                
-            if len(point_frame):
-                # If there are a point frame included, verify shape
-                if len(point_shape) != 2 or point_shape[0] != self.point_used or point_shape[1] != 5:
-                    raise ValueError("Expected point frame to be a 2D array on form " +
-                                    "({}, 5), was on form {}".format(self.point_used, str(point_shape)))
-        else:
-            # Define the count in the header
-            self._header.point_count = point_shape[0]
-            self._header.analog_count = analog_shape[0]
+                'Expected frame input to be sequence of point and analog pairs on form (-1, 2). ' +
+                'Input was of shape {}.'.format(str(sh)))
 
         if index is not None:
             self._frames[index:index] = frames

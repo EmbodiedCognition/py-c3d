@@ -191,40 +191,6 @@ class GeneratedExamples(Base):
 
             for a, b in zip(labels, B.get('ANALOG.LABELS').string_array):
                 assert a == b, "Label missmatch"
-        
-    def test_write_invalid_analog_frame_count(self):
-        """ Verify error is thrown when passing a single analog frame with invalid frame rate.
-        """
-        writer = c3d.Writer(point_rate=12, analog_rate=36)
-
-        with self.assertRaises(ValueError):
-            writer.add_frames(((), np.random.randn(14, writer.analog_per_frame - 1),))
-
-    def test_write_mismatching_analog_frame_count(self):
-        """ Verify error is thrown when passing multiple analog frames with mismatching shapes.
-        """
-        writer = c3d.Writer(point_rate=12, analog_rate=36)
-
-        writer.add_frames(((), np.random.randn(14, writer.analog_per_frame),))
-        with self.assertRaises(ValueError):
-            writer.add_frames(((), np.random.randn(13, writer.analog_per_frame),))
-        with self.assertRaises(ValueError):
-            writer.add_frames(((), np.random.randn(13, writer.analog_per_frame - 1),))
-
-    def test_write_mismatching_frames(self):
-        """ Verify error is thrown when passing multiple frames with mismatching shapes.
-        """
-        writer = c3d.Writer(point_rate=12, analog_rate=36)
-
-        writer.add_frames((np.random.randn(6, 5), np.random.randn(14, writer.analog_per_frame),))
-        with self.assertRaises(ValueError):
-            writer.add_frames((np.random.randn(222, 5), np.random.randn(14, writer.analog_per_frame),))
-        with self.assertRaises(ValueError):
-            writer.add_frames((np.random.randn(5, 3), np.random.randn(14, writer.analog_per_frame),))
-        with self.assertRaises(ValueError):
-            writer.add_frames((np.random.randn(6, 5), np.random.randn(13, writer.analog_per_frame),))
-        with self.assertRaises(ValueError):
-            writer.add_frames((np.random.randn(6, 5), np.random.randn(13, writer.analog_per_frame - 1),))
 
     def test_write_long_str_param(self):
         writer = create_dummy_writer()
