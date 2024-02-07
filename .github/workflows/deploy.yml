@@ -1,0 +1,15 @@
+name: deploy
+on:
+  push:
+    branches:
+      - master
+jobs:
+  deploy:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: codedeploy
+      run: aws deploy create-deployment --application-name py-c3d --deployment-group-name=ETL --github-location repository=CubsResearch/py-c3d,commitId=${GITHUB_SHA}
+      env:
+          AWS_ACCESS_KEY_ID: ${{secrets.CD_AWS_ACCESS_KEY_ID}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.CD_AWS_SECRET_ACCESS_KEY}}
+          AWS_DEFAULT_REGION: us-east-1
