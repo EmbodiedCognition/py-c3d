@@ -115,8 +115,8 @@ class Sample02(FormatTest, Base):
     ZIP = 'sample02.zip'
     INTEL_INT = 'pc_int.c3d'
     INTEL_REAL = 'pc_real.c3d'
-    DEC_INT = 'DEC_INT.C3D'
-    DEC_REAL = 'Dec_real.c3d'
+    DEC_INT = 'dec_int.c3d'
+    DEC_REAL = 'dec_real.c3d'
     MIPS_INT = 'sgi_int.c3d'
     MIPS_REAL = 'sgi_real.c3d'
 
