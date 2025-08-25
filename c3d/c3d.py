@@ -1529,7 +1529,7 @@ class Manager(object):
             # Manual refer to parsing the parameter as 2 16-bit words, generally equivalent to an uint32
             # end_frame = param.uint32_value
             words = param.uint16_array
-            end_frame = words[0] + words[1] * 65536
+            end_frame = int(words[0]) + int(words[1]) * 65536
             if hlf <= end_frame:
                 return end_frame
         param = self.get('POINT:LONG_FRAMES')
