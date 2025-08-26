@@ -65,10 +65,18 @@ class ReadTest():
 
             print('{} | READ: OK'.format(file))
 
-        # Allow self.zipfiles on form:
-        # ['FILE', ..]
-        # [('FOLDER', ['FILE', ..])]
-        if len(np.shape(self.zip_files)) == 1:
+        # Check if zip_files is a simple list of files or nested folder structure
+        # Simple list: ['file1', 'file2', ...]  
+        # Nested: [('folder', ['file1', 'file2']), ...]
+        is_simple_list = True
+        if self.zip_files and len(self.zip_files) > 0:
+            first_item = self.zip_files[0]
+            if isinstance(first_item, (tuple, list)) and len(first_item) == 2:
+                folder_name, files = first_item
+                if isinstance(files, (list, tuple)):
+                    is_simple_list = False
+
+        if is_simple_list:
             for file in self.zip_files:
                 check_zipfile(file)
         else:
@@ -130,7 +138,18 @@ class WithinRangeTest():
         print('----------------------------')
         print(type(self))
         print('----------------------------')
-        if len(np.shape(self.zip_files)) == 1:
+        # Check if zip_files is a simple list of files or nested folder structure
+        # Simple list: ['file1', 'file2', ...]  
+        # Nested: [('folder', ['file1', 'file2']), ...]
+        is_simple_list = True
+        if self.zip_files and len(self.zip_files) > 0:
+            first_item = self.zip_files[0]
+            if isinstance(first_item, (tuple, list)) and len(first_item) == 2:
+                folder_name, files = first_item
+                if isinstance(files, (list, tuple)):
+                    is_simple_list = False
+
+        if is_simple_list:
             for file in self.zip_files:
                 check_zipfile(file)
         else:

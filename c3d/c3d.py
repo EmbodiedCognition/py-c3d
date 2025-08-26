@@ -2206,11 +2206,32 @@ class Writer(Manager):
             Insert the frame or sequence at the index (the first sequence frame will be inserted at give index).
             Note that the index should be relative to 0 rather then the frame number provided by read_frames()!
         '''
-        sh = np.array(frames, dtype=object).shape
+        # Determine shape without using np.array() which fails on inhomogeneous data
+        if hasattr(frames, '__iter__') and not isinstance(frames, (str, np.ndarray)):
+            # Check if it looks like a sequence of frames
+            frames_list = list(frames)
+            if len(frames_list) > 0:
+                first_element = frames_list[0]
+                if isinstance(first_element, (list, tuple)) and len(first_element) == 2:
+                    # It's a sequence of (point, analog) pairs
+                    sh = (len(frames_list), 2)
+                    frames = frames_list
+                else:
+                    # Single frame that happens to be iterable
+                    sh = (2,) if len(frames_list) == 2 else (len(frames_list),)
+            else:
+                # Empty sequence
+                sh = (0, 2)
+                frames = []
+        else:
+            # Single frame (non-iterable or string/array)
+            sh = (2,)
+            frames = [frames]
+        
         # Single frame
         if len(sh) != 2:
             frames = [frames]
-            sh = np.shape(frames)
+            sh = (len(frames), 2)
         # Sequence of invalid shape
         if sh[1] != 2:
             raise ValueError(
