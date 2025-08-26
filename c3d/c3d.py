@@ -1513,7 +1513,7 @@ class Manager(object):
             # ACTUAL_START_FIELD is encoded in two 16 byte words...
             # return param.uint32_value
             words = param.uint16_array
-            return words[0] + words[1] * 65535
+            return int(words[0]) + int(words[1]) * 65535
         return self.header.first_frame
 
     @property
