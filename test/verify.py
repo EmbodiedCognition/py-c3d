@@ -68,7 +68,7 @@ class ReadTest():
         # Allow self.zipfiles on form:
         # ['FILE', ..]
         # [('FOLDER', ['FILE', ..])]
-        if len(np.shape(self.zip_files)) == 1:
+        if len(np.array(self.zip_files, dtype=object).shape) == 1:
             for file in self.zip_files:
                 check_zipfile(file)
         else:
@@ -130,7 +130,7 @@ class WithinRangeTest():
         print('----------------------------')
         print(type(self))
         print('----------------------------')
-        if len(np.shape(self.zip_files)) == 1:
+        if len(np.array(self.zip_files, dtype=object).shape) == 1:
             for file in self.zip_files:
                 check_zipfile(file)
         else:

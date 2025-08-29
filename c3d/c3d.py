@@ -2209,7 +2209,7 @@ class Writer(Manager):
         sh = np.array(frames, dtype=object).shape
         # Single frame
         if len(sh) != 2:
-            frames = [frames]
+            frames = np.array([frames], dtype=object)
             sh = np.shape(frames)
         # Sequence of invalid shape
         if sh[1] != 2:
@@ -2424,7 +2424,7 @@ class Writer(Manager):
 
         # Padding
         self._pad_block(handle)
-        while handle.tell() != 512 * (self.header.data_block - 1):
+        while handle.tell() != 512 * (int(self.header.data_block) - 1):
             handle.write(b'\x00' * 512)
 
     def _write_frames(self, handle):
@@ -2436,7 +2436,7 @@ class Writer(Manager):
             Write metadata and C3D motion frames to the given file handle. The
             writer does not close the handle.
         '''
-        assert handle.tell() == 512 * (self._header.data_block - 1)
+        assert handle.tell() == 512 * (int(self._header.data_block) - 1)
         scale_mag = abs(self.point_scale)
         is_float = self.point_scale < 0
         if is_float:
