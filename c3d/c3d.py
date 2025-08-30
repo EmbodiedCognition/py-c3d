@@ -2205,7 +2205,7 @@ class Writer(Manager):
         index : int or None
             Insert the frame or sequence at the index (the first sequence frame will be inserted at give index).
             Note that the index should be relative to 0 rather then the frame number provided by read_frames()!
-        '''
+        '''        
         sh = np.array(frames, dtype=object).shape
         # Single frame
         if len(sh) != 2:
