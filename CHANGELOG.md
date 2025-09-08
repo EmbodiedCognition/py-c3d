@@ -1,3 +1,8 @@
+## [0.6.0] - 08.09.2025
+
+- Added support for more recent numpy versions. (https://github.com/EmbodiedCognition/py-c3d/pull/54)
+- Dropped support for Python <3.9
+
 ## [0.5.2] - 19.12.2022
 
 - Fixed numpy dtype deprecated warning (https://github.com/EmbodiedCognition/py-c3d/pull/50)
