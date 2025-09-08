@@ -1513,7 +1513,7 @@ class Manager(object):
             # ACTUAL_START_FIELD is encoded in two 16 byte words...
             # return param.uint32_value
             words = param.uint16_array
-            return words[0] + words[1] * 65535
+            return int(words[0]) + int(words[1]) * 65535
         return self.header.first_frame
 
     @property
@@ -1529,7 +1529,7 @@ class Manager(object):
             # Manual refer to parsing the parameter as 2 16-bit words, generally equivalent to an uint32
             # end_frame = param.uint32_value
             words = param.uint16_array
-            end_frame = words[0] + words[1] * 65536
+            end_frame = int(words[0]) + int(words[1]) * 65536
             if hlf <= end_frame:
                 return end_frame
         param = self.get('POINT:LONG_FRAMES')
@@ -2205,11 +2205,11 @@ class Writer(Manager):
         index : int or None
             Insert the frame or sequence at the index (the first sequence frame will be inserted at give index).
             Note that the index should be relative to 0 rather then the frame number provided by read_frames()!
-        '''
+        '''        
         sh = np.array(frames, dtype=object).shape
         # Single frame
         if len(sh) != 2:
-            frames = [frames]
+            frames = np.array([frames], dtype=object)
             sh = np.shape(frames)
         # Sequence of invalid shape
         if sh[1] != 2:
@@ -2424,7 +2424,7 @@ class Writer(Manager):
 
         # Padding
         self._pad_block(handle)
-        while handle.tell() != 512 * (self.header.data_block - 1):
+        while handle.tell() != 512 * (int(self.header.data_block) - 1):
             handle.write(b'\x00' * 512)
 
     def _write_frames(self, handle):
@@ -2436,7 +2436,7 @@ class Writer(Manager):
             Write metadata and C3D motion frames to the given file handle. The
             writer does not close the handle.
         '''
-        assert handle.tell() == 512 * (self._header.data_block - 1)
+        assert handle.tell() == 512 * (int(self._header.data_block) - 1)
         scale_mag = abs(self.point_scale)
         is_float = self.point_scale < 0
         if is_float:

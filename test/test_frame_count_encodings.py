@@ -52,7 +52,7 @@ class Sample19(FrameCountEncodingTest, AnalogSampleCountEncodingTest, verify.Rea
 
     frame_count = [34672]
     sample_count = [624096]
-    zip_files = ['sample19/sample19.c3d']
+    zip_files = ['sample19.c3d']
 
 
 class Sample31(FrameCountEncodingTest, AnalogSampleCountEncodingTest, verify.ReadTest, Base):
