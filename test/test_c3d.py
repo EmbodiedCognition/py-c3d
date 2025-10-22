@@ -45,7 +45,7 @@ class ReaderTest(Base):
             for p in g.param_values():
                 if len(p.dimensions) == 0:
                     val = None
-                    width = len(p.bytes)
+                    width = len(p.bytes_data)
                     if width == 2:
                         val = p.int16_value
                     elif width == 4:

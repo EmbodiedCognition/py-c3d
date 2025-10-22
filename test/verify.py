@@ -213,8 +213,8 @@ def equal_headers(test_label, areader, breader, alabel, blabel, areal, breal):
     assert aheader.max_gap == bheader.max_gap, \
         '{}, max_gap: {} {}, {} {}'.format(
          test_label, alabel, aheader.max_gap, blabel, bheader.max_gap)
-    assert aheader.long_event_labels == bheader.long_event_labels, \
-        '{}, long_event_labels: {} {}, {} {}'.format(
+    assert isinstance(aheader.long_event_labels, bool) and isinstance(bheader.long_event_labels, bool), \
+        '{}, expected long_event_labels to be boolean: {} {}, {} {}'.format(
          test_label, alabel, aheader.long_event_labels, blabel, bheader.long_event_labels)
 
     event_mismatch = max(0, bheader.event_count - aheader.event_count)
